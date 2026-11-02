@@ -22,7 +22,11 @@ Se precisar de novos módulos, informe seu conteúdo integral e destino exato (`
 
 O usuário descontinuou o protótipo Backrooms e decidiu **reaproveitar a mesma experiência Roblox** para o Club Legacy. IDs públicos já são usados no workflow: **Universe ID `9749365367` e Place ID `86256105108811`**. Isso é intencional; não solicite criação de uma nova experiência nem reutilize arquivos de jogabilidade do Backrooms. **Não use nenhuma chave Open Cloud em código**.
 
-O workflow bloqueia publicações enquanto os dois scripts principais contiverem `CL_SCAFFOLD_PLACEHOLDER`. Substitua integralmente os scripts temporários por implementações funcionais.
+O workflow contém proteção contra scripts com o marcador `CL_SCAFFOLD_PLACEHOLDER`. Os scripts integrados não o contêm. A ausência desse marcador **não prova** que a implementação está correta, portanto compile e teste antes de publicar.
+
+## Estado da integração
+
+**Os scripts completos enviados pelo usuário (Arquivo 1A + 1B, Arquivo 2 e Arquivo 3) foram unidos e inseridos no GitHub.** Ainda não foram compilados nem testados no Roblox. Em novas revisões, altere somente o que estiver comprovadamente incorreto e preserve a estrutura existente.
 
 ## Entrega prioritária
 

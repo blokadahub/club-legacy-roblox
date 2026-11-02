@@ -7,7 +7,7 @@
 - [x] Repositório `blokadahub/club-legacy-roblox` criado na branch `main`.
 - [x] Estrutura `src/server`, `src/client` e `src/shared` adicionada.
 - [x] Projeto `default.project.json` criado para Rojo.
-- [x] Scripts principais temporários adicionados, para serem substituídos pelo código definitivo.
+- [x] Scripts principais de servidor e cliente fornecidos pelo Claude, integrados no GitHub (aguardando testes reais).
 - [x] GitHub Actions com instalação automática de Rojo 7.7.1 configurado.
 - [x] Compilação `.rbxlx` e upload do artefato configurados no workflow.
 - [x] Publicação manual, opt-in, desativada por padrão.
@@ -15,7 +15,7 @@
 - [x] README, orientações para o Claude e checklist publicados.
 - [x] Publicação pelo workflow do repositório antigo Backrooms desativada; código antigo preservado.
 - [ ] Primeiro teste real do GitHub Actions concluído com sucesso.
-- [ ] Código e módulos definitivos entregues e integrados.
+- [x] Código inicial do Claude (servidor, cliente e Config) entregue e integrado; ainda não homologado.
 - [ ] Revisão de sintaxe, mapeamento Rojo e comunicação cliente-servidor concluída.
 
 ## 2. Roblox e publicação
@@ -32,7 +32,7 @@
 - [ ] Abertura da experiência no aplicativo Roblox Android confirmada.
 - [ ] Configuração de visibilidade e disponibilidade da experiência revisada.
 
-## 3. Produto mínimo jogável — funcionalidade, ainda não entregue
+## 3. Produto mínimo jogável — código inicial integrado, funcionamento ainda não comprovado
 
 - [ ] Tela inicial, criação e carregamento de carreira.
 - [ ] Escolha ou criação de clube fictício.

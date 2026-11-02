@@ -16,8 +16,8 @@ Simulador de carreira de treinador para **Roblox**, desenvolvido em **Luau**, co
 </div>
 
 > [!IMPORTANT]
-> **Estado atual: infraestrutura preparada, jogo ainda não implementado.**
-> Os scripts principais continuam **temporários** enquanto aguardamos o código do Claude. A compilação poderá ser testada, mas a publicação está **desativada por padrão** e é bloqueada caso esses scripts temporários ainda existam.
+> **Estado atual: código inicial do Claude integrado ao GitHub, ainda sem teste de compilação ou execução.**
+> Os scripts de servidor, cliente e configuração recebidos do Claude foram integrados. **Ainda não existe confirmação de que o jogo compila ou funciona no Roblox.** A publicação permanece desativada por padrão.
 
 ## O projeto
 
@@ -46,7 +46,7 @@ Essas funcionalidades são **objetivos**, não recursos concluídos.
 | Proteção contra publicação do código temporário | ✅ Ativa no workflow |
 | Publicação do antigo Backrooms | ✅ Desativada no repositório antigo |
 | Chave `ROBLOX_API_KEY` neste repositório | ⬜ Configuração manual pendente / não verificável |
-| Código completo gerado pelo Claude | ⬜ Aguardando entrega |
+| Código inicial do Claude (servidor, cliente e Config) | ✅ Integrado; testes pendentes |
 | Compilação real do Club Legacy | ⬜ Não executada |
 | Jogo funcional, DataStore e testes no Roblox | ⬜ Pendentes |
 | Renomear a experiência no Creator Hub | ⬜ Pendente |
@@ -64,9 +64,9 @@ club-legacy-roblox/
 │   └── club-legacy-banner.svg      # Identidade visual do README
 ├── src/
 │   ├── server/
-│   │   └── Main.server.luau        # Temporário: substituir pelo servidor
+│   │   └── Main.server.luau        # Servidor integrado: aguardando testes
 │   ├── client/
-│   │   └── Main.client.luau        # Temporário: substituir pela interface
+│   │   └── Main.client.luau        # Cliente integrado: aguardando testes
 │   └── shared/
 │       └── Config.luau             # Configuração pública compartilhada
 ├── default.project.json           # Mapeamento Rojo
@@ -106,8 +106,8 @@ A chave **não pode ser recuperada ou copiada automaticamente** de outro reposit
 
 ## Fluxo pelo celular
 
-1. **Receber o código do Claude:** leia [INSTRUCOES-CLAUDE.md](INSTRUCOES-CLAUDE.md). Claude não tem autorização para escrever no GitHub; ele deve devolver os **arquivos completos**.
-2. **Integrar:** substituir o conteúdo de `src/server/Main.server.luau` e `src/client/Main.client.luau`, adicionando módulos adicionais se forem necessários. Ajustar `default.project.json` quando houver novos caminhos.
+1. **Código integrado:** os três arquivos Lua enviados pelo Claude já estão neste repositório. Leia [INSTRUCOES-CLAUDE.md](INSTRUCOES-CLAUDE.md) caso sejam necessárias correções futuras.
+2. **Verificar:** revise os scripts e confirme o mapeamento Rojo; não presuma que a compilação valida toda a jogabilidade.
 3. **Compilar sem publicar:** abrir [Actions](https://github.com/blokadahub/club-legacy-roblox/actions), escolher **CL - Club Legacy | Construir e publicar** → **Run workflow**, deixando **`publicar` desmarcado**.
 4. **Inspecionar resultado:** conferir a execução e baixar o artefato `club-legacy-rbxlx`. Uma compilação bem-sucedida **não significa** que as mecânicas estejam funcionando.
 5. **Publicar quando estiver pronto:** após integrar o jogo, configurar o secret e aprovar a compilação, executar o mesmo workflow com **`publicar` marcado**.
