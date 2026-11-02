@@ -1,0 +1,25 @@
+{
+  "name": "CL 27 — Interface de clube",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "CL27": {
+        "$className": "Folder",
+        "Config": { "$path": "CL-27/Config" },
+        "Components": { "$path": "CL-27/Components" },
+        "Screens": { "$path": "CL-27/Screens" },
+        "Animations": { "$path": "CL-27/Animations" },
+        "Data": { "$path": "CL-27/Data" },
+        "Assets": { "$path": "CL-27/Assets" }
+      }
+    },
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "CL27": { "$path": "CL-27/Main.client.luau" }
+      }
+    }
+  }
+}

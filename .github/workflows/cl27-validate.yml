@@ -1,0 +1,25 @@
+name: CL 27 | Validar interface independente
+on:
+  push:
+    paths: ['CL-27/**', 'cl27.project.json', '.github/workflows/cl27-validate.yml']
+  pull_request:
+    paths: ['CL-27/**', 'cl27.project.json', '.github/workflows/cl27-validate.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar ferramentas oficiais verificadas
+        run: bash CL-27/Tools/install.sh "$RUNNER_TEMP/cl27-tools"
+      - name: Compilar e validar dados, interações e artefatos
+        run: python3 CL-27/Tests/validate.py --tools "$RUNNER_TEMP/cl27-tools" --output "$RUNNER_TEMP/cl27-build"
+      - name: Disponibilizar CL 27 para integração no Studio
+        uses: actions/upload-artifact@v4
+        with:
+          name: cl27-studio
+          path: ${{ runner.temp }}/cl27-build/cl27.rbxlx
+          if-no-files-found: error
