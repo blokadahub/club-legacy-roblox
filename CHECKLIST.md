@@ -14,7 +14,7 @@
 - [x] Bloqueio de publicação enquanto os scripts principais contiverem `CL_SCAFFOLD_PLACEHOLDER`.
 - [x] README, orientações para o Claude e checklist publicados.
 - [x] Publicação pelo workflow do repositório antigo Backrooms desativada; código antigo preservado.
-- [ ] Primeiro teste real do GitHub Actions concluído com sucesso.
+- [x] Primeiro teste real do GitHub Actions concluído com sucesso (02/11/2026, execução #41525520683, commit `5c81b17`).
 - [x] Código inicial do Claude (servidor, cliente e Config) entregue e integrado; ainda não homologado.
 - [ ] Revisão de sintaxe, mapeamento Rojo e comunicação cliente-servidor concluída.
 
