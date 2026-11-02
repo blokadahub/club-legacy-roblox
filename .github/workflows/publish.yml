@@ -18,12 +18,19 @@ concurrency:
 
 jobs:
   construir:
-    name: Validar e construir; publicar somente quando autorizado
+    name: Validar e compilar; publicar somente com autorizacao
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: Baixar repositorio
         uses: actions/checkout@v4
+
+      - name: Conferir scripts principais
+        run: |
+          set -euo pipefail
+          test -s default.project.json
+          test -s src/server/Main.server.luau
+          test -s src/client/Main.client.luau
 
       - name: Instalar Rojo 7.7.1
         run: cargo install rojo --version 7.7.1 --locked
@@ -44,31 +51,33 @@ jobs:
           path: club-legacy.rbxlx
           if-no-files-found: error
 
-      - name: Bloquear publicacao da base temporaria
+      - name: Bloquear publicacao dos scripts temporarios
         if: ${{ inputs.publicar }}
         run: |
           set -euo pipefail
           if grep -q "CL_SCAFFOLD_PLACEHOLDER" src/server/Main.server.luau || grep -q "CL_SCAFFOLD_PLACEHOLDER" src/client/Main.client.luau; then
-            echo "::error::Os scripts principais ainda sao temporarios. Integre primeiro os codigos definitivos do Club Legacy."
+            echo "::error::Os scripts ainda sao temporarios. Integre os codigos definitivos do CL - Club Legacy antes de publicar."
             exit 1
           fi
 
-      - name: Publicar no Roblox somente quando solicitado
+      - name: Publicar na experiencia Roblox reaproveitada
         if: ${{ inputs.publicar }}
         env:
           API_KEY: ${{ secrets.ROBLOX_API_KEY }}
-          UNIVERSE_ID: ${{ vars.ROBLOX_UNIVERSE_ID }}
-          PLACE_ID: ${{ vars.ROBLOX_PLACE_ID }}
+          UNIVERSE_ID: "9749365367"
+          PLACE_ID: "86256105108811"
         run: |
           set -euo pipefail
           if [[ -z "$API_KEY" ]]; then
-            echo "::error::Falta o secret ROBLOX_API_KEY."
+            echo "::error::Cadastre o secret ROBLOX_API_KEY neste repositorio."
             exit 1
           fi
           if [[ ! "$UNIVERSE_ID" =~ ^[0-9]+$ || ! "$PLACE_ID" =~ ^[0-9]+$ ]]; then
-            echo "::error::Configure ROBLOX_UNIVERSE_ID e ROBLOX_PLACE_ID para a experiencia Club Legacy."
+            echo "::error::Os IDs da experiencia Roblox sao invalidos."
             exit 1
           fi
+
+          echo "Publicacao manual autorizada para o Universe ID ${UNIVERSE_ID}, Place ID ${PLACE_ID}."
           curl --fail-with-body --show-error --silent \
             --request POST \
             --url "https://apis.roblox.com/universes/v1/${UNIVERSE_ID}/places/${PLACE_ID}/versions?versionType=Published" \

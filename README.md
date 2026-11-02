@@ -1,41 +1,132 @@
-# CL - Club Legacy
+![CL - Club Legacy](assets/club-legacy-banner.svg)
 
-Projeto de simulador de carreira de treinador para Roblox.
+<div align="center">
 
-**Estado atual:** infraestrutura de desenvolvimento preparada. Ainda nao ha um jogo jogavel; os scripts em `src/` sao marcadores temporarios para receber o codigo do Claude.
+# CL — Club Legacy
 
-## Estrutura pronta
+**Construa o clube. Defina o legado.**
 
-- `default.project.json`: mapeia os scripts para os servicos do Roblox usando Rojo.
-- `src/server/Main.server.luau`: logica autoritativa no servidor (temporaria).
-- `src/client/Main.client.luau`: interface do jogador (temporaria).
-- `src/shared/Config.luau`: configuracao compartilhada, caso o jogo precise dela.
-- `.github/workflows/publish.yml`: compilacao manual e publicacao opcional.
-- `INSTRUCOES-CLAUDE.md`: especificacoes para encaixar o codigo gerado.
+Simulador de carreira de treinador para **Roblox**, desenvolvido em **Luau**, com compilação via **Rojo + GitHub Actions**.
 
-## Quando o Claude entregar os codigos
+![Roblox](https://img.shields.io/badge/Plataforma-Roblox-151B2E?style=flat-square)
+![Luau](https://img.shields.io/badge/Linguagem-Luau-151B2E?style=flat-square)
+![Rojo](https://img.shields.io/badge/Build-Rojo%207.7.1-224E5F?style=flat-square)
+![Fase](https://img.shields.io/badge/Status-Em%20desenvolvimento-C8953E?style=flat-square)
 
-1. Substitua o **conteudo completo** de `src/server/Main.server.luau` pelo script de servidor.
-2. Substitua o **conteudo completo** de `src/client/Main.client.luau` pelo LocalScript da interface.
-3. Se a entrega contiver modulos, acrescente-os em `src/shared/` ou onde o Claude indicar e ajuste `default.project.json` quando necessario.
-4. Nao cole varios scripts em um unico arquivo sem revisar o mapeamento. Cada arquivo deve ter o caminho correto.
-5. Remova os marcadores `CL_SCAFFOLD_PLACEHOLDER` ao **substituir integralmente** os dois scripts. O workflow impede publicar a base temporaria por engano.
-6. Nao copie os IDs nem a chave Open Cloud do projeto Backrooms.
+</div>
 
-## GitHub Actions pelo celular
+> [!IMPORTANT]
+> **Estado atual: infraestrutura preparada, jogo ainda não implementado.**
+> Os scripts principais continuam **temporários** enquanto aguardamos o código do Claude. A compilação poderá ser testada, mas a publicação está **desativada por padrão** e é bloqueada caso esses scripts temporários ainda existam.
 
-Abra **Actions > CL - Club Legacy | Construir e publicar > Run workflow**. Com `publicar` desmarcado, o GitHub apenas valida e gera `club-legacy.rbxlx`, disponibilizado em Artifacts. Isso NAO garante funcionamento do jogo no Roblox; teste a experiencia depois de publicar.
+## O projeto
 
-Para publicar na sua **nova experiencia Club Legacy**, configure em **Settings > Secrets and variables > Actions**:
+**CL - Club Legacy** será um jogo de gerenciamento de futebol, inspirado no gênero *Manager Career*, com identidade própria. O objetivo inicial é uma carreira de treinador **jogável pelo celular**, sem depender de partidas 3D.
 
-- **Repository secret**: `ROBLOX_API_KEY` (chave Open Cloud autorizada para a nova experiencia; nunca publique a chave em arquivos).
-- **Repository variable**: `ROBLOX_UNIVERSE_ID` (Universe ID do Club Legacy).
-- **Repository variable**: `ROBLOX_PLACE_ID` (Place ID inicial do Club Legacy).
+| Foco da primeira versão | Planejamento |
+| :--- | :--- |
+| **Gestão de clube** | Criar/assumir um clube fictício |
+| **Elenco e escalação** | Jogadores, posições, titulares e reservas |
+| **Estratégia** | Formações e táticas que influenciam resultados |
+| **Temporada** | Liga fictícia, calendário, simulação e classificação |
+| **Mercado** | Compras, vendas e orçamento |
+| **Carreira** | Evolução, salvamento e nova temporada |
+| **Interface** | Menus adaptados a celulares Android |
 
-Depois da compilacao aprovada e com os scripts definitivos, execute novamente **Run workflow** marcando `publicar`. A publicacao nao torna automaticamente a experiencia publica. Configure a visibilidade no Creator Hub, de acordo com as regras da plataforma.
+Essas funcionalidades são **objetivos**, não recursos concluídos.
 
-**Nao ative a publicacao antes de integrar e conferir o codigo do jogo.**
+## Estado do desenvolvimento
 
-## Avisos
+| Área | Situação |
+| :--- | :--- |
+| Repositório e branch `main` | ✅ Criados |
+| Estrutura Rojo e pastas Luau | ✅ Preparadas |
+| GitHub Actions com instalação de Rojo 7.7.1 | ✅ Configurado, **não testado** neste projeto |
+| IDs de destino da experiência Roblox | ✅ Definidos |
+| Proteção contra publicação do código temporário | ✅ Ativa no workflow |
+| Publicação do antigo Backrooms | ✅ Desativada no repositório antigo |
+| Chave `ROBLOX_API_KEY` neste repositório | ⬜ Configuração manual pendente / não verificável |
+| Código completo gerado pelo Claude | ⬜ Aguardando entrega |
+| Compilação real do Club Legacy | ⬜ Não executada |
+| Jogo funcional, DataStore e testes no Roblox | ⬜ Pendentes |
+| Renomear a experiência no Creator Hub | ⬜ Pendente |
 
-O codigo da IA exige revisao. A compilacao Rojo verifica a estrutura, mas nao prova que transferencias, simulacoes, salvamento e interface funcionam. Use scripts de servidor para validar dinheiro, resultados e DataStoreService. A experiencia Roblox Club Legacy deve ser independente do Backrooms.
+**[Acompanhe a checklist completa](CHECKLIST.md)** — separa infraestrutura, funcionalidades, testes e publicação.
+
+## Estrutura do repositório
+
+```text
+club-legacy-roblox/
+├── .github/
+│   └── workflows/
+│       └── publish.yml             # Compilar / publicar sob comando manual
+├── assets/
+│   └── club-legacy-banner.svg      # Identidade visual do README
+├── src/
+│   ├── server/
+│   │   └── Main.server.luau        # Temporário: substituir pelo servidor
+│   ├── client/
+│   │   └── Main.client.luau        # Temporário: substituir pela interface
+│   └── shared/
+│       └── Config.luau             # Configuração pública compartilhada
+├── default.project.json           # Mapeamento Rojo
+├── INSTRUCOES-CLAUDE.md           # Contrato de entrega de arquivos
+├── CHECKLIST.md                   # Estado técnico e próximas tarefas
+└── README.md
+```
+
+O código definitivo poderá exigir outros módulos e atualizações em `default.project.json`. Nenhum segredo deve entrar na pasta `src/` nem no repositório.
+
+## Experiência Roblox reutilizada
+
+O projeto **Backrooms foi descontinuado**. Sua experiência Roblox existente será reaproveitada **exclusivamente para o CL - Club Legacy**:
+
+| Identificador | Valor |
+| :--- | :--- |
+| **Universe ID** | `9749365367` |
+| **Place ID** | `86256105108811` |
+| **Experiência anterior** | `Local de bryanfranjudo` (teste Backrooms) |
+| **Nome desejado** | `CL - Club Legacy` |
+
+Os dois IDs públicos já estão definidos **diretamente no workflow do Club Legacy**, portanto **não é necessário cadastrar variáveis** `ROBLOX_UNIVERSE_ID` e `ROBLOX_PLACE_ID` neste repositório. A experiência ainda precisa ser renomeada manualmente no Roblox Creator Hub. **Alterar os arquivos do GitHub não muda o jogo publicado no Roblox.**
+
+A publicação antiga foi desativada no repositório Backrooms, preservado apenas para consulta histórica.
+
+## Configurar a chave Open Cloud
+
+A chave **não pode ser recuperada ou copiada automaticamente** de outro repositório pelo GitHub conectado. Para permitir a publicação:
+
+1. No Roblox Creator Hub, verifique que sua chave Open Cloud possui permissão de escrita de lugares (*universe-places: Write*) para o Universe ID acima. Reutilize uma chave válida que ainda possua ou crie outra.
+2. Abra [Settings → Secrets and variables → Actions](https://github.com/blokadahub/club-legacy-roblox/settings/secrets/actions).
+3. Cadastre **Repository secret** com o nome exato **`ROBLOX_API_KEY`**.
+4. Cole a chave apenas no campo secreto do GitHub. **Nunca compartilhe o valor no chat, no README ou em arquivos de código.**
+
+> [!WARNING]
+> Ao executar a publicação do Club Legacy, o conteúdo publicado na experiência anterior será **substituído**. Faça isso somente após integrar e revisar o jogo. A operação não exclui o histórico do repositório Backrooms.
+
+## Fluxo pelo celular
+
+1. **Receber o código do Claude:** leia [INSTRUCOES-CLAUDE.md](INSTRUCOES-CLAUDE.md). Claude não tem autorização para escrever no GitHub; ele deve devolver os **arquivos completos**.
+2. **Integrar:** substituir o conteúdo de `src/server/Main.server.luau` e `src/client/Main.client.luau`, adicionando módulos adicionais se forem necessários. Ajustar `default.project.json` quando houver novos caminhos.
+3. **Compilar sem publicar:** abrir [Actions](https://github.com/blokadahub/club-legacy-roblox/actions), escolher **CL - Club Legacy | Construir e publicar** → **Run workflow**, deixando **`publicar` desmarcado**.
+4. **Inspecionar resultado:** conferir a execução e baixar o artefato `club-legacy-rbxlx`. Uma compilação bem-sucedida **não significa** que as mecânicas estejam funcionando.
+5. **Publicar quando estiver pronto:** após integrar o jogo, configurar o secret e aprovar a compilação, executar o mesmo workflow com **`publicar` marcado**.
+6. **Testar no Roblox:** conferir entrada, interface, gestão, calendário, transferências, classificação, temporadas e salvamento. Se houver erros, corrigir no GitHub e publicar novamente.
+
+## Regras técnicas
+
+- O **servidor** deve controlar a carreira, o dinheiro, as transferências, os resultados e o salvamento.
+- O **cliente** deve exibir as telas e solicitar ações; nunca decidir os resultados ou autorizar gastos por conta própria.
+- `DataStoreService` deve ter tratamento de erros e não deve comunicar sucesso quando o salvamento falhar.
+- Código gerado por IA requer revisão e teste dentro do Roblox.
+- Nenhuma publicação acontece automaticamente a cada commit.
+
+---
+
+<div align="center">
+
+**CL — Club Legacy** · Primeiro a carreira jogável. Depois, a expansão.
+
+[Checklist](CHECKLIST.md) · [Orientações para o Claude](INSTRUCOES-CLAUDE.md) · [GitHub Actions](.github/workflows/publish.yml)
+
+</div>
