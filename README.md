@@ -17,7 +17,7 @@ Simulador de carreira de treinador para **Roblox**, desenvolvido em **Luau**, co
 
 > [!IMPORTANT]
 > **Estado atual: código inicial do Claude integrado ao GitHub, ainda sem teste de compilação ou execução.**
-> Os scripts de servidor, cliente e configuração recebidos do Claude foram integrados. **Ainda não existe confirmação de que o jogo compila ou funciona no Roblox.** A publicação permanece desativada por padrão.
+> Os scripts de servidor, cliente e configuração recebidos do Claude foram integrados. **A compilação com Rojo passou; o funcionamento dentro do Roblox ainda não foi testado.** A publicação permanece desativada por padrão.
 
 ## O projeto
 
@@ -41,13 +41,13 @@ Essas funcionalidades são **objetivos**, não recursos concluídos.
 | :--- | :--- |
 | Repositório e branch `main` | ✅ Criados |
 | Estrutura Rojo e pastas Luau | ✅ Preparadas |
-| GitHub Actions com instalação de Rojo 7.7.1 | ✅ Configurado, **não testado** neste projeto |
+| GitHub Actions com instalação de Rojo 7.7.1 | ✅ Testado com sucesso em 02/11/2026 |
 | IDs de destino da experiência Roblox | ✅ Definidos |
 | Proteção contra publicação do código temporário | ✅ Ativa no workflow |
 | Publicação do antigo Backrooms | ✅ Desativada no repositório antigo |
 | Chave `ROBLOX_API_KEY` neste repositório | ⬜ Configuração manual pendente / não verificável |
 | Código inicial do Claude (servidor, cliente e Config) | ✅ Integrado; testes pendentes |
-| Compilação real do Club Legacy | ⬜ Não executada |
+| Compilação real do Club Legacy | ✅ Concluída: [primeira execução](https://github.com/blokadahub/club-legacy-roblox/actions/runs/41525520683) |
 | Jogo funcional, DataStore e testes no Roblox | ⬜ Pendentes |
 | Renomear a experiência no Creator Hub | ⬜ Pendente |
 
