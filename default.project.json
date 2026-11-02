@@ -3,24 +3,15 @@
   "tree": {
     "$className": "DataModel",
     "ReplicatedStorage": {
-      "$className": "ReplicatedStorage",
-      "Shared": {
-        "$path": "src/shared"
-      }
+      "$className": "ReplicatedStorage"
     },
     "ServerScriptService": {
-      "$className": "ServerScriptService",
-      "ClubLegacyServer": {
-        "$path": "src/server/Main.server.luau"
-      }
+      "$className": "ServerScriptService"
     },
     "StarterPlayer": {
       "$className": "StarterPlayer",
       "StarterPlayerScripts": {
-        "$className": "StarterPlayerScripts",
-        "ClubLegacyClient": {
-          "$path": "src/client/Main.client.luau"
-        }
+        "$className": "StarterPlayerScripts"
       }
     }
   }
