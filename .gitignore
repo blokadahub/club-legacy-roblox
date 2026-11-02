@@ -1,0 +1,7 @@
+# Arquivos compilados e temporarios (os scripts Luau devem permanecer versionados).
+*.rbxl
+*.rbxlx
+*.rbxm
+*.rbxmx
+.DS_Store
+*.log
