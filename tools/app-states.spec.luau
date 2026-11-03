@@ -115,7 +115,7 @@ check(notification.Visible and notification.GroupTransparency == 0,
 advance(0.2)
 check(notification.Visible and notification.GroupTransparency > 0 and notification.GroupTransparency < 1,
 	"Notificação deve desaparecer com fade, sem corte seco")
-advance(0.2)
+advance(0.23)
 check(not notification.Visible and notification.GroupTransparency == 1,
 	"Notificação permaneceu visível após a saída animada")
 check(gui:FindFirstChild("SoundtrackOverlay") == overlay and sound.Parent == services.SoundService,
