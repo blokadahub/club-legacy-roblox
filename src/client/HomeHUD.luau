@@ -6,12 +6,12 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local HomeShowcase = require(script.Parent.HomeShowcase)
+local RadialGlow = require(script.Parent.RadialGlow)
 
 local HomeHUD = {}
 local ITEMS = {"Notícias do CL", "Clubs", "Jogo Rápido", "Aprenda a Jogar", "Upgrade"}
 local WHITE = Color3.fromRGB(252, 255, 253)
 local GRAY = Color3.fromRGB(184, 195, 196)
-local SMOKE = "rbxasset://textures/particles/smoke_main.dds"
 
 local function element(className: string, parent: Instance, properties)
 	local object = Instance.new(className)
@@ -39,75 +39,6 @@ local function levelOf(player: Player): string
 		end
 	end
 	return "—"
-end
-
-local function smoke(parent: Instance, offset: number)
-	-- Névoa VIVA: quatro camadas com velocidades/fases distintas, bordas
-	-- dissolvidas e respiração luminosa. Sem retângulo verde ou peça de cenário.
-	local group = element("CanvasGroup", parent, {
-		Name = "FumacaVerde",
-		BackgroundTransparency = 1,
-		GroupTransparency = 1,
-		-- Névoa compacta que termina suavemente abaixo do texto.
-		Position = UDim2.new(0, -24, 0, offset - 21),
-		Size = UDim2.fromOffset(296, 108),
-		ClipsDescendants = false,
-		ZIndex = 2,
-		Visible = true,
-	})
-	local clouds = {}
-	for index = 1, 4 do
-		local x = (index - 1) * 48 - 20
-		local y = if index % 2 == 0 then 12 else 3
-		local image = element("ImageLabel", group, {
-			Name = "Nuvem" .. tostring(index),
-			BackgroundTransparency = 1,
-			Image = SMOKE,
-			ImageColor3 = if index % 2 == 0
-				then Color3.fromRGB(57, 206, 119)
-				else Color3.fromRGB(34, 161, 93),
-			ImageTransparency = 0.32 + index * 0.042,
-			Position = UDim2.fromOffset(x, y),
-			Size = UDim2.fromOffset(142 + (index % 2) * 30, 78 + (index % 3) * 9),
-			Rotation = (index - 2.5) * 9,
-			ZIndex = 2,
-		})
-		element("UIGradient", image, {
-			-- Dissolução vertical: sem linha reta no limite inferior.
-			Rotation = 90,
-			Transparency = NumberSequence.new({
-				NumberSequenceKeypoint.new(0, 1),
-				NumberSequenceKeypoint.new(0.18, 0.4),
-				NumberSequenceKeypoint.new(0.53, 0.01),
-				NumberSequenceKeypoint.new(0.83, 0.49),
-				NumberSequenceKeypoint.new(1, 1),
-			}),
-		})
-		clouds[index] = {
-			image = image, x = x, y = y, phase = index * 1.73,
-			rotation = (index - 2.5) * 9,
-			opacity = 0.32 + index * 0.042,
-		}
-	end
-	-- Uma onda verde responde à seleção sem alterar a névoa permanente.
-	local impulse = element("ImageLabel", group, {
-		Name = "PulsoSelecao",
-		Image = SMOKE, ImageColor3 = Color3.fromRGB(95, 240, 138),
-		ImageTransparency = 1, BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(16, 4),
-		Size = UDim2.fromOffset(234, 86),
-		ZIndex = 4,
-	})
-	element("UIGradient", impulse, {
-		Rotation = 90,
-		Transparency = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 1),
-			NumberSequenceKeypoint.new(0.3, 0.26),
-			NumberSequenceKeypoint.new(0.62, 0.07),
-			NumberSequenceKeypoint.new(1, 1),
-		}),
-	})
-	return group, clouds, impulse
 end
 
 -- Símbolos vetoriais nativos, sem emoji ou imagem externa.
@@ -296,10 +227,15 @@ function HomeHUD.start(playerGui: Instance, state)
 	local showcase = HomeShowcase.new(root, function(index, lesson)
 		if navigatePrimary then navigatePrimary(index, lesson) end
 	end, reducedMotion)
+	local function glowWidth(index: number): number
+		return math.clamp(110 + #ITEMS[index] * 12, 190, 318)
+	end
+	local selectionGlow, selectionPulse, glowCore = RadialGlow.new(
+		list, 8 + (current - 1) * rowGap, glowWidth(current)
+	)
+	local lastGlowFocus = current
 	for index, caption in ipairs(ITEMS) do
 		local y = 8 + (index - 1) * rowGap + (if current == 4 and index > 4 then 144 else 0)
-		local fog, clouds, impulse = smoke(list, y)
-		fog.Name = "FumacaVerde_" .. tostring(index)
 		local button = element("TextButton", list, {
 			Name = "Opcao_" .. tostring(index),
 			Text = caption,
@@ -317,7 +253,7 @@ function HomeHUD.start(playerGui: Instance, state)
 		})
 		-- Pressão curta, seguida de retorno macio, sem ampliar o botão inteiro.
 		local pressScale = element("UIScale", button, {Name = "RespostaToque", Scale = 1})
-		rows[index] = {button = button, fog = fog, clouds = clouds, impulse = impulse, scale = pressScale, y = y, visual = -1}
+		rows[index] = {button = button, scale = pressScale, y = y, visual = -1}
 	end
 
 	-- Submenu recuado para os quatro destinos de Aprenda a Jogar.
@@ -357,18 +293,17 @@ function HomeHUD.start(playerGui: Instance, state)
 	})
 	element("UICorner", learnAccent, {CornerRadius = UDim.new(1, 0)})
 
-	-- A névoa recebe um impulso de luz rápido e desce à intensidade habitual.
-	-- Não é um retângulo neon nem uma escala elástica.
-	local function strike(row)
+	-- Pulso oval pontual: brilho discreto sem fumaça ou distorcer texto.
+	local function strike()
 		if reducedMotion then return end
-		row.impulse.ImageTransparency = 0.15
-		row.impulse.Size = UDim2.fromOffset(226, 82)
-		row.impulse.Position = UDim2.fromOffset(20, 7)
-		animate(row.impulse, {
-			ImageTransparency = 1,
-			Size = UDim2.fromOffset(256, 102),
-			Position = UDim2.fromOffset(6, -3),
-		}, 0.58, Enum.EasingStyle.Quart)
+		selectionPulse.GroupTransparency = 0.46
+		selectionPulse.Size = UDim2.fromScale(0.42, 0.40)
+		selectionPulse.Position = UDim2.fromScale(0.29, 0.30)
+		animate(selectionPulse, {
+			GroupTransparency = 1,
+			Size = UDim2.fromScale(0.70, 0.68),
+			Position = UDim2.fromScale(0.15, 0.16),
+		}, 0.5, Enum.EasingStyle.Quart)
 	end
 
 	local lastExpanded = current ~= 4
@@ -400,17 +335,22 @@ function HomeHUD.start(playerGui: Instance, state)
 			end
 		end
 		list.CanvasSize = UDim2.new(0, 0, 0, if expanded then 540 else 420)
+		-- Única luz radial segue o foco em vez de cinco névoas independentes.
+		local focused = hovered or current
+		local focusedY = 8 + (focused - 1) * rowGap + (if expanded and focused > 4 then 144 else 0)
+		if instant or focused ~= lastGlowFocus then
+			animate(selectionGlow, {
+				Position = UDim2.fromOffset(-27, focusedY - 21),
+				Size = UDim2.fromOffset(glowWidth(focused), 92),
+				GroupTransparency = if focused == current then 0.09 else 0.19,
+			}, if instant then 0 else 0.28, Enum.EasingStyle.Quart)
+			lastGlowFocus = focused
+		end
 		for index, row in ipairs(rows) do
-			local focused = hovered or current
 			local mode = if index == focused then (if index == current then 2 else 1) else 0
 			local nextY = 8 + (index - 1) * rowGap + (if expanded and index > 4 then 144 else 0)
 			local moved = nextY ~= row.y
 			row.y = nextY
-			if moved then
-				animate(row.fog, {
-					Position = UDim2.new(0, -24, 0, nextY - 21),
-				}, if instant then 0 else 0.27, Enum.EasingStyle.Quart)
-			end
 			if instant or row.visual ~= mode or moved then
 				row.visual = mode
 				local active = mode > 0
@@ -421,10 +361,6 @@ function HomeHUD.start(playerGui: Instance, state)
 					TextSize = if mode == 2 then 27 elseif mode == 1 then 26 else 23,
 					Position = UDim2.new(0, if active then 14 else 6, 0, row.y),
 				}, if instant then 0 else 0.28, Enum.EasingStyle.Quart)
-				animate(row.fog, {
-					GroupTransparency = if mode == 2 then 0.035 elseif mode == 1 then 0.07 else 1,
-				}, if instant then 0 else 0.42, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-				if active and not instant then strike(row) end
 			end
 		end
 		local focused = hovered or current
@@ -496,14 +432,13 @@ function HomeHUD.start(playerGui: Instance, state)
 			state.homeFocus = index
 			repaint()
 			pulse(row)
-			strike(row)
+			strike()
 			-- O botão principal abre as rotas existentes, sem inventar sistemas.
 		end))
 	end
 
-	-- Um único loop leve, limitado a 30 Hz, move APENAS a névoa que está
-	-- aparecendo. Em segundo plano não atualiza nada. Preserva o desempenho
-	-- do celular e não cria 20 loops/tweens infinitos concorrentes.
+	-- Um único loop a 30 Hz: respiração leve de UMA camada central.
+	-- Nada de partículas em movimento ou dezenas de tweens por opção.
 	local elapsed, accumulator = 0, 0
 	table.insert(connections, RunService.Heartbeat:Connect(function(dt)
 		if not alive or not gui.Enabled or reducedMotion then return end
@@ -512,20 +447,7 @@ function HomeHUD.start(playerGui: Instance, state)
 		elapsed += accumulator
 		accumulator = 0
 		showcase:Step(elapsed)
-		for _, row in ipairs(rows) do
-			if row.fog.GroupTransparency < 0.96 then
-				for index, cloud in ipairs(row.clouds) do
-					local time = elapsed * (0.44 + index * 0.09) + cloud.phase
-					local horizontal = math.sin(time) * (5 + index * 1.25)
-					local vertical = math.sin(time * 0.68 + cloud.phase) * (4 + index * 1.2)
-					cloud.image.Position = UDim2.fromOffset(cloud.x + horizontal, cloud.y + vertical)
-					cloud.image.Rotation = cloud.rotation + math.sin(time * 0.72) * 4
-					cloud.image.ImageTransparency = math.clamp(
-						cloud.opacity + math.sin(time * 1.13) * 0.055, 0, 1
-					)
-				end
-			end
-		end
+		glowCore.BackgroundTransparency = 0.922 + math.sin(elapsed * 1.15) * 0.012
 	end))
 
 	element("TextLabel", root, {
