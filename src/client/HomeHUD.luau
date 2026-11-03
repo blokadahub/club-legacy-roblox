@@ -63,9 +63,9 @@ local function smoke(parent: Instance, offset: number)
 			BackgroundTransparency = 1,
 			Image = SMOKE,
 			ImageColor3 = if index % 2 == 0
-				then Color3.fromRGB(32, 158, 100)
-				else Color3.fromRGB(22, 105, 71),
-			ImageTransparency = 0.51 + index * 0.045,
+				then Color3.fromRGB(57, 206, 119)
+				else Color3.fromRGB(34, 161, 93),
+			ImageTransparency = 0.32 + index * 0.042,
 			Position = UDim2.fromOffset(x, y),
 			Size = UDim2.fromOffset(142 + (index % 2) * 30, 78 + (index % 3) * 9),
 			Rotation = (index - 2.5) * 9,
@@ -76,19 +76,37 @@ local function smoke(parent: Instance, offset: number)
 			Rotation = 90,
 			Transparency = NumberSequence.new({
 				NumberSequenceKeypoint.new(0, 1),
-				NumberSequenceKeypoint.new(0.18, 0.58),
-				NumberSequenceKeypoint.new(0.53, 0.10),
-				NumberSequenceKeypoint.new(0.83, 0.67),
+				NumberSequenceKeypoint.new(0.18, 0.4),
+				NumberSequenceKeypoint.new(0.53, 0.01),
+				NumberSequenceKeypoint.new(0.83, 0.49),
 				NumberSequenceKeypoint.new(1, 1),
 			}),
 		})
 		clouds[index] = {
 			image = image, x = x, y = y, phase = index * 1.73,
 			rotation = (index - 2.5) * 9,
-			opacity = 0.51 + index * 0.045,
+			opacity = 0.32 + index * 0.042,
 		}
 	end
-	return group, clouds
+	-- Uma onda verde responde à seleção sem alterar a névoa permanente.
+	local impulse = element("ImageLabel", group, {
+		Name = "PulsoSelecao",
+		Image = SMOKE, ImageColor3 = Color3.fromRGB(95, 240, 138),
+		ImageTransparency = 1, BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(16, 4),
+		Size = UDim2.fromOffset(234, 86),
+		ZIndex = 4,
+	})
+	element("UIGradient", impulse, {
+		Rotation = 90,
+		Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.3, 0.26),
+			NumberSequenceKeypoint.new(0.62, 0.07),
+			NumberSequenceKeypoint.new(1, 1),
+		}),
+	})
+	return group, clouds, impulse
 end
 
 -- Símbolos vetoriais nativos, sem emoji ou imagem externa.
@@ -100,6 +118,7 @@ local function icon(parent: Instance, name: string, kind: string, x: number, y: 
 		Position = UDim2.new(x, 0, y, 0),
 		Size = UDim2.fromOffset(46, 52), ZIndex = 8,
 	})
+	element("UIScale", button, {Name = "EscalaIcone", Scale = 0.88})
 	local ink = Color3.fromRGB(221, 231, 227)
 	local function strokeSegment(w, h, px, py, angle)
 		local part = element("Frame", button, {
@@ -193,8 +212,8 @@ function HomeHUD.start(playerGui: Instance, state)
 	})
 
 	-- Alinhados horizontalmente com CL News; sempre acessíveis por toque.
-	local settingsButton, settingsGleam = icon(root, "Configuracoes", "gear", 0.017, 0.19)
-	local accessibilityButton, accessibilityGleam = icon(root, "Acessibilidade", "access", 0.049, 0.19)
+	local settingsButton, settingsGleam = icon(root, "Configuracoes", "gear", 0.018, 0.192)
+	local accessibilityButton, accessibilityGleam = icon(root, "Acessibilidade", "access", 0.018, 0.286)
 	for _, entry in ipairs({
 		{button = settingsButton, glow = settingsGleam, tab = 1},
 		{button = accessibilityButton, glow = accessibilityGleam, tab = 2},
@@ -269,7 +288,7 @@ function HomeHUD.start(playerGui: Instance, state)
 
 	for index, caption in ipairs(ITEMS) do
 		local y = 8 + (index - 1) * 77
-		local fog, clouds = smoke(list, y)
+		local fog, clouds, impulse = smoke(list, y)
 		fog.Name = "FumacaVerde_" .. tostring(index)
 		local button = element("TextButton", list, {
 			Name = "Opcao_" .. tostring(index),
@@ -288,7 +307,21 @@ function HomeHUD.start(playerGui: Instance, state)
 		})
 		-- Pressão curta, seguida de retorno macio, sem ampliar o botão inteiro.
 		local pressScale = element("UIScale", button, {Name = "RespostaToque", Scale = 1})
-		rows[index] = {button = button, fog = fog, clouds = clouds, scale = pressScale, y = y, visual = -1}
+		rows[index] = {button = button, fog = fog, clouds = clouds, impulse = impulse, scale = pressScale, y = y, visual = -1}
+	end
+
+	-- A névoa recebe um impulso de luz rápido e desce à intensidade habitual.
+	-- Não é um retângulo neon nem uma escala elástica.
+	local function strike(row)
+		if reducedMotion then return end
+		row.impulse.ImageTransparency = 0.15
+		row.impulse.Size = UDim2.fromOffset(226, 82)
+		row.impulse.Position = UDim2.fromOffset(20, 7)
+		animate(row.impulse, {
+			ImageTransparency = 1,
+			Size = UDim2.fromOffset(256, 102),
+			Position = UDim2.fromOffset(6, -3),
+		}, 0.58, Enum.EasingStyle.Quart)
 	end
 
 	local function repaint(instant: boolean?)
@@ -311,8 +344,9 @@ function HomeHUD.start(playerGui: Instance, state)
 				-- Dissolve a névoa ao mudar a seleção; sem trocar Visible
 				-- instantaneamente. O brilho selecionado é um pouco mais presente.
 				animate(row.fog, {
-					GroupTransparency = if mode == 2 then 0.18 elseif mode == 1 then 0.36 else 1,
+					GroupTransparency = if mode == 2 then 0.035 elseif mode == 1 then 0.07 else 1,
 				}, if instant then 0 else 0.44, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+				if active and not instant then strike(row) end
 			end
 		end
 	end
@@ -366,6 +400,7 @@ function HomeHUD.start(playerGui: Instance, state)
 			state.homeFocus = index
 			repaint()
 			pulse(row)
+			strike(row)
 			-- Nenhuma seção é aberta. Só altera o foco da apresentação.
 		end))
 	end
