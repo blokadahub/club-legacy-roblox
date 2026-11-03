@@ -7,6 +7,7 @@ local Soundtrack = require(moduleNodes["src/client/Soundtrack.luau"])
 local assertions = 0
 local function check(condition, message) assert(condition, message); assertions += 1 end
 local function key(code) services.UserInputService.InputBegan:Fire({KeyCode = code}, false) end
+check(not table.find(App.routes, "HomeTraining"), "Rota HomeTraining deve estar removida")
 local handle = App.start()
 local gui = playerGui.CL27
 local canvas = gui.Canvas
@@ -232,18 +233,27 @@ manager.InputEnded:Fire({UserInputType = Enum.UserInputType.Touch})
 advance(0.32)
 check(manager.TextTransparency == 0.32 and kickOff.TextTransparency == 0,
 	"Soltar toque deve devolver foco branco somente ao botão selecionado")
--- Selecoes internas tambem devem ser imediatas; animacao breve de impacto.
+-- Aprenda a Jogar exibe itens inativos ate a proxima atualizacao.
 clubOption.Activated:Fire()
 advance(0.69)
-lessons:FindFirstChild("SubOpcao_2").Activated:Fire()
-check(not wipe.Visible and not UI.inputLocked,
-	"Subopcao de Aprenda nao deve exibir carregamento")
-check(handle.state.homeLesson == 2 and handle.state.screen == "HomeInterior",
-	"Subopcao Rush deve atualizar foco sem inventar rota")
+check(showcase:FindFirstChild("TituloCentral").Text == "APRENDA A JOGAR"
+	and primary:FindFirstChild("TextoAcao").Text == "EM ATUALIZAÇÃO",
+	"Aprenda precisa informar seu estado indisponivel")
+check(not primary.Selectable and not primary.Active,
+	"CTA central deve estar desativado")
+for i = 1, 4 do
+	local entry = lessons:FindFirstChild("SubOpcao_" .. tostring(i))
+	check(entry ~= nil and not entry.Selectable and not entry.Active,
+		"Subopcao nao pode receber toque nem foco")
+	entry.Activated:Fire()
+end
+primary.Activated:Fire()
+check(handle.state.screen == "HomeInterior" and handle.state.homeLesson == nil
+	and not wipe.Visible and not UI.inputLocked,
+	"Aprenda nao pode mudar de cena ou iniciar carregamento")
 advance(0.55)
-check(showcase:FindFirstChild("TituloCentral").Text == "RUSH"
-	and primary:FindFirstChild("TextoAcao").Text == "Conhecer Rush",
-	"Submenu deve atualizar CTA e titulo central")
+check(showcase:FindFirstChild("TituloCentral").Text == "APRENDA A JOGAR",
+	"Conteudo deve permanecer estatico")
 kickOff.Activated:Fire()
 advance(0.55)
 check(showcase:FindFirstChild("TituloCentral").Text == "JOGO RÁPIDO"
@@ -517,14 +527,14 @@ key(Enum.KeyCode.ButtonB)
 check(not UI.inputLocked, "Closing central menu must release header lock")
 
 handle.state.settings.reducedMotion = true
-handle.go("HomeTraining")
+handle.go("HomeInterior")
 advance(0.15)
 check(handle.state.screen == "Squad" and UI.inputLocked and wipe.Visible,
 	"Movimento reduzido mantem 2,5 s, apenas elimina a animacao segmentada")
 check(not clSweep.Visible,
 	"Movimento reduzido deve deixar CL estatico sem efeitos luminosos móveis")
 advance(2.0)
-check(handle.state.screen == "HomeTraining" and wipe.Visible and UI.inputLocked,
+check(handle.state.screen == "HomeInterior" and wipe.Visible and UI.inputLocked,
 	"Movimento reduzido nao deve eliminar o tempo minimo de carregamento")
 advance(0.36)
 check(not wipe.Visible and not UI.inputLocked,
@@ -707,9 +717,13 @@ local mobileLessons = mobileList:FindFirstChild("SubmenuAprenda")
 check(mobileLessons.Visible and mobileLessons.Size.X.Scale == 1
 	and mobileList.CanvasPosition.Y > 0,
 	"Submenu deve caber na largura do celular e posicionar a rolagem corretamente")
-mobileLessons:FindFirstChild("SubOpcao_4").Activated:Fire()
-check(mobile.state.homeLesson == 4 and not mobile.state.menuInputLocked,
-	"Submenu movel nao deve bloquear cliques com loading artificial")
+local disabledLesson = mobileLessons:FindFirstChild("SubOpcao_4")
+check(not disabledLesson.Selectable and not disabledLesson.Active,
+	"Submenu movel deve desativar as opcoes de treinamento")
+disabledLesson.Activated:Fire()
+check(mobile.state.homeLesson == nil and mobile.state.screen == "HomeInterior"
+	and not mobile.state.menuInputLocked,
+	"Submenu movel nao pode abrir o modo de treino")
 advance(0.55)
 mobileList:FindFirstChild("Opcao_5").Activated:Fire()
 advance(0.55)
