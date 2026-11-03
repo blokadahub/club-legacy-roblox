@@ -105,11 +105,10 @@ function Icons.create(parent: Instance, kind: string, color: Color3)
 	elseif kind == "create" then
 		circle(frame, parts, "CabecaJogador", 26, 19, 31, color)
 		rectangle(frame, parts, "OmbrosJogador", 15, 58, 53, 26, color, 12)
-		circle(frame, parts, "FundoAdicao", 62, 58, 28, color)
-		rectangle(frame, parts, "EspacoMaisH", 68, 70, 17, 4, Color3.fromRGB(20, 22, 24), 2)
-		rectangle(frame, parts, "EspacoMaisV", 75, 64, 4, 17, Color3.fromRGB(20, 22, 24), 2)
-		-- Os dois recortes mantêm contraste no cartão branco/escuro;
-		-- o '+' não é texto Unicode.
+		outline(frame, parts, "AroAdicao", 62, 58, 28, 28, color, 3.5, 14)
+		rectangle(frame, parts, "MaisHorizontal", 68, 70, 17, 4, color, 2)
+		rectangle(frame, parts, "MaisVertical", 75, 64, 4, 17, color, 2)
+		-- Símbolo + desenhado por formas vetoriais, legível em ambas as cores.
 	elseif kind == "music" then
 		stroke(frame, parts, "HasteNotaEsquerda", 39, 48, 45, 6, 90, color)
 		stroke(frame, parts, "HasteNotaDireita", 72, 43, 52, 6, 90, color)
