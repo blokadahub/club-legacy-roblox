@@ -282,17 +282,17 @@ advance(0.18)
 check(handle.state.screen == "HomeInterior" and wipe.Visible
 	and wipe.GroupTransparency > 0 and wipe.GroupTransparency < 1,
 	"Entrada do loading deve escurecer a tela gradualmente")
-advance(1.84)
+advance(1.87)
 check(handle.state.screen == "Settings" and not homeHud.Enabled
 	and wipe.Visible and wipe.GroupTransparency == 0,
 	"Configuracoes devem carregar perto do final dos 2,5 segundos")
-advance(0.20)
+advance(0.18)
 check(wipe.Visible and wipe.GroupTransparency == 0 and UI.inputLocked,
 	"Controles ainda devem estar bloqueados antes de revelar Settings")
 advance(0.10)
 check(wipe.Visible and wipe.GroupTransparency > 0 and wipe.GroupTransparency < 1,
 	"Loading deve revelar suavemente a tela de destino")
-advance(0.20)
+advance(0.18)
 check(not wipe.Visible and wipe.GroupTransparency == 1 and not UI.inputLocked,
 	"Loading deve liberar a interface somente apos os 2,5 segundos")
 local settingsGui = playerGui:FindFirstChild("CL27_SettingsHUD")
@@ -413,28 +413,28 @@ check(handle.state.homeClub == clubBefore, "Controller focus movement must not c
 key(Enum.KeyCode.Right)
 check(handle.state.homeClub ~= clubBefore, "Closing central menu must resume page input")
 
--- Latest queued route wins; no geometry swap is performed by a stale delay.
+-- Rotas programaticas em fila nao interrompem o loading ativo.
+-- O ultimo destino continua vencendo apos o tempo de 2,5 segundos.
 handle.go("Squad")
 advance(0.2)
 handle.go("Overview")
 handle.go("Kits")
-advance(0.24)
-check(handle.state.screen == "Squad", "Current transition must finish its intended handoff")
-advance(0.64)
+advance(2.29)
 check(handle.state.screen == "Squad" and UI.inputLocked and wipe.Visible,
-	"Queued transition must begin only after first exit completes")
-advance(0.44)
-check(handle.state.screen == "Kits" and wipe.GroupTransparency == 0,
-	"Latest queued route must replace earlier pending route under full coverage")
-advance(0.64)
-check(not wipe.Visible and not UI.inputLocked, "Queued navigation must release lock")
+	"Destino pendente nao pode interromper o primeiro carregamento")
+advance(2.05)
+check(handle.state.screen == "Kits" and wipe.Visible and UI.inputLocked,
+	"Ultima rota da fila deve vencer durante o carregamento seguinte")
+advance(0.46)
+check(not wipe.Visible and not UI.inputLocked,
+	"Depois da fila o loading precisa liberar novamente os controles")
 local kitBefore = handle.state.homeKit
 key(Enum.KeyCode.DPadRight)
 check(handle.state.homeKit == kitBefore, "Controller focus movement must not cycle kits globally")
 key(Enum.KeyCode.Right)
 check(handle.state.homeKit ~= kitBefore, "Keyboard arrows must continue cycling kits")
 key(Enum.KeyCode.ButtonB)
-advance(1.1)
+advance(2.51)
 check(handle.state.screen == "Squad", "History must preserve actual visited routes")
 key(Enum.KeyCode.M)
 for _, button in ipairs(canvas.Squad:GetDescendants()) do
@@ -446,12 +446,18 @@ check(not UI.inputLocked, "Closing central menu must release header lock")
 
 handle.state.settings.reducedMotion = true
 handle.go("HomeTraining")
-advance(0.05)
-check(handle.state.screen == "Squad" and UI.inputLocked, "Reduced motion still needs covered handoff")
-advance(0.05)
-check(handle.state.screen == "HomeTraining", "Reduced motion uses short entry phase")
-advance(0.16)
-check(not wipe.Visible and not UI.inputLocked, "Reduced motion must finish without lingering lock")
+advance(0.15)
+check(handle.state.screen == "Squad" and UI.inputLocked and wipe.Visible,
+	"Movimento reduzido mantem 2,5 s, apenas elimina a animacao segmentada")
+local reducedSegment=emblem:FindFirstChild("SegmentoCL_01")
+check(reducedSegment.GroupTransparency == 0,
+	"Movimento reduzido deve manter marca CL completa sem pulsacao")
+advance(2.0)
+check(handle.state.screen == "HomeTraining" and wipe.Visible and UI.inputLocked,
+	"Movimento reduzido nao deve eliminar o tempo minimo de carregamento")
+advance(0.36)
+check(not wipe.Visible and not UI.inputLocked,
+	"Movimento reduzido deve terminar em 2,5 s e liberar os controles")
 
 -- Completed jobs must not accumulate cleanup closures throughout a long session.
 local scope, callbacks = Scope.new(), 0
@@ -466,7 +472,7 @@ check(callbacks == 100 and not scope.alive, "Destroyed scope executed delayed wo
 
 -- A same-page update keeps the selected controller row and its scroll position.
 handle.go("Development")
-advance(0.28)
+advance(2.51)
 local development = canvas.Development
 local athleteList = development:FindFirstChild("AtletasEmDesenvolvimento", true)
 local lastAthlete
@@ -597,16 +603,17 @@ check(mobileList:FindFirstChild("Opcao_5").Position.Y.Offset <= 225,
 check(mobileList:FindFirstChild("Opcao_1").TextSize >= 22,
 	"Correção de espaçamento não pode encolher a tipografia excessivamente")
 mobileList:FindFirstChild("Opcao_4").Activated:Fire()
-advance(0.54)
+advance(2.51)
 local mobileLessons = mobileList:FindFirstChild("SubmenuAprenda")
 check(mobileLessons.Visible and mobileLessons.Size.X.Scale == 1
 	and mobileList.CanvasPosition.Y > 0,
 	"Submenu deve caber na largura do celular e posicionar a rolagem corretamente")
 mobileLessons:FindFirstChild("SubOpcao_4").Activated:Fire()
-check(mobile.state.homeLesson == 4,
-	"Submenu móvel precisa aceitar toque no quarto item")
+check(mobile.state.homeLesson == 4 and mobile.state.menuInputLocked,
+	"Submenu movel precisa aceitar toque e acionar carregamento")
+advance(2.51)
 mobileList:FindFirstChild("Opcao_5").Activated:Fire()
-advance(0.54)
+advance(2.51)
 check(mobile.state.homeFocus == 5 and mobileList.CanvasPosition.Y == 0,
 	"Fechar submenu no celular deve restaurar posição inicial da rolagem")
 mobile.destroy()
