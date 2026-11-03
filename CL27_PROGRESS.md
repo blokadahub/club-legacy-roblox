@@ -13,7 +13,7 @@
 - [x] Auditoria 1: composição por fontes e reprojeção; validação visual por capturas pendente.
 - [x] Auditoria 2: código, fases e estados; captura quadro a quadro pendente.
 - [x] Auditoria 3: qualidade, contratos e integridade; validação visual no Studio pendente.
-- [ ] Registro no GitHub e resultado do Actions.
+- [x] Registro na main e build do GitHub Actions aprovado; artefato disponibilizado.
 
 ## Limitações observadas
 
@@ -89,4 +89,9 @@ Não restou falha reproduzível nas verificações executadas após as correçõ
 
 ## Registro GitHub
 
-Preparando commit na `main` com controle do SHA esperado. Resultado do Actions e identificação do commit serão acrescentados após o registro remoto.
+- Implementação registrada na **main**, commit [`0d0ce9ee52d21e058a68c4cee6cbdb5d53e3e989`](https://github.com/blokadahub/club-legacy-roblox/commit/0d0ce9ee52d21e058a68c4cee6cbdb5d53e3e989), com atualização protegida pelo SHA anterior esperado. **47 arquivos** compõem a entrega.
+- [GitHub Actions — execução 41556384701](https://github.com/blokadahub/club-legacy-roblox/actions/runs/41556384701): **completed / success**, em 03/11/2026 às 00:56:47 UTC. Todas as etapas passaram: download/checksum, sintaxe, dados, interações/estados, Rojo, validação XML e upload.
+- Artefato **club-legacy-rbxlx**, ID `13195171375`, ZIP de **41.660 bytes**, disponível na execução acima até **17/11/2026**. Digest do ZIP informado pelo GitHub: `sha256:c8077be5d9cc5f41fdfdd57e90d6952a6bef314f5a2a1fff689f2e7198b2cd44`.
+- Arquivo local `club-legacy.rbxlx`, SHA256 `260b3754c65208402df8d0aad2cc4827ef0c3bd7746747337596ec9aa1fbab02`, gerado e validado após as auditorias. O arquivo compilado é distribuído como artefato; as fontes permanecem versionadas.
+- O registro posterior deste resultado altera somente este documento, com `[skip ci]`, preservando exatamente o código aprovado na execução indicada.
+- **Nenhuma experiência Roblox foi publicada ou modificada nesta sessão.** O fluxo manual Open Cloud está preparado e sem IDs antigos; o destino ainda precisa ser confirmado/configurado.
