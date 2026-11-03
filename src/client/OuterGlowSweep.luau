@@ -1,6 +1,6 @@
 --!strict
 -- CL 27 | Animated Outer Glow Sweep
--- Reflexo branco quente concentrado que acompanha uma borda vetorial:
+-- Reflexo branco-menta com verde-neon claro que acompanha uma borda vetorial:
 -- núcleo definido + halos em degradê + rastro contínuo e suave.
 -- Não utiliza partículas, esferas em fila ou a animação "cobra".
 -- GUI do Roblox não possui Gaussian Blur para interfaces; os halos
@@ -10,9 +10,9 @@ local OuterGlowSweep = {}
 
 local MINT = Color3.fromRGB(108, 244, 143)
 local GREEN = Color3.fromRGB(43, 223, 92)
-local LIGHT = Color3.fromRGB(255, 255, 250)
-local WARM = Color3.fromRGB(255, 250, 234)
-local HAZE = Color3.fromRGB(245, 244, 226)
+local LIGHT = Color3.fromRGB(230, 255, 238)
+local WARM = Color3.fromRGB(184, 255, 203)
+local HAZE = Color3.fromRGB(127, 246, 165)
 
 local function make(kind: string, parent: Instance, props)
 	local object = Instance.new(kind)
@@ -55,11 +55,11 @@ local function sweepPiece(parent: Instance, label: string, z: number)
 		ZIndex = z,
 	})
 	-- As faixas seguem a tangente do contorno; não são luzes circulares.
-	local halo = round(group, "HaloExternoSuave", 15, HAZE, 0.87, z)
+	local halo = round(group, "HaloExternoSuave", 16, HAZE, 0.85, z)
 	make("UIGradient", halo, {Rotation = 90, Transparency = SOFT_EDGE})
-	local middle = round(group, "GlowMedio", 7.2, WARM, 0.70, z + 1)
+	local middle = round(group, "GlowMedio", 8.4, WARM, 0.66, z + 1)
 	make("UIGradient", middle, {Rotation = 90, Transparency = SOFT_EDGE})
-	round(group, "LinhaBranca", 1.65, LIGHT, 0.035, z + 2)
+	round(group, "LinhaBranca", 2.25, LIGHT, 0.025, z + 2)
 	return group
 end
 
@@ -133,8 +133,8 @@ function OuterGlowSweep.newCL(parent: Instance)
 		})
 		local aura = round(holder, "AuraDifusa", 9, GREEN, 0.90, 8)
 		make("UIGradient", aura, {Rotation = 90, Transparency = SOFT_EDGE})
-		round(holder, "HaloNeon", 5.2, MINT, 0.60, 9)
-		round(holder, "NucleoCL", 2.8, Color3.fromRGB(222, 255, 226), 0.16, 10)
+		round(holder, "HaloNeon", 5.8, MINT, 0.60, 9)
+		round(holder, "NucleoCL", 3.1, Color3.fromRGB(222, 255, 226), 0.16, 10)
 
 		local count = math.max(2, math.ceil(length / 3.4))
 		for j = 1, count do
