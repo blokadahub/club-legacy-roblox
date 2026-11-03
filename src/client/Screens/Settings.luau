@@ -41,25 +41,25 @@ function Settings.mount(root: Instance, ctx)
 	element("TextLabel", root, {
 		Name = "SecaoPersonalizar",
 		Text = "PERSONALIZAR",
-		Font = Enum.Font.GothamBold, TextSize = 17,
+		Font = Enum.Font.GothamBold, TextSize = 20,
 		TextColor3 = Color3.fromRGB(221, 231, 232),
 		TextXAlignment = Enum.TextXAlignment.Left,
 		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(293, 192),
-		Size = UDim2.fromOffset(450, 30),
+		Position = UDim2.fromOffset(243, 163),
+		Size = UDim2.fromOffset(500, 34),
 		ZIndex = 4,
 	})
 
 	local close = element("TextButton", root, {
 		Name = "FecharConfiguracoes",
 		Text = "VOLTAR",
-		Font = Enum.Font.GothamBold, TextSize = 14,
+		Font = Enum.Font.GothamBold, TextSize = 17,
 		TextColor3 = Color3.fromRGB(224, 234, 233),
 		TextXAlignment = Enum.TextXAlignment.Right,
 		BackgroundTransparency = 1,
 		AutoButtonColor = false,
-		Position = UDim2.fromOffset(1202, 186),
-		Size = UDim2.fromOffset(103, 44),
+		Position = UDim2.fromOffset(1238, 162),
+		Size = UDim2.fromOffset(120, 48),
 		Selectable = true, ZIndex = 6,
 	})
 	scope:Connect(close.Activated, function()
@@ -68,11 +68,11 @@ function Settings.mount(root: Instance, ctx)
 
 	local grid = element("Frame", root, {
 		Name = "GradeConfiguracoes",
-		Position = UDim2.fromOffset(291, 260),
-		Size = UDim2.fromOffset(1018, 456),
+		Position = UDim2.fromOffset(243, 232),
+		Size = UDim2.fromOffset(1115, 493),
 		BackgroundTransparency = 1, ZIndex = 3,
 	})
-	local CARD_WIDTH, CARD_HEIGHT, GAP = 249, 222, 7
+	local CARD_WIDTH, CARD_HEIGHT, GAP = 272, 242, 9
 	local cards = {}
 	for i, item in ipairs(OPTIONS) do
 		local col = (i - 1) % 4
@@ -92,19 +92,20 @@ function Settings.mount(root: Instance, ctx)
 			Name = "TituloCartao",
 			Text = item.label,
 			Font = Enum.Font.GothamBold,
-			TextSize = if i == 8 then 22 else 25,
+			TextSize = if i == 8 then 24 else 28,
 			TextColor3 = if selected == i then BLACK else WHITE,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextYAlignment = Enum.TextYAlignment.Top,
 			TextWrapped = true,
 			BackgroundTransparency = 1,
-			Position = UDim2.fromOffset(15, 14),
-			Size = UDim2.fromOffset(CARD_WIDTH - 26, 73),
+			Position = UDim2.fromOffset(18, 17),
+			Size = UDim2.fromOffset(CARD_WIDTH - 33, 83),
 			ZIndex = 5,
 		})
 		local image, iconParts = Icons.create(card, item.icon, if selected == i then SELECTED else ICON_MUTED)
-		image.Position = UDim2.fromOffset(143, 109)
+		image.Position = UDim2.fromOffset(152, 125)
 		image.ZIndex = 5
+		element("UIScale", image, {Scale = 1.1})
 		cards[i] = {card = card, title = title, iconParts = iconParts}
 
 		scope:Connect(card.Activated, function()
@@ -142,10 +143,10 @@ function Settings.mount(root: Instance, ctx)
 	end
 
 	-- Dois indicadores pequenos existentes na linguagem do menu de referência.
-	for _, x in ipairs({812, 1066}) do
+	for _, x in ipairs({852, 1130}) do
 		local dot = element("Frame", root, {
 			Name = "IndicadorDePagina",
-			Position = UDim2.fromOffset(x, 729), Size = UDim2.fromOffset(7, 7),
+			Position = UDim2.fromOffset(x, 742), Size = UDim2.fromOffset(8, 8),
 			BackgroundColor3 = WHITE, BorderSizePixel = 0, ZIndex = 5,
 		})
 		element("UICorner", dot, {CornerRadius = UDim.new(1, 0)})
@@ -155,22 +156,22 @@ function Settings.mount(root: Instance, ctx)
 		Name = "InstrucoesInferiores",
 		Text = "SELECIONAR      VOLTAR",
 		Font = Enum.Font.GothamMedium,
-		TextSize = 13, TextColor3 = Color3.fromRGB(214, 222, 222),
+		TextSize = 15, TextColor3 = Color3.fromRGB(214, 222, 222),
 		TextXAlignment = Enum.TextXAlignment.Left,
 		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(293, 818),
-		Size = UDim2.fromOffset(370, 30), ZIndex = 5,
+		Position = UDim2.fromOffset(243, 808),
+		Size = UDim2.fromOffset(410, 34), ZIndex = 5,
 	})
 	local right = element("TextLabel", root, {
 		Name = "StatusDecorativo",
 		Text = "CL 27   /   01",
 		Font = Enum.Font.GothamMedium,
-		TextSize = 13,
+		TextSize = 15,
 		TextColor3 = Color3.fromRGB(216, 231, 223),
 		TextXAlignment = Enum.TextXAlignment.Right,
 		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(1083, 818),
-		Size = UDim2.fromOffset(226, 30), ZIndex = 5,
+		Position = UDim2.fromOffset(1128, 808),
+		Size = UDim2.fromOffset(230, 34), ZIndex = 5,
 	})
 	return grid
 end
