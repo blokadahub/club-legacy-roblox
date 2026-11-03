@@ -43,7 +43,7 @@ Navegação: botão **Central** ou **M/Y** abre todas as seções; **B** volta. 
 
 `src/shared` contém dados e tema. `src/client` contém App, ciclo de vida, UI, personagens, cenários e telas. `src/server` desativa spawn jogável. Apenas um bootstrap cliente e um servidor são mapeados pelo Rojo.
 
-O workflow `build.yml` valida Luau, dados, estrutura e XML, então disponibiliza o artefato. `publish.yml` mantém o fluxo manual Open Cloud com publicação desativada por padrão. Configure `ROBLOX_UNIVERSE_ID`, `ROBLOX_PLACE_ID` e o secret `ROBLOX_API_KEY` somente para o destino revisado; confirme o Place ID ao publicar. IDs antigos não são reutilizados e pushes não publicam no Roblox.
+O workflow `build.yml` valida Luau, dados, estrutura e XML, então disponibiliza o artefato. `publish.yml` mantém o fluxo manual Open Cloud com publicação desativada por padrão. Destino autorizado: Backrooms (`Universe ID 9749365367`, `Place ID 86256105108811`), configurado no workflow após confirmação do proprietário. Configure o secret `ROBLOX_API_KEY`, confirme o Place ID ao publicar e observe a checagem automática de correspondência com o Universe pela API Roblox. Pushes não publicam no Roblox. Veja `PUBLICAR_CL27.md`.
 
 ## Evidências e limites
 
