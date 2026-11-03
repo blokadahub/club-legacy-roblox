@@ -213,7 +213,6 @@ function Scene:_light(mode)
 	for _, tween in ipairs(self.lightTweens) do tween:Cancel() end
 	table.clear(self.lightTweens)
 	Lighting.GlobalShadows, Lighting.ShadowSoftness = true, 0.35
-	local training = mode == "Training"
 	local interior = mode == "Interior"
 	local tunnel = mode == "Tunnel"
 	-- O controlador principal continua sendo o unico dono da Camera/Lighting.
@@ -222,22 +221,22 @@ function Scene:_light(mode)
 	Lighting.FogStart = if tunnel then 74 else self.oldLighting.FogStart
 	Lighting.FogEnd = if tunnel then 168 else self.oldLighting.FogEnd
 	local target = {
-		Ambient = if tunnel then Color3.fromRGB(8, 11, 20) else (training and Color3.fromRGB(109, 126, 137) or (interior and Color3.fromRGB(36, 45, 46) or Color3.fromRGB(27, 59, 64))),
-		OutdoorAmbient = if tunnel then Color3.fromRGB(3, 5, 10) else (training and Color3.fromRGB(155, 175, 185) or (interior and Color3.fromRGB(22, 29, 33) or Color3.fromRGB(35, 55, 60))),
-		Brightness = if tunnel then 0.45 else (training and 2.6 or (interior and 1.15 or 1.6)),
-		ClockTime = if tunnel then 0 else (training and 14.25 or (interior and 16.4 or 21)),
-		ExposureCompensation = if tunnel then -0.32 else (training and 0.05 or (interior and -0.32 or -0.24)),
-		EnvironmentDiffuseScale = if tunnel then 0.18 else (training and 0.85 or (interior and 0.35 or 0.55)),
+		Ambient = if tunnel then Color3.fromRGB(8, 11, 20) else (interior and Color3.fromRGB(36, 45, 46) or Color3.fromRGB(27, 59, 64)),
+		OutdoorAmbient = if tunnel then Color3.fromRGB(3, 5, 10) else (interior and Color3.fromRGB(22, 29, 33) or Color3.fromRGB(35, 55, 60)),
+		Brightness = if tunnel then 0.45 else (interior and 1.15 or 1.6),
+		ClockTime = if tunnel then 0 else (interior and 16.4 or 21),
+		ExposureCompensation = if tunnel then -0.32 else (interior and -0.32 or -0.24),
+		EnvironmentDiffuseScale = if tunnel then 0.18 else (interior and 0.35 or 0.55),
 		EnvironmentSpecularScale = if tunnel then 0.3 else (interior and 0.3 or 0.85),
 	}
 	-- The graphic wipe covers the geometry swap; lighting settles beneath it.
 	local tween = TweenService:Create(Lighting, TweenInfo.new(self.settings.reducedMotion and 0 or 0.32, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), target)
 	table.insert(self.lightTweens, tween)
 	tween:Play()
-	self.rays.Enabled = training
-	self.atmosphere.Density = if tunnel then 0 else (training and 0.15 or 0.035)
-	self.atmosphere.Haze = training and 0.6 or 0
-	self.grade.TintColor = if tunnel then Color3.fromRGB(229, 244, 246) else (training and Color3.fromRGB(247, 252, 255) or (interior and Color3.fromRGB(255, 248, 233) or Color3.fromRGB(221, 255, 247)))
+	self.rays.Enabled = false
+	self.atmosphere.Density = if tunnel then 0 else 0.035
+	self.atmosphere.Haze = 0
+	self.grade.TintColor = if tunnel then Color3.fromRGB(229, 244, 246) else (interior and Color3.fromRGB(255, 248, 233) or Color3.fromRGB(221, 255, 247))
 end
 
 function Scene:_actor(club, kit, position, yaw, pose, number)
@@ -299,55 +298,6 @@ local function tree(parent, x, z, size)
 	end
 end
 
-function Scene:_training(club, kit)
-	local p = self.folder
-	block(p, "BaseGramado", Vector3.new(240, 0.3, 220), CFrame.new(0, -0.2, -50), Color3.fromRGB(51, 82, 43), Enum.Material.Grass)
-	for i = -3, 8 do
-		block(p, "CorteGramado", Vector3.new(95, 0.015, 7), CFrame.new(0, -0.04, -i * 7), i % 2 == 0 and Color3.fromRGB(54, 88, 46) or Color3.fromRGB(59, 94, 49), Enum.Material.Grass)
-	end
-	trimRectangle(p, 77, 61, Vector3.new(0, -0.015, -17), Color3.fromRGB(202, 217, 182), 0.09)
-	block(p, "LinhaMeioCampo", Vector3.new(77, 0.02, 0.09), CFrame.new(0, -0.01, -17), Color3.fromRGB(205, 219, 188), Enum.Material.SmoothPlastic)
-	for i = 0, 39 do
-		local a, b = i / 40 * math.pi * 2, (i + 1) / 40 * math.pi * 2
-		beam(p, "CirculoCentral", Vector3.new(math.sin(a) * 7.2, -0.005, -17 + math.cos(a) * 7.2), Vector3.new(math.sin(b) * 7.2, -0.005, -17 + math.cos(b) * 7.2), 0.075, Color3.fromRGB(205, 219, 188), Enum.Material.SmoothPlastic)
-	end
-	-- A curved headquarters with glazing, concrete cornices and real depth.
-	for i = 0, 10 do
-		local angle = math.rad(-65 + i * 13)
-		local cf = CFrame.new(-19 + math.sin(angle) * 14, 4, -34 + math.cos(angle) * 7) * CFrame.Angles(0, angle, 0)
-		block(p, "SedeVidroCurvo", Vector3.new(3.3, 7.7, 0.35), cf, Color3.fromRGB(39, 67, 78), Enum.Material.Glass, 0.18)
-		for _, y in ipairs({ -3.8, 0.2, 4.2 }) do
-			block(p, "SedeMarquise", Vector3.new(3.7, 0.55, 3.2), cf * CFrame.new(0, y, 0), Color3.fromRGB(153, 163, 154), Enum.Material.Concrete)
-		end
-		block(p, "SedeMontante", Vector3.new(0.12, 8, 0.5), cf * CFrame.new(1.5, 0.2, 0), Color3.fromRGB(182, 190, 182), Enum.Material.Metal)
-	end
-	block(p, "CentroDesempenho", Vector3.new(30, 5.6, 11), CFrame.new(18, 2.8, -35), Color3.fromRGB(115, 126, 113), Enum.Material.Concrete)
-	block(p, "MarquiseCentro", Vector3.new(32, 0.55, 12), CFrame.new(18, 5.8, -34.8), Color3.fromRGB(175, 180, 162), Enum.Material.Concrete)
-	for x = 4, 31, 3 do
-		block(p, "VidroCentro", Vector3.new(2.5, 3.5, 0.15), CFrame.new(x, 2.9, -29.4), Color3.fromRGB(44, 71, 76), Enum.Material.Glass, 0.13)
-		block(p, "PilarCentro", Vector3.new(0.15, 5.2, 0.25), CFrame.new(x + 1.4, 2.7, -29.2), Color3.fromRGB(186, 190, 173), Enum.Material.Metal)
-	end
-	for _, x in ipairs({ -5, 8, 22 }) do
-		cylinder(p, "MastroOriginal", 0.045, 10.8, Vector3.new(x, 5.4, -24), Color3.fromRGB(175, 185, 179), Enum.Material.Metal)
-		local flag = block(p, "BandeiraCL27", Vector3.new(1.5, 4.2, 0.03), CFrame.new(x + 0.8, 8.2, -24) * CFrame.Angles(0, math.pi, 0), C.green, Enum.Material.Fabric)
-		local art = surface(flag, C.blue, C.green)
-		screenText(art, "CL 27", 0.05, 0.2, 0.9, 0.4, 150)
-	end
-	for _, x in ipairs({ -42, -34, -7, 1, 34, 42 }) do tree(p, x, -29 - math.abs(x) * 0.17, 1.2 + (math.abs(x) % 3) * 0.13) end
-	for x = -60, 60, 12 do tree(p, x, -63, 1.9) end
-	for _, x in ipairs({ -29, 28 }) do
-		cylinder(p, "PosteLuz", 0.08, 11.5, Vector3.new(x, 5.75, -17), Color3.fromRGB(109, 126, 126), Enum.Material.Metal)
-		block(p, "LuminariaCampo", Vector3.new(2.3, 0.15, 0.65), CFrame.new(x, 11.4, -17), Color3.fromRGB(197, 209, 204), Enum.Material.Metal)
-	end
-	-- Empty practice goal is scenery only; there are no gameplay systems.
-	for _, x in ipairs({ -3.6, 3.6 }) do beam(p, "Trave", Vector3.new(x, 0, -46), Vector3.new(x, 2.4, -46), 0.11, C.white, Enum.Material.Metal) end
-	beam(p, "Travessao", Vector3.new(-3.6, 2.4, -46), Vector3.new(3.6, 2.4, -46), 0.11, C.white, Enum.Material.Metal)
-	for x = -3.6, 3.6, 0.6 do beam(p, "RedeGol", Vector3.new(x, 0, -47.5), Vector3.new(x, 2.4, -46), 0.018, Color3.fromRGB(168, 185, 172), Enum.Material.Fabric) end
-	for y = 0.4, 2.4, 0.4 do beam(p, "RedeGol", Vector3.new(-3.6, y, -47.5 + y / 2.4 * 1.5), Vector3.new(3.6, y, -47.5 + y / 2.4 * 1.5), 0.018, Color3.fromRGB(168, 185, 172), Enum.Material.Fabric) end
-	self:_menuAvatar(Vector3.new(5.1, 0, 0), Vector3.new(0, 3.5, 17))
-	self.cameraPosition, self.cameraTarget, self.fov = Vector3.new(0, 3.5, 17), Vector3.new(0, 2.6, -1), 34
-end
-
 function Scene:_arena(homeClub, awayClub, homeKit, awayKit, withActors)
 	local p = self.folder
 	floor(p, 38, false)
@@ -375,7 +325,8 @@ function Scene:_arena(homeClub, awayClub, homeKit, awayKit, withActors)
 end
 
 function Scene:Show(mode, homeClub, awayClub, homeKitIndex, awayKitIndex)
-	mode = mode or "Interior"
+	-- Chamadas legadas de treino nao devem montar a cena removida.
+	mode = if mode == "Training" then "Interior" else (mode or "Interior")
 	if self.mode == mode then
 		self:UpdateClubs(homeClub, awayClub, homeKitIndex, awayKitIndex)
 		return
@@ -406,7 +357,6 @@ function Scene:Show(mode, homeClub, awayClub, homeKitIndex, awayKitIndex)
 			self.mode = "Arena"
 			self:_arena(homeClub, awayClub, homeKitIndex, awayKitIndex, false)
 		end
-	elseif mode == "Training" then self:_training(homeClub, homeKitIndex)
 	elseif mode == "Arena" or mode == "Kits" then self:_arena(homeClub, awayClub, homeKitIndex, awayKitIndex, mode == "Kits")
 	else self:_interior(homeClub, homeKitIndex) end
 	self:_light(self.mode)
@@ -489,7 +439,7 @@ function Scene:ApplySettings(settings)
 		self.bloom.Size, self.bloom.Threshold = 28, 1.15
 		self.grade.Contrast, self.grade.Saturation = 0.1, -0.06
 	end
-	self.rays.Enabled = high and self.mode == "Training"
+	self.rays.Enabled = false
 	for _, object in ipairs(self.folder:GetDescendants()) do
 		if object:IsA("Light") then
 			object.Shadows = high and object:IsA("SurfaceLight")
