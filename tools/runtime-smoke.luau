@@ -344,11 +344,28 @@ for roleIndex, key in ipairs({"captain", "penalties", "shortFreeKicks", "longFre
 	check(state.assignments[key] == 22, "Role assignment did not update " .. key)
 	dispose(root, ctx)
 end
+-- Personalização visual somente: grade 4x2 e seleção não altera preferências.
 do
-	local state = deepClone(baseState); state.settingsTab = 2
+	local state = deepClone(baseState)
 	local root, ctx = mounted("Settings", state)
-	clickByText(root, "Desativado  ›")
-	check(state.settings.reducedMotion, "Reduced motion preference did not update")
+	local grid = root:FindFirstChild("GradeConfiguracoes", true)
+	check(grid ~= nil and grid.Size.X.Offset == 1018, "Grade de Configurações com proporção inesperada")
+	local count = 0
+	for i = 1, 8 do
+		local card = grid:FindFirstChild("Cartao_" .. tostring(i))
+		check(card ~= nil, "Faltou cartão visual " .. tostring(i))
+		check(card:FindFirstChild("TituloCartao") ~= nil, "Cartão sem título " .. tostring(i))
+		check(card:FindFirstChild("Icone_" .. ({"settings","profile","online","playtime","edit","sheets","create","music"})[i]) ~= nil,
+			"Cartão sem iconografia própria " .. tostring(i))
+		count += 1
+	end
+	check(count == 8, "Devem existir oito cartões")
+	local before = state.settings.quality
+	grid:FindFirstChild("Cartao_7").Activated:Fire()
+	check(state.settingsCard == 7 and state.settings.quality == before and ctx.lastRoute == nil,
+		"Clicar num cartão deve apenas trocar seleção, sem abrir sistema")
+	root:FindFirstChild("FecharConfiguracoes", true).Activated:Fire()
+	check(ctx.lastRoute == "HomeInterior", "Voltar precisa retornar ao menu principal")
 	dispose(root, ctx)
 end
 do
