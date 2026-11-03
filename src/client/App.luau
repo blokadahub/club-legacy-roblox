@@ -225,7 +225,6 @@ function App.start()
 				go(target,true)
 			end,pageScope,{quiet=true,textSize=14})
 			UI.button(footer,"⌂  INÍCIO",391,10,130,40,function() go(if state.homeEnvironment=="Training" then "HomeTraining" else "HomeInterior") end,pageScope,{quiet=true,textSize=14})
-			if state.settings.showHints then UI.text(footer,"CLIQUE / A  Selecionar    •    M / Y  Central    •    B  Voltar",566,17,640,25,12,Theme.muted) end
 			UI.text(footer,"CL 27  /  APRESENTAÇÃO VISUAL",1240,17,314,25,10,Theme.muted).TextXAlignment=Enum.TextXAlignment.Right
 		end
 		if not busy then focusPage(focusOrdinal) end
