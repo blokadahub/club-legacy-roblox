@@ -2,6 +2,7 @@
 -- Conteúdo central do lobby CL 27. Composição de interface, não cenário 3D.
 -- Símbolos geométricos próprios: não depende de logos/arquivos da EA SPORTS.
 local TweenService = game:GetService("TweenService")
+local Workspace = game:GetService("Workspace")
 
 local Showcase = {}
 local GREEN = Color3.fromRGB(129, 223, 135)
@@ -53,9 +54,11 @@ local function makeSymbol(parent: Instance, kind: string): Frame
 	local frame = item("Frame", parent, {
 		Name = "Simbolo_" .. kind, BackgroundTransparency = 1,
 		Size = UDim2.fromOffset(204, 132),
-		Position = UDim2.new(0.5, -102, 0, 0),
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.fromScale(0.5, 0),
 		Visible = false, ZIndex = 6,
 	})
+	item("UIScale", frame, {Name = "EscalaSimbolo", Scale = 1})
 	local ink = WHITE
 	if kind == "news" then
 		-- Insígnia dourada própria, facetada em diagonais.
@@ -115,11 +118,15 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 	local action = item("TextButton", stage, {
 		Name = "AcaoPrincipal", Text = "", AutoButtonColor = false, Selectable = true,
 		Active = true, BorderSizePixel = 0, BackgroundColor3 = GREEN,
-		Position = UDim2.fromScale(0.235, 0.677),
-		Size = UDim2.fromScale(0.53, 0.10),
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.fromScale(0.5, 0.677),
+		Size = UDim2.new(0.59, 0, 0, 56),
 		ClipsDescendants = true, ZIndex = 7,
 	})
 	item("UICorner", action, {CornerRadius = UDim.new(1, 0)})
+	item("UISizeConstraint", action, {
+		MinSize = Vector2.new(206, 44), MaxSize = Vector2.new(340, 56),
+	})
 	local border = item("UIStroke", action, {
 		Name = "ReflexoBorda", Color = Color3.fromRGB(224, 255, 226),
 		Thickness = 1.35, Transparency = 0.67, ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
@@ -159,6 +166,42 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 		label(frame, "Legenda", text, 10, UDim2.fromScale(0.07, 0.46),
 			UDim2.fromScale(0.86, 0.47), WHITE, Enum.Font.GothamBold)
 	end
+
+	-- Mantém logomarca, título e cápsula legíveis em telas móveis baixas,
+	-- sem aumentar indevidamente os botões em monitores grandes.
+	local viewportConnection: RBXScriptConnection? = nil
+	local cameraConnection: RBXScriptConnection? = nil
+	local function adapt()
+		local camera = Workspace.CurrentCamera
+		if not camera then return end
+		local compact = camera.ViewportSize.Y < 600
+		for _, symbol in pairs(symbols) do
+			local scale = symbol:FindFirstChild("EscalaSimbolo")
+			if scale and scale:IsA("UIScale") then
+				scale.Scale = if compact then 0.61 else 1
+			end
+		end
+		title.TextSize = if compact then 25 else 36
+		title.Position = UDim2.fromScale(0.035, if compact then 0.375 else 0.35)
+		subtitle.TextSize = if compact then 14 else 18
+		subtitle.Position = UDim2.fromScale(0.115, if compact then 0.51 else 0.495)
+		subtitle.Size = UDim2.fromScale(0.77, if compact then 0.16 else 0.115)
+		action.Position = UDim2.fromScale(0.5, if compact then 0.695 else 0.677)
+		action.Size = UDim2.new(0.59, 0, 0, if compact then 44 else 56)
+		actionText.TextSize = if compact then 14 else 17
+		mini.Position = UDim2.fromScale(0.18, if compact then 0.89 else 0.84)
+		mini.Size = UDim2.fromScale(0.64, if compact then 0.11 else 0.13)
+	end
+	local function watchCamera()
+		if viewportConnection then viewportConnection:Disconnect() end
+		local camera = Workspace.CurrentCamera
+		if camera then
+			viewportConnection = camera:GetPropertyChangedSignal("ViewportSize"):Connect(adapt)
+		end
+		adapt()
+	end
+	cameraConnection = Workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(watchCamera)
+	watchCamera()
 
 	local selected, lesson, token, fadeTween = 0, nil, 0, nil
 	local isReduced = reducedMotion
@@ -219,6 +262,8 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 		if not alive then return end
 		alive = false
 		if fadeTween then fadeTween:Cancel() end
+		if viewportConnection then viewportConnection:Disconnect() end
+		if cameraConnection then cameraConnection:Disconnect() end
 		stage:Destroy()
 	end
 	action.Activated:Connect(function()
