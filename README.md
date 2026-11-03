@@ -17,8 +17,10 @@ Apresentação interativa de futebol para **Roblox**, escrita em **Luau** e comp
 11. Competições: classificação e chaveamento demonstrativos.
 12. Personalização: paleta e uniforme, com personagem em ViewportFrame.
 13. Configurações: qualidade, ambiente preferido, movimento reduzido, contraste e dicas.
-14. Seleção de Clubes: dois painéis simétricos, filtros e comparação de atributos.
+14. **Clubs**: corredor cinematográfico 3D com carregamento CL permanente, sem véu escuro após a entrada. A seleção de clubes anterior permanece no código, mas não é exibida nesta rota.
 15. Seleção de Uniformes: dois atletas no Workspace e camisas isoladas em ViewportFrame.
+
+O túnel integrado utiliza os quatro módulos reutilizáveis do PR #7, sem o bootstrap do experimento. Consulte [a integração Clubs](docs/CLUBS_TUNNEL.md) para controles, indicador permanente, restauração e testes. O botão de voltar tem área de toque real de 54 px para Android.
 
 Os dados e preferências permanecem apenas na sessão. A classificação do Circuito Legado reúne oito convidados de três ligas fictícias. As telas compartilham estado, seleções, navegação e animações com descarte de conexões.
 
