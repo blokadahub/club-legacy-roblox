@@ -349,7 +349,7 @@ do
 	local state = deepClone(baseState)
 	local root, ctx = mounted("Settings", state)
 	local grid = root:FindFirstChild("GradeConfiguracoes", true)
-	check(grid ~= nil and grid.Size.X.Offset == 1018, "Grade de Configurações com proporção inesperada")
+	check(grid ~= nil and grid.Size.X.Offset == 1115 and grid.Size.Y.Offset == 493, "Grade de Configurações com proporção inesperada")
 	local count = 0
 	for i = 1, 8 do
 		local card = grid:FindFirstChild("Cartao_" .. tostring(i))
