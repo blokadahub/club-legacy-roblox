@@ -3,7 +3,7 @@
 -- Símbolos geométricos próprios: não depende de logos/arquivos da EA SPORTS.
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
-local NeonSnake = require(script.Parent.NeonSnake)
+local OuterGlowSweep = require(script.Parent.OuterGlowSweep)
 
 local Showcase = {}
 local GREEN = Color3.fromRGB(129, 223, 135)
@@ -129,8 +129,8 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 		MinSize = Vector2.new(206, 44), MaxSize = Vector2.new(340, 56),
 	})
 	local border = item("UIStroke", action, {
-		Name = "ReflexoBorda", Color = Color3.fromRGB(224, 255, 226),
-		Thickness = 1.35, Transparency = 0.67, ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+		Name = "ReflexoBorda", Color = Color3.fromRGB(243, 252, 241),
+		Thickness = 1.1, Transparency = 0.82, ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 	})
 	local disc = item("Frame", action, {
 		Name = "IconeControle", Position = UDim2.new(0, 7, 0.5, -17),
@@ -141,9 +141,9 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 	label(disc, "TeclaX", "X", 17, UDim2.fromScale(0, 0), UDim2.fromScale(1, 1), GREEN, Enum.Font.GothamBold)
 	local actionText = label(action, "TextoAcao", "", 17,
 		UDim2.new(0, 47, 0, 0), UDim2.new(1, -52, 1, 0), BLACK, Enum.Font.GothamBold)
-	-- O antigo reflexo atravessava o corpo do botão; a luz agora percorre
-	-- somente a borda arredondada em looping, sem tapar o texto.
-	local capsuleFX = NeonSnake.newCapsule(action)
+	-- Faixa branca localizada percorre a borda da capsula com halo macio
+	-- e rastro gradual. O botao, o circulo X e o texto ficam imoveis.
+	local capsuleFX = OuterGlowSweep.newCapsule(action)
 
 	-- Miniaturas tipográficas, exibidas apenas na seção Upgrade.
 	local mini = item("Frame", stage, {
@@ -247,7 +247,7 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 	function self:Step(elapsed: number)
 		if not alive or isReduced then return end
 		capsuleFX:Step(elapsed)
-		border.Transparency = 0.60
+		border.Transparency = 0.82
 	end
 	function self:SetReducedMotion(enabled: boolean)
 		isReduced = enabled
