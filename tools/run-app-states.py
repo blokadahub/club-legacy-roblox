@@ -119,7 +119,13 @@ parts.append("local folders = {['src/client'] = clientRoot, ['src/shared'] = sha
 scene = """local Scene = {}
 function Scene.new(settings)
     local self = {settings = settings, shows = {}, updates = 0}
-    function self:Show(mode) table.insert(self.shows, mode); self.mode = mode end
+    function self:Show(mode)
+        if services.failNextSceneShow then
+            services.failNextSceneShow = false
+            error("Falha simulada na troca do cenário")
+        end
+        table.insert(self.shows, mode); self.mode = mode
+    end
     function self:UpdateClubs() self.updates += 1 end
     function self:ApplySettings(value) self.settings = value end
     function self:SetSettingsAtmosphere(visible) self.settingsNeonVisible = visible end
