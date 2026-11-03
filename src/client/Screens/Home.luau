@@ -1,67 +1,263 @@
 --!strict
-local UI=require(script.Parent.Parent.UI)
-local Theme=require(game:GetService("ReplicatedStorage").CL27.Theme)
-local Data=require(game:GetService("ReplicatedStorage").CL27.Data)
-local entries={
-	{"VISÃO GERAL","Overview","Seu legado começa aqui","Acompanhe o clube, os próximos compromissos e os destaques da temporada."},
-	{"CENTRAL DO ELENCO","Squad","Cada posição. Uma história.","Conheça o elenco, ajuste a formação e encontre o equilíbrio da sua equipe."},
-	{"SELEÇÃO DE CLUBES","Clubs","O encontro de duas identidades","Escolha os clubes e apresente seus uniformes na arena do CL 27."},
-	{"CALENDÁRIO","Calendar","Uma temporada de possibilidades","Explore os compromissos da sua liga e as noites continentais."},
-	{"MERCADO","Transfers","O próximo nome do seu legado","Explore perfis e organize a lista de atletas observados pelo clube."},
-	{"DESENVOLVIMENTO","Development","Talento em movimento","Escolha o foco de desenvolvimento e acompanhe o potencial do elenco."},
-	{"COMPETIÇÕES","Competitions","A grandeza está na jornada","Consulte a classificação e os caminhos até as próximas conquistas."},
-	{"PERSONALIZAÇÃO","Customization","A sua assinatura","Explore a identidade visual do clube e os uniformes originais do CL 27."},
-}
-return function(root,ctx)
-	local isTraining=ctx.state.screen=="HomeTraining"
-	local selected=ctx.state.homeFocus or 3
-	local current=entries[selected]
-	local club=Data.clubs[ctx.state.homeClub or 1]
-	-- A navegação ocupa somente o primeiro quarto; o atleta permanece no espaço real à direita.
-	local shade=UI.frame(root,0,0,570,900,Color3.fromRGB(3,11,17),0.13)
-	local grad=UI.gradient(shade,{Color3.new(1,1,1),Color3.new(1,1,1)})
-	grad.Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0.05),NumberSequenceKeypoint.new(0.7,0.25),NumberSequenceKeypoint.new(1,1)})
-	UI.logo(root,45,42,1.05)
-	UI.text(root,"CLUB LEGACY",79,96,260,22,11,Theme.muted,Enum.Font.GothamBold)
-	local rail=UI.panel(root,40,153,34,166,Theme.background,0.28)
-	for i, icon in ipairs({"◈","◎","≡"}) do
-		UI.button(rail,icon,0,(i-1)*51,34,42,function()
-			ctx.go(({"Settings","Customization","Overview"})[i])
-		end,ctx.scope,{quiet=true,textSize=23})
-	end
-	for i,item in ipairs(entries) do
-		local y=159+(i-1)*63
-		local button=UI.button(root,item[1],112,y,340,49,function()
-			if ctx.state.homeFocus==i then ctx.go(item[2]) else ctx.state.homeFocus=i;ctx.rerender() end
-		end,ctx.scope,{quiet=true,selected=i==selected,textSize=if i==selected then 25 else 19,
-			textColor=if i==selected then Theme.white else Color3.fromRGB(184,196,197),hoverTextColor=Theme.white})
-		button.TextXAlignment=Enum.TextXAlignment.Left
-		if i==selected then
-			UI.frame(root,96,y+13,3,23,UI.accent)
+-- Menu inicial, inspirado na estrutura da referência: cinco entradas, sem rotas
+-- enquanto as páginas correspondentes não existirem. Os outros módulos do CL27
+-- não são afetados.
+local Players = game:GetService("Players")
+local UI = require(script.Parent.Parent.UI)
+local Theme = require(game:GetService("ReplicatedStorage").CL27.Theme)
+
+local ITEMS = {"CL News", "Modo Manager", "Kick Off", "Clubes", "Sessões"}
+local SMOKE_IMAGE = "rbxasset://textures/particles/smoke_main.dds"
+local ACTIVE = Color3.fromRGB(251, 255, 253)
+local INACTIVE = Color3.fromRGB(191, 198, 199)
+local SMOKE_GREEN = Color3.fromRGB(37, 160, 104)
+
+local function getLevel(player: Player): string
+	-- Roblox não oferece um nível universal de perfil. Só exibe um valor
+	-- realmente fornecido por um sistema de progresso do próprio jogo.
+	for _, name in ipairs({"Level", "Nivel", "Nível"}) do
+		local value = player:GetAttribute(name)
+		if typeof(value) == "number" and value >= 0 then
+			return tostring(math.floor(value))
 		end
 	end
-	if isTraining then
-		-- One upper contextual block preserves the open skyline and building silhouette.
-		UI.text(root,"CENTRO DE TREINAMENTO / "..string.upper(club.name),482,120,665,20,11,Theme.white,Enum.Font.GothamBold)
-		local title=UI.text(root,current[3],480,149,665,70,30,Theme.white,Enum.Font.GothamBlack)
-		title.TextWrapped=true
-		title.TextStrokeColor3=Theme.background
-		title.TextStrokeTransparency=0.82
-		local details=UI.text(root,current[4],482,227,610,66,18,Theme.white)
-		details.TextWrapped=true
-		details.TextStrokeColor3=Theme.background
-		details.TextStrokeTransparency=0.87
-	else
-		UI.text(root,"TEMPORADA 2026 / 27",482,350,510,24,14,UI.accent,Enum.Font.GothamBold)
-		UI.text(root,current[3],480,386,570,91,39,Theme.white,Enum.Font.GothamBlack).TextWrapped=true
-		UI.text(root,current[4],482,487,485,69,18,Color3.fromRGB(205,227,228)).TextWrapped=true
+	local stats = player:FindFirstChild("leaderstats")
+	if stats then
+		for _, name in ipairs({"Level", "Nivel", "Nível"}) do
+			local value = stats:FindFirstChild(name)
+			if value and (value:IsA("IntValue") or value:IsA("NumberValue")) then
+				return tostring(math.max(0, math.floor(value.Value)))
+			end
+		end
 	end
-	UI.button(root,"ENTRAR  →",482,619,282,56,function() ctx.go(current[2]) end,ctx.scope,{primary=true,textSize=20})
-	UI.text(root,if isTraining then "02 / 02" else "01 / 02",482,697,95,25,13,Theme.muted)
-	UI.button(root,if isTraining then "◈  AMBIENTE INTERNO" else "◈  CENTRO DE TREINAMENTO",581,689,336,41,function()
-		ctx.go(if isTraining then "HomeInterior" else "HomeTraining")
-	end,ctx.scope,{quiet=true,textSize=14})
-	UI.text(root,string.upper(club.shortName).." / CENTRO DO CLUBE",1120,49,365,24,13,Theme.white,Enum.Font.GothamBold).TextXAlignment=Enum.TextXAlignment.Right
-	UI.text(root,"NÍVEL 27   •   TEMPORADA 01",1120,77,365,24,12,Theme.muted).TextXAlignment=Enum.TextXAlignment.Right
-	UI.text(root,"AMBIENTE "..(if isTraining then "02   /   CENTRO DE TREINAMENTO" else "01   /   GALERIA DO LEGADO"),1070,789,460,27,11,Theme.muted).TextXAlignment=Enum.TextXAlignment.Right
+	return "—"
+end
+
+-- As imagens de fumaça são o recurso nativo do Roblox, e não um retângulo neon.
+-- Pequenas sobreposições de diferentes tamanhos simulam uma névoa irregular.
+local function smoke(parent: Instance, y: number)
+	local group = UI.new("CanvasGroup", {
+		Name = "FumacaVerde",
+		Position = UDim2.fromOffset(-26, y - 12),
+		Size = UDim2.fromOffset(450, 78),
+		BackgroundTransparency = 1,
+		GroupTransparency = 1,
+		ZIndex = 2,
+	}, parent)
+	local aura = UI.new("Frame", {
+		Position = UDim2.fromOffset(30, 20),
+		Size = UDim2.fromOffset(310, 39),
+		BackgroundColor3 = SMOKE_GREEN,
+		BackgroundTransparency = 0.93,
+		BorderSizePixel = 0,
+		ZIndex = 2,
+	}, group)
+	UI.new("UICorner", {CornerRadius = UDim.new(1, 0)}, aura)
+	local auraGradient = UI.gradient(aura, {
+		Color3.fromRGB(8, 88, 67), SMOKE_GREEN, Color3.fromRGB(4, 66, 50),
+	}, 0)
+	auraGradient.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 1),
+		NumberSequenceKeypoint.new(0.28, 0.12),
+		NumberSequenceKeypoint.new(0.64, 0.3),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	for i = 1, 5 do
+		local p = i - 1
+		UI.new("ImageLabel", {
+			Name = "Vapor" .. tostring(i),
+			Image = SMOKE_IMAGE,
+			ImageColor3 = if i % 2 == 0 then Color3.fromRGB(63, 170, 123) else Color3.fromRGB(25, 113, 84),
+			ImageTransparency = 0.51 + i * 0.065,
+			BackgroundTransparency = 1,
+			Position = UDim2.fromOffset(2 + p * 44, (p % 3) * 7 - 6),
+			Size = UDim2.fromOffset(155 + (i % 2) * 85, 84 - (i % 2) * 11),
+			Rotation = (i - 3) * 9,
+			ZIndex = 3,
+		}, group)
+	end
+	return group
+end
+
+local function icon(parent: Instance, name: string, character: string, x: number, y: number)
+	-- Somente representação visual. Nenhuma rota ou menu é aberto por esses ícones.
+	return UI.new("TextButton", {
+		Name = name,
+		Text = character,
+		Font = Enum.Font.GothamMedium,
+		TextSize = 27,
+		TextColor3 = Color3.fromRGB(212, 221, 221),
+		TextTransparency = 0.18,
+		BackgroundTransparency = 1,
+		AutoButtonColor = false,
+		Selectable = false,
+		Active = false,
+		Position = UDim2.fromOffset(x, y),
+		Size = UDim2.fromOffset(42, 42),
+		ZIndex = 7,
+	}, parent)
+end
+
+return function(root, ctx)
+	local player = Players.LocalPlayer
+	local scope = ctx.scope
+	local selected = math.clamp(ctx.state.homeFocus or 3, 1, #ITEMS)
+	local hovered: number? = nil
+
+	-- Degradê escurece somente o lado do menu, sem criar um segundo telão.
+	local shade = UI.frame(root, 0, 0, 735, 900, Color3.fromRGB(4, 9, 13), 0.14)
+	shade.Name = "VignetteMenuEsquerdo"
+	shade.ZIndex = 1
+	local gradient = UI.gradient(shade, {
+		Color3.fromRGB(4, 9, 13),
+		Color3.fromRGB(4, 10, 13),
+		Color3.fromRGB(4, 9, 13),
+	}, 0)
+	gradient.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.05),
+		NumberSequenceKeypoint.new(0.47, 0.16),
+		NumberSequenceKeypoint.new(0.76, 0.68),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+
+	icon(root, "Configuracoes", "⚙", 53, 38)
+	icon(root, "Acessibilidade", "♿", 53, 87)
+	UI.logo(root, 131, 42, 0.9)
+
+	local list = UI.new("ScrollingFrame", {
+		Name = "MenuPrincipalFC",
+		Position = UDim2.fromOffset(117, 177),
+		Size = UDim2.fromOffset(495, 435),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		CanvasSize = UDim2.fromOffset(0, 435),
+		ScrollingDirection = Enum.ScrollingDirection.Y,
+		ScrollBarThickness = 0,
+		ClipsDescendants = true,
+		Active = true,
+		ZIndex = 3,
+	}, root)
+
+	local rows = {}
+	for index, labelText in ipairs(ITEMS) do
+		local y = (index - 1) * 80 + 3
+		local fog = smoke(list, y)
+		local label = UI.text(list, labelText, 17, y, 407, 57,
+			if selected == index then 27 else 22,
+			if selected == index then ACTIVE else INACTIVE,
+			if selected == index then Enum.Font.GothamBold else Enum.Font.GothamMedium)
+		label.Name = "Texto_" .. tostring(index)
+		label.TextTransparency = if selected == index then 0 else 0.36
+		label.ZIndex = 6
+
+		local button = UI.new("TextButton", {
+			Name = "Opcao_" .. tostring(index),
+			Text = "",
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			AutoButtonColor = false,
+			Position = UDim2.fromOffset(0, y),
+			Size = UDim2.fromOffset(450, 58),
+			Selectable = true,
+			ZIndex = 7,
+		}, list)
+		fog.GroupTransparency = if index == selected then 0.22 else 1
+		table.insert(rows, {fog = fog, label = label, button = button})
+
+		local function paint(instant: boolean?)
+			for j, item in ipairs(rows) do
+				local active = j == selected or j == hovered
+				local goals = {
+					TextColor3 = if active then ACTIVE else INACTIVE,
+					TextTransparency = if active then 0 else 0.36,
+					TextSize = if active then 27 else 22,
+				}
+				item.label.Font = if active then Enum.Font.GothamBold else Enum.Font.GothamMedium
+				if instant then
+					for k, v in pairs(goals) do item.label[k] = v end
+					item.fog.GroupTransparency = if active then 0.22 else 1
+				else
+					scope:Tween(item.label, goals, 0.2)
+					scope:Tween(item.fog, {GroupTransparency = if active then 0.22 else 1}, 0.32)
+				end
+			end
+		end
+
+		scope:Connect(button.MouseEnter, function()
+			hovered = index
+			paint(false)
+		end)
+		scope:Connect(button.MouseLeave, function()
+			if hovered == index then hovered = nil end
+			paint(false)
+		end)
+		scope:Connect(button.SelectionGained, function()
+			hovered = index
+			paint(false)
+		end)
+		scope:Connect(button.SelectionLost, function()
+			if hovered == index then hovered = nil end
+			paint(false)
+		end)
+		scope:Connect(button.InputBegan, function(input)
+			if input.UserInputType == Enum.UserInputType.Touch then
+				hovered = index
+				paint(false)
+			end
+		end)
+		scope:Connect(button.InputEnded, function(input)
+			if input.UserInputType == Enum.UserInputType.Touch and hovered == index then
+				hovered = nil
+				paint(false)
+			end
+		end)
+		scope:Connect(button.Activated, function()
+			-- Por enquanto só altera a seleção; nenhuma seção é aberta.
+			selected = index
+			ctx.state.homeFocus = index
+			hovered = nil
+			paint(false)
+		end)
+	end
+
+	-- Dados verdadeiros da conta; não usa os exemplos fictícios da referência.
+	local name = UI.text(root, player.Name, 1078, 36, 460, 35, 21, ACTIVE, Enum.Font.GothamBold)
+	name.Name = "NomeRealJogador"
+	name.TextXAlignment = Enum.TextXAlignment.Right
+	name.ZIndex = 8
+	local level = UI.text(root, "Nível " .. getLevel(player), 1138, 71, 400, 25, 15, Color3.fromRGB(201, 213, 216))
+	level.Name = "NivelRealJogador"
+	level.TextXAlignment = Enum.TextXAlignment.Right
+	level.ZIndex = 8
+
+	-- Se um sistema de nível for inicializado enquanto o menu já estiver aberto,
+	-- seus dados podem atualizar sem precisar recriar a página.
+	local function updateLevel()
+		if level.Parent then level.Text = "Nível " .. getLevel(player) end
+	end
+	for _, key in ipairs({"Level", "Nivel", "Nível"}) do
+		local ok, signal = pcall(function() return player:GetAttributeChangedSignal(key) end)
+		if ok and signal then scope:Connect(signal, updateLevel) end
+	end
+	local stats = player:FindFirstChild("leaderstats")
+	if stats then
+		scope:Connect(stats.ChildAdded, updateLevel)
+		for _, stat in ipairs(stats:GetChildren()) do
+			if stat:IsA("IntValue") or stat:IsA("NumberValue") then
+				scope:Connect(stat:GetPropertyChangedSignal("Value"), updateLevel)
+			end
+		end
+	end
+
+	-- Um eventual sistema de nível adicionado depois ainda é detectado.
+	scope:Connect(player.ChildAdded, function(child)
+		if child.Name ~= "leaderstats" then return end
+		updateLevel()
+		scope:Connect(child.ChildAdded, function(stat)
+			updateLevel()
+			if stat:IsA("IntValue") or stat:IsA("NumberValue") then
+				scope:Connect(stat:GetPropertyChangedSignal("Value"), updateLevel)
+			end
+		end)
+	end)
 end
