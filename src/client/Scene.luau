@@ -203,13 +203,13 @@ function Scene:_light(mode)
 	local training = mode == "Training"
 	local interior = mode == "Interior"
 	local target = {
-		Ambient = training and Color3.fromRGB(109, 126, 137) or (interior and Color3.fromRGB(72, 83, 79) or Color3.fromRGB(27, 59, 64)),
-		OutdoorAmbient = training and Color3.fromRGB(155, 175, 185) or Color3.fromRGB(35, 55, 60),
-		Brightness = training and 2.6 or (interior and 2 or 1.6),
+		Ambient = training and Color3.fromRGB(109, 126, 137) or (interior and Color3.fromRGB(36, 45, 46) or Color3.fromRGB(27, 59, 64)),
+		OutdoorAmbient = training and Color3.fromRGB(155, 175, 185) or (interior and Color3.fromRGB(22, 29, 33) or Color3.fromRGB(35, 55, 60)),
+		Brightness = training and 2.6 or (interior and 1.15 or 1.6),
 		ClockTime = training and 14.25 or (interior and 16.4 or 21),
-		ExposureCompensation = training and 0.05 or (interior and -0.1 or -0.24),
-		EnvironmentDiffuseScale = training and 0.85 or 0.55,
-		EnvironmentSpecularScale = 0.85,
+		ExposureCompensation = training and 0.05 or (interior and -0.32 or -0.24),
+		EnvironmentDiffuseScale = training and 0.85 or (interior and 0.35 or 0.55),
+		EnvironmentSpecularScale = interior and 0.3 or 0.85,
 	}
 	-- The graphic wipe covers the geometry swap; lighting settles beneath it.
 	local tween = TweenService:Create(Lighting, TweenInfo.new(self.settings.reducedMotion and 0 or 0.32, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), target)
@@ -245,7 +245,7 @@ function Scene:_interior(club, kit)
 	block(p, "Teto", Vector3.new(48, 0.5, 32), CFrame.new(0, 11.1, -1), Color3.fromRGB(38, 43, 40), Enum.Material.Concrete)
 	for z = -9, 12, 5 do
 		block(p, "VigaTeto", Vector3.new(42, 0.5, 0.5), CFrame.new(0, 10.6, z), Color3.fromRGB(56, 61, 56), Enum.Material.Metal)
-		glow(p, "LuzLinearTeto", Vector3.new(11, 0.06, 0.08), CFrame.new(4, 10.3, z), Color3.fromRGB(242, 248, 222), 1.1, 16)
+		glow(p, "LuzLinearTeto", Vector3.new(11, 0.06, 0.08), CFrame.new(4, 10.3, z), Color3.fromRGB(215, 230, 215), 0.45, 12)
 	end
 	for x = -15, 17, 4 do
 		block(p, "AletaArquitetonica", Vector3.new(0.14, 10, 0.7), CFrame.new(x, 5, -6.35), Color3.fromRGB(58, 64, 59), Enum.Material.Metal)
@@ -258,22 +258,15 @@ function Scene:_interior(club, kit)
 	for _, x in ipairs({ -8.4, 14.7 }) do
 		glow(p, "LuzIndiretaVertical", Vector3.new(0.065, 9.6, 0.08), CFrame.new(x, 5.2, -5.9), Color3.fromRGB(196, 247, 217), 1.4, 14)
 	end
-	local rim = block(p, "MolduraTelao", Vector3.new(15.7, 6.5, 0.45), CFrame.new(2.1, 3.76, -5.9), Color3.fromRGB(9, 15, 17), Enum.Material.Metal)
-	local display = block(p, "TelaoOriginal", Vector3.new(15.0, 5.8, 0.08), rim.CFrame * CFrame.new(0, 0, 0.25), C.blue, Enum.Material.Neon)
-	-- Its front must face the camera at +Z; a 180° turn exposes Front SurfaceGui.
-	display.CFrame *= CFrame.Angles(0, math.pi, 0)
-	local backdrop = surface(display, Color3.fromRGB(15, 37, 61), Color3.fromRGB(14, 98, 94))
-	screenText(backdrop, "CL 27", 0.59, 0.18, 0.38, 0.35, 142, 0.04)
-	self.clubText = screenText(backdrop, club and string.upper(club.name or "CLUB LEGACY") or "CLUB LEGACY", 0.59, 0.57, 0.38, 0.12, 35, 0.05)
-	screenText(backdrop, "SEU CLUBE. SEU LEGADO.", 0.59, 0.72, 0.38, 0.09, 24, 0.2)
+	-- Parede livre: o telão e seus textos foram removidos do menu inicial.
 	-- Inlaid pale strips catch the natural side light without fake UI shadows.
 	for i = 0, 3 do
 		block(p, "FaixaPisoIluminada", Vector3.new(3.8, 0.014, 10), CFrame.new(-9 + i * 5.7, -0.025, 4.7) * CFrame.Angles(0, -0.2, 0), Color3.fromRGB(160, 163, 139), Enum.Material.Marble)
 	end
-	local key = block(p, "JanelaLuz", Vector3.new(0.1, 7, 10), CFrame.new(-16.5, 6.2, 4), Color3.fromRGB(225, 237, 220), Enum.Material.Neon, 0.78)
+	local key = block(p, "JanelaLuz", Vector3.new(0.1, 7, 10), CFrame.new(-16.5, 6.2, 4), Color3.fromRGB(191, 212, 200), Enum.Material.Neon, 0.94)
 	local keyLight = Instance.new("SurfaceLight")
-	keyLight.Face, keyLight.Angle, keyLight.Range, keyLight.Brightness = Enum.NormalId.Right, 110, 40, 3
-	keyLight.Color, keyLight.Shadows = Color3.fromRGB(255, 244, 217), true
+	keyLight.Face, keyLight.Angle, keyLight.Range, keyLight.Brightness = Enum.NormalId.Right, 72, 18, 0.72
+	keyLight.Color, keyLight.Shadows = Color3.fromRGB(220, 231, 218), true
 	keyLight.Parent = key
 	self:_menuAvatar(Vector3.new(5.3, 0, 0.1), Vector3.new(0, 3.9, 17))
 	self.cameraPosition, self.cameraTarget, self.fov = Vector3.new(0, 3.9, 17), Vector3.new(0, 2.6, -1), 34
@@ -388,7 +381,7 @@ function Scene:ApplySettings(settings)
 	Lighting.PrioritizeLightingQuality = high
 	Lighting.GlobalShadows = not low
 	self.bloom.Enabled = not low
-	self.bloom.Intensity = high and 0.2 or 0.1
+	self.bloom.Intensity = self.mode == "Interior" and 0.06 or (high and 0.2 or 0.1)
 	self.rays.Enabled = high and self.mode == "Training"
 	for _, object in ipairs(self.folder:GetDescendants()) do
 		if object:IsA("Light") then
