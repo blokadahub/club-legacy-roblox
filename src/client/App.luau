@@ -239,6 +239,12 @@ function App.start()
 			end)
 		end)
 	end
+	-- A engrenagem abre Configurações; o símbolo de acessibilidade abre
+	-- diretamente a aba real de acessibilidade já existente.
+	homeHud:SetNavigation(function(tab)
+		state.settingsTab = tab
+		go("Settings")
+	end)
 	lifetime:Connect(UserInputService.InputBegan,function(input,processed)
 		if processed or UserInputService:GetFocusedTextBox() then return end
 		if input.KeyCode==Enum.KeyCode.M or input.KeyCode==Enum.KeyCode.ButtonY then toggleTray()
