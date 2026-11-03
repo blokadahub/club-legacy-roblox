@@ -10,6 +10,29 @@ local handle = App.start()
 local gui = playerGui.CL27
 local canvas = gui.Canvas
 local wipe = canvas.Transicao
+-- O menu inicial deve existir em seu PRÓPRIO ScreenGui, antes de
+-- qualquer montagem de cenário; não pode depender de telas legadas.
+local homeHud = playerGui:FindFirstChild("CL27_HomeHUD")
+check(homeHud ~= nil and homeHud.Enabled and homeHud.DisplayOrder > gui.DisplayOrder,
+	"HUD independente não está à frente do cenário/menu principal")
+local homeRoot = homeHud:FindFirstChild("HomeOverlay")
+local homeList = homeRoot and homeRoot:FindFirstChild("MenuPrincipalFC")
+check(homeList ~= nil and homeList:FindFirstChild("Opcao_1") ~= nil
+	and homeList:FindFirstChild("Opcao_5") ~= nil,
+	"Um ou mais botões principais não foram inseridos no PlayerGui")
+check(homeList:FindFirstChild("Opcao_3").Text == "Kick Off"
+	and homeList:FindFirstChild("Opcao_3").TextTransparency == 0,
+	"Kick Off não está visivelmente selecionado na primeira entrada")
+check(homeRoot:FindFirstChild("NomeRealJogador").Text == services.Players.LocalPlayer.Name
+	and homeRoot:FindFirstChild("NivelRealJogador").Text == "Nível —",
+	"Nome/nível do Roblox não foram criados corretamente")
+homeList:FindFirstChild("Opcao_4").Activated:Fire()
+check(handle.state.homeFocus == 4 and homeList:FindFirstChild("Opcao_4").TextTransparency == 0,
+	"A seleção de Clubes não foi destacada visualmente")
+check(handle.state.screen == "HomeInterior",
+	"O menu de apresentação abriu uma seção que ainda não possui conteúdo")
+homeList:FindFirstChild("Opcao_3").Activated:Fire()
+check(handle.state.homeFocus == 3, "Kick Off deixou de ser a seleção inicial")
 -- Soundtrack compartilha o ciclo de vida do App, não o das páginas.
 local overlay = gui:FindFirstChild("SoundtrackOverlay")
 local sound = services.SoundService:FindFirstChild("CL27SoundtrackLocal")
@@ -65,6 +88,7 @@ advance(0.11)
 check(handle.state.screen == "HomeInterior" and wipe.GroupTransparency > 0 and wipe.GroupTransparency < 1, "Mid-entry must preserve source")
 advance(0.11)
 check(handle.state.screen == "Clubs" and UI.inputLocked and wipe.Visible, "Swap must happen under opaque wipe")
+check(not homeHud.Enabled, "HUD inicial deve ocultar ao acessar outra seção")
 check(services.GuiService.SelectedObject == nil, "Controller focus must wait until page input resumes")
 advance(0.18)
 check(wipe.GroupTransparency > 0 and wipe.GroupTransparency < 1 and UI.inputLocked, "Mid-exit must retain input lock")
@@ -164,6 +188,7 @@ local scene = services.lastScene
 handle.destroy()
 advance(2)
 check(scene.destroyed and gui.Destroyed, "Disposal must destroy scene and GUI")
+check(homeHud.Destroyed, "HUD independente não foi destruído com o App")
 check(not UI.inputLocked, "Disposal must release shared input lock")
 handle.go("Finance")
 advance(1)
