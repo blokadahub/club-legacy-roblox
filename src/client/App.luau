@@ -85,6 +85,22 @@ function App.start()
 	local transitionFx=TransitionFX.start(playerGui)
 	lifetime:Add(function() transitionFx:Destroy() end)
 	local transition=transitionFx.layer
+	-- Retorno em pixels reais, não reduzido pelo UIScale do canvas 16:9.
+	-- Único comando sobre o túnel, acessível mesmo em Android compacto.
+	local tunnelBackGui=UI.new("ScreenGui",{
+		Name="CL27_TunnelBack",DisplayOrder=88,IgnoreGuiInset=true,
+		ResetOnSpawn=false,ZIndexBehavior=Enum.ZIndexBehavior.Sibling,
+		Enabled=false,
+	},playerGui)
+	lifetime:Add(tunnelBackGui)
+	local tunnelBack=UI.new("TextButton",{
+		Name="VoltarDoTunel",Text="‹",TextSize=34,
+		TextColor3=Color3.fromRGB(237,250,239),Font=Enum.Font.GothamMedium,
+		Position=UDim2.fromOffset(18,38),Size=UDim2.fromOffset(54,54),
+		BackgroundColor3=Color3.fromRGB(14,24,24),BackgroundTransparency=0.72,
+		BorderSizePixel=0,AutoButtonColor=false,Active=true,Selectable=true,
+	},tunnelBackGui)
+	UI.new("UICorner",{CornerRadius=UDim.new(1,0)},tunnelBack)
 	local MINIMUM_LOAD_SECONDS=TransitionFX.MINIMUM_SECONDS
 	local function lockNavigation()
 		busy=true
@@ -124,6 +140,10 @@ function App.start()
 	end
 	local function focusPage(preferredOrdinal)
 		if not UserInputService.GamepadEnabled or not page then return end
+		if state.screen=="Clubs" then
+			GuiService.SelectedObject=tunnelBack
+			return
+		end
 		local first=nil
 		local ordinal=0
 		for _,object in ipairs(page:GetDescendants()) do
@@ -184,6 +204,7 @@ function App.start()
 		UI.highContrast=state.settings.highContrast==true
 		UI.reducedMotion=state.settings.reducedMotion
 		page=UI.new("CanvasGroup",{Name=state.screen,BackgroundTransparency=1,Size=UDim2.fromScale(1,1),GroupTransparency=0},canvas)
+		tunnelBackGui.Enabled=(state.screen=="Clubs")
 		-- A UI de Settings fica em outro ScreenGui, nunca sob Transicao.
 		settingsHud:SetVisible(state.screen=="Settings")
 		local wanted=if state.screen=="HomeInterior" then "Interior" elseif state.screen=="HomeTraining" then "Training" elseif state.screen=="Kits" then "Kits" elseif state.screen=="Clubs" then "Tunnel" else "Arena"
@@ -217,15 +238,6 @@ function App.start()
 		end
 		-- A tela inicial da referência possui só cinco opções e os ícones decorativos.
 		-- O rodapé de navegação continua disponível nas outras páginas.
-		if state.screen=="Clubs" then
-			-- O túnel é a apresentação inteira. Apenas um retorno discreto
-			-- permanece acessível em celular, teclado e controle.
-			local back=UI.button(page,"‹",27,26,58,58,function()
-				go(table.remove(history) or "HomeInterior",true)
-			end,pageScope,{quiet=true,textSize=34})
-			back.Name="VoltarDoTunel"
-			back.TextXAlignment=Enum.TextXAlignment.Center
-		end
 		if wanted~="Interior" and wanted~="Training" and state.screen~="Settings" and state.screen~="Clubs" then
 			local footer=UI.frame(page,0,839,1600,61,Theme.background,.3)
 			UI.line(footer,44,0,1556,0,Theme.muted,1).BackgroundTransparency=.8
@@ -315,6 +327,12 @@ function App.start()
 		end)
 	end
 
+	-- O retorno do túnel usa um ScreenGui independente para manter um
+	-- alvo de toque de 54 px também em smartphones de baixa resolução.
+	lifetime:Connect(tunnelBack.Activated,function()
+		if busy or state.screen~="Clubs" then return end
+		go(table.remove(history) or "HomeInterior",true)
+	end)
 	-- Apenas a engrenagem abre Configurações. Seleções laterais são
 	-- imediatas e não disparam uma tela artificial de carregamento.
 	homeHud:SetNavigation(function(tab)
