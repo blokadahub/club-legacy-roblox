@@ -77,8 +77,6 @@ local lessons = homeList:FindFirstChild("SubmenuAprenda")
 check(lessons ~= nil and lessons.Visible
 	and lessons:FindFirstChild("SubOpcao_4") ~= nil,
 	"Aprenda a Jogar deve expandir quatro subopções")
-check(homeList:FindFirstChild("Opcao_5").Position.Y.Offset > 400,
-	"Upgrade deve deslocar para baixo quando Aprenda a Jogar expande")
 check(clubOption.TextTransparency > 0,
 	"Transição de destaque deve começar a partir do estado anterior, sem salto")
 advance(0.16)
@@ -88,6 +86,8 @@ check(clubOption.TextTransparency > 0 and clubOption.TextTransparency < 0.32
 advance(0.36)
 check(clubOption.TextTransparency == 0 and clubMist.GroupTransparency == 0.035,
 	"Opção selecionada não terminou o destaque suave")
+check(homeList:FindFirstChild("Opcao_5").Position.Y.Offset > 400,
+	"Upgrade deve deslocar para baixo quando Aprenda a Jogar expande")
 local mistCloud = clubMist:FindFirstChild("Nuvem1")
 check(mistCloud ~= nil, "Névoa selecionada não possui a primeira camada")
 local cloudBefore = mistCloud.Position
