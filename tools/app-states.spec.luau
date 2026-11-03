@@ -635,21 +635,105 @@ check(presentation.tunnel.model:GetAttribute("PartCount") == 366,
 check(presentation.fov == 54 and presentation.cameraPosition.Y == 5.2
 	and presentation.tunnel.camera == nil,
 	"Túnel deve reutilizar a câmera principal no FOV original de 54 graus")
-check(presentation.atmosphere.Density == 0 and services.Lighting.FogStart == 74,
+check(presentation.atmosphere.Parent == nil and services.Lighting.FogStart == 68,
 	"Atmosfera original não pode encobrir a névoa distante do túnel")
 presentation:ApplySettings({quality="Baixa",reducedMotion=true})
 check(presentation.tunnel.quality == "Low"
 	and presentation.tunnel.model:GetAttribute("PartCount") == 238,
 	"Modo Baixa deve reduzir o túnel para 238 partes")
+for _, item in ipairs(presentation.tunnel.model:GetDescendants()) do
+	if item:IsA("PointLight") then
+		check(item.Enabled ~= false,"Qualidade Baixa apagou as luzes locais do túnel")
+	end
+end
 presentation:ApplySettings({quality="Média",reducedMotion=true})
 check(presentation.tunnel.quality == "Medium"
 	and presentation.tunnel.model:GetAttribute("PartCount") == 334,
 	"Modo Média deve usar 334 partes sem alterar o módulo original")
+-- Real integrated light rig: protect range/visibility from the generic CL27
+-- quality pass, preserve every architectural descriptor, and bound fog cost.
+local TunnelGeometry = require(moduleNodes["src/client/Environments/TunnelGeometry.luau"])
+local TunnelLighting = require(moduleNodes["src/client/Environments/TunnelLighting.luau"])
+advance(0.33) -- Existing lighting tween settles beneath the 2.5-second transition.
+local budgets = {
+	Low={parts=238,lights=28,fog=4},Medium={parts=334,lights=32,fog=6},High={parts=366,lights=40,fog=6},
+}
+for _, pair in ipairs({{"Baixa","Low"},{"Média","Medium"},{"Alta","High"}}) do
+	presentation:ApplySettings({quality=pair[1],reducedMotion=true})
+	local q,budget = pair[2],budgets[pair[2]]
+	local parts,lights,fogCount,responses,shadows,green,fill,particleLimit = 0,0,0,0,0,0,0,0
+	local expected = {}
+	for _, d in ipairs(TunnelGeometry.build(q)) do expected[d.name]=d end
+	for _, item in ipairs(presentation.tunnel.model:GetDescendants()) do
+		if item:IsA("BasePart") then
+			parts+=1
+			local d=expected[item.Name]
+			check(d~=nil,"Lighting introduced extra architecture")
+			check(item.Size.X==d.size[1] and item.Size.Y==d.size[2] and item.Size.Z==d.size[3],"Lighting resized architecture")
+			check(item.CFrame.Position.X==d.frame[1] and item.CFrame.Position.Y==d.frame[2] and item.CFrame.Position.Z==d.frame[3],"Lighting moved architecture")
+			check(item.Color.R==d.color[1]/255 and item.Color.G==d.color[2]/255 and item.Color.B==d.color[3]/255,"Lighting changed palette")
+			check(item.Material==Enum.Material[d.material] and item.Reflectance<=0.06,"Material response became a mirror")
+		elseif item:IsA("Light") then
+			lights+=1
+			check(item.Enabled and item:GetAttribute("CL27TunnelLight"),"Tunnel light lost ownership or visibility")
+			check(item.Range==item:GetAttribute("CL27Range") and item.Range<=28,"Generic quality pass changed tunnel range")
+			if item.Shadows then shadows+=1 end
+			local host=item.Parent
+			if host:IsA("Attachment") then host=host.Parent end
+			if host.Name:match("_GreenBase$") then green+=1 end
+			if host.Name:match("_CeilingCrossRib$") then
+				fill+=1
+				check(item.Range==28 and not item.Shadows,"Neutral fill range/shadow regression")
+			end
+			check(not host.Name:match("_DistantHorizon$"),"A light still projects toward the camera from the horizon")
+		elseif item:IsA("ParticleEmitter") then
+			fogCount+=1
+			check(item.Name=="TunnelDistantFog" and item.Enabled,"Localized fog missing")
+			check(item.LightEmission==0 and item.LightInfluence==1,"Fog emits light or ignores environment lighting")
+			check(item.Parent:GetAttribute("TunnelDepth")>=78 and item.Parent:GetAttribute("TunnelDepth")<=106,"Fog entered the foreground")
+			check(item.Texture=="rbxasset://textures/particles/smoke_main.dds","Fog depends on a permissioned texture")
+			check(item.EmittedCount==2 and item.Rate<=0.22,"Fog burst/rate exceeds budget")
+			check(#item:GetChildren()==0,"Fog contains a hidden light")
+			particleLimit+=math.ceil(item.Rate*item.Lifetime.Max)+2
+		elseif item:IsA("SurfaceGui") then
+			responses+=1
+			check(item.Name=="TunnelFloorResponse" and not item.AlwaysOnTop and item.LightInfluence==1,"Floor overlay is detached from world lighting/depth")
+			local gradient=item.RailFalloff:FindFirstChildOfClass("UIGradient")
+			check(gradient~=nil and gradient.Transparency[2].Value>=0.92,"Floor response is opaque or excessive")
+		end
+	end
+	check(parts==budget.parts and lights==budget.lights and fogCount==budget.fog,"Tunnel quality budget changed")
+	check(green==16 and fill==4 and responses==24,"Rail/fill/floor coverage changed")
+	check(shadows==(q=="High" and 2 or 0) and particleLimit<=48,"Expensive effects exceed mobile budget")
+	check(services.Lighting.ExposureCompensation==TunnelLighting.Environment.ExposureCompensation
+		and presentation.grade.Contrast==TunnelLighting.Post.Contrast,"Integrated environment did not use corrected lighting")
+	local architecture=presentation.tunnel.architecture
+	presentation:ApplySettings({quality=pair[1],reducedMotion=true})
+	check(presentation.tunnel.architecture==architecture,"Unchanged quality duplicates architecture/effects")
+	presentation.tunnel:SetEffectsEnabled(false)
+	presentation:ApplySettings({quality=pair[1],reducedMotion=true})
+	for _, item in ipairs(presentation.tunnel.model:GetDescendants()) do
+		if item:IsA("Light") or item:IsA("SurfaceGui") or item:IsA("ParticleEmitter") then
+			check(item.Enabled==false,"Quality pass reactivated disabled effects")
+			if item:IsA("ParticleEmitter") then check(item.Cleared,"Disabled fog kept live particles") end
+		end
+	end
+	presentation.tunnel:SetEffectsEnabled(true)
+	for _, item in ipairs(presentation.tunnel.model:GetDescendants()) do
+		if item:IsA("ParticleEmitter") then check(item.Enabled and item.EmittedCount==4,"Fog did not resume cleanly") end
+	end
+	print(string.format("PASS Tunnel %s: %d parts, %d lights, %d shadows, %d fog emitters, particle bound %d, %d floor responses",q,parts,lights,shadows,fogCount,particleLimit,responses))
+end
+local formerEffects={}
+for _, item in ipairs(presentation.tunnel.model:GetDescendants()) do
+	if item:IsA("Light") or item:IsA("SurfaceGui") or item:IsA("ParticleEmitter") then table.insert(formerEffects,item) end
+end
 local formerTunnel = presentation.tunnel
 presentation:Show("Arena", Data.clubs[1], Data.clubs[2], 1, 1)
 check(presentation.tunnel == nil and formerTunnel.destroyed
-	and services.Lighting.FogStart ~= 74,
+	and presentation.atmosphere.Parent == services.Lighting and services.Lighting.FogStart ~= 68,
 	"Sair do túnel deve liberar a geometria e restaurar a névoa")
+for _, item in ipairs(formerEffects) do check(item.Destroyed and item.Parent==nil,"Tunnel retained light/fog/reflection resources after exit") end
 local replacement = Instance.new("Camera")
 replacement.ViewportSize = Vector2.new(1600, 900)
 replacement.CameraType = Enum.CameraType.Custom

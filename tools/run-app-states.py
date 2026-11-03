@@ -16,6 +16,15 @@ args = parser.parse_args()
 prelude = (root / "tools/runtime-smoke.luau").read_text().split("-- MODULES", 1)[0]
 setup = r'''
 events.Ended = true
+local NumberRange = {new = function(a, b) return {Min=a, Max=b or a} end}
+function methods:Emit(count)
+    assert(self.ClassName == 'ParticleEmitter')
+    self._props.EmittedCount = (self._props.EmittedCount or 0) + count
+end
+function methods:Clear()
+    assert(self.ClassName == 'ParticleEmitter')
+    self._props.Cleared = true
+end
 warn = function(...) print(...) end
 local constructInstance = Instance.new
 function Instance.new(className)

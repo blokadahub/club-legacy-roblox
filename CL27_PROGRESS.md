@@ -111,3 +111,13 @@ Não restou falha reproduzível nas verificações executadas após as correçõ
 - Auditoria das fontes: `Scene:Show` elimina a cena anterior com `self.folder:ClearAllChildren()`. Outros ambientes existentes e legítimos são `Interior`, `Arena`, `Kits` e `Tunnel`. O ambiente visual `CL27_SettingsNeon` existe somente em Configurações; `CL27Assets/AcademySoccerBall` é um modelo visual em `ReplicatedStorage`, sem partida.
 - Arquivos legados de interface, como `Screens/Home.luau`, `Screens/Clubs.luau` e `Screens/Pitch.luau`, permanecem como fontes no projeto; não implicam construções ocultas no Workspace. Telas alternativas podem ser acessadas pela Central, sem duplicar todos os cenários físicos.
 - Limite: verificação estática do código GitHub. Instâncias adicionadas no próprio Roblox Studio, fora do repositório, não foram inspecionadas aqui.
+
+## Correção de iluminação e névoa do túnel — 03/11/2026
+
+- Base main `3ba99ace613431c18753cdcb44803bcea69ceeea`, backup remoto/local `backup/pre-tunnel-lighting-20261103-3ba99ac`; trabalho em `fix/tunnel-lighting-reflections-fog`. A correção foi aplicada à versão integrada em `src/client/Environments`, sem alterar o experimento antigo do PR #7.
+- Corrigido um defeito reproduzido antes da alteração: o passe genérico apagava PointLight do túnel em Baixa e sobrescrevia seus alcances. Emissores próprios agora são identificados e preservados.
+- Ambiente neutro mais legível, exposição corrigida, preenchimento sem sombras, luz real em todos os segmentos verdes e pós-processamento moderado. Resposta acetinada e complemento gráfico suave no próprio piso, sem novas peças ou reflexo de espelho.
+- Névoa cinzenta localizada, com partículas nativas sem emissão de luz, apoiada por fog de distância. O Atmosphere do controlador é retirado/restaurado ao entrar/sair, permitindo o fog funcionar. Nenhum loop por frame foi acrescentado.
+- Geometria, dimensões, paleta, neons, câmera, interface, controles e música preservados. Low/Medium/High mantêm 238/334/366 peças; usam 28/32/40 luzes, 0/0/2 sombras locais e 4/6/6 emissores de névoa, com limite conservador de 20/42/48 partículas vivas.
+- Verificação: sintaxe das 38 fontes; 653 testes de dados; 519 montagens/381 callbacks/240 asserções do harness de interfaces; **5.847 asserções** de estados/iluminação/qualidade/descarte; Rojo 7.7.1 e XML com fontes idênticas; catálogo API com 390 referências sem erros. Detalhes e roteiro de inspeção em [CLUBS_TUNNEL.md](docs/CLUBS_TUNNEL.md).
+- **Sem Studio/Player: a aparência corrigida, a igualdade com a imagem 2 e o desempenho no Android ainda não foram comprovados.** A captura enviada pelo usuário foi analisada; não foi produzida uma captura Roblox nova. Nenhuma publicação ou merge automático foi executado.

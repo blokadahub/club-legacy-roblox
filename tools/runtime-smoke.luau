@@ -115,7 +115,11 @@ Instance.new = function(className)
 end
 function methods:IsA(className)
 	local name = self.ClassName
-	return name == className or className == "BasePart" and name == "Part" or className == "GuiButton" and (name == "TextButton" or name == "ImageButton")
+	return name == className
+		or className == "BasePart" and (name == "Part" or name == "WedgePart")
+		or className == "Light" and (name == "PointLight" or name == "SurfaceLight" or name == "SpotLight")
+		or className == "PostEffect" and (name == "BloomEffect" or name == "ColorCorrectionEffect" or name == "SunRaysEffect")
+		or className == "GuiButton" and (name == "TextButton" or name == "ImageButton")
 end
 function methods:GetChildren() return table.clone(self._children) end
 function methods:GetDescendants()
