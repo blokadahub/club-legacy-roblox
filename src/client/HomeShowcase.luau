@@ -14,16 +14,9 @@ local SECTIONS = {
 	{title = "NOTÍCIAS DO CL", subtitle = "Acompanhe novidades e atualizações do Club Legacy.", action = "Ver notícias", symbol = "news"},
 	{title = "CLUBS", subtitle = "Escolha seu clube e prepare a próxima partida.", action = "Entrar em Clubs", symbol = "clubs"},
 	{title = "JOGO RÁPIDO", subtitle = "Selecione as equipes e entre no clima de jogo.", action = "Selecionar equipes", symbol = "quick"},
-	{title = "APRENDA A JOGAR", subtitle = "Explore os fundamentos e domine os comandos.", action = "Abrir treinamento", symbol = "learn"},
+	{title = "APRENDA A JOGAR", subtitle = "Modos indisponíveis temporariamente. Aguarde uma atualização.", action = "EM ATUALIZAÇÃO", symbol = "learn"},
 	{title = "UPGRADE", subtitle = "Descubra a identidade e as próximas novidades do CL 27.", action = "Ver melhorias", symbol = "upgrade"},
 }
-local LESSONS = {
-	{title = "CENTRO DE TREINAMENTO", subtitle = "Explore o ambiente de treino do CL 27.", action = "Abrir treinamento"},
-	{title = "RUSH", subtitle = "Uma experiência de futebol mais dinâmica.", action = "Conhecer Rush"},
-	{title = "JOGOS DE HABILIDADE", subtitle = "Desafios para desenvolver fundamentos de jogo.", action = "Explorar desafios"},
-	{title = "ARENA DE TREINO", subtitle = "Pratique movimentos e aperfeiçoe sua técnica.", action = "Abrir arena"},
-}
-
 local function item(className: string, parent: Instance, props)
 	local object = Instance.new(className)
 	for key, value in pairs(props) do
@@ -210,10 +203,17 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 		for symbol, image in pairs(symbols) do
 			image.Visible = symbol == section.symbol
 		end
-		local display = if index == 4 and lessonIndex then LESSONS[lessonIndex] else nil
-		title.Text = if display then display.title else section.title
-		subtitle.Text = if display then display.subtitle else section.subtitle
-		actionText.Text = if display then display.action else section.action
+		title.Text = section.title
+		subtitle.Text = section.subtitle
+		actionText.Text = section.action
+		local disabled = index == 4
+		action.Active = not disabled
+		action.Selectable = not disabled
+		action.BackgroundColor3 = if disabled then Color3.fromRGB(105, 112, 114) else GREEN
+		disc.Visible = not disabled
+		actionText.Position = if disabled then UDim2.fromScale(0, 0) else UDim2.new(0, 47, 0, 0)
+		actionText.Size = if disabled then UDim2.fromScale(1, 1) else UDim2.new(1, -52, 1, 0)
+		capsuleFX:SetReducedMotion(isReduced or disabled)
 		mini.Visible = index == 5
 	end
 	local function tweenFade(goal: number, duration: number)
@@ -251,7 +251,7 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 	end
 	function self:SetReducedMotion(enabled: boolean)
 		isReduced = enabled
-		capsuleFX:SetReducedMotion(enabled)
+		capsuleFX:SetReducedMotion(enabled or selected == 4)
 		if enabled then
 			if fadeTween then fadeTween:Cancel() end
 			stage.GroupTransparency = 0
@@ -267,17 +267,17 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 		stage:Destroy()
 	end
 	action.Activated:Connect(function()
-		if alive and selected > 0 then actionCallback(selected, lesson) end
+		if alive and selected > 0 and selected ~= 4 then actionCallback(selected, lesson) end
 	end)
 	action.MouseEnter:Connect(function()
-		if alive then
+		if alive and selected ~= 4 then
 			TweenService:Create(action, TweenInfo.new(0.16), {
 				BackgroundColor3 = Color3.fromRGB(161, 243, 166),
 			}):Play()
 		end
 	end)
 	action.MouseLeave:Connect(function()
-		if alive then
+		if alive and selected ~= 4 then
 			TweenService:Create(action, TweenInfo.new(0.2), {BackgroundColor3 = GREEN}):Play()
 		end
 	end)
