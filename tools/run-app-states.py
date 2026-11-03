@@ -79,6 +79,10 @@ local function advance(seconds)
     now = target
     interpolate(now)
 end
+function methods:GetAttributeChangedSignal(key)
+    if not self._events['Attribute_' .. key] then self._events['Attribute_' .. key] = signal() end
+    return self._events['Attribute_' .. key]
+end
 function methods:GetPropertyChangedSignal(key)
     if not self._events['Property_' .. key] then self._events['Property_' .. key] = signal() end
     return self._events['Property_' .. key]
