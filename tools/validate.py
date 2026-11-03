@@ -76,10 +76,10 @@ def validate_sources() -> list[Path]:
     # As rotas são entradas identificadas no App; cada destino aponta a módulo real.
     for route in ROUTES:
         require(re.search(rf"\b{re.escape(route)}\b", app_text) is not None, f"Rota ausente no App: {route}")
-    require("HomeTraining" not in app_text, "HomeTraining nao pode permanecer no App.")
-    require("function Scene:_training" not in (ROOT / "src/client/Scene.luau").read_text(), "Geometria 3D de treinamento deve permanecer removida.")
         if route != "HomeInterior":
             require((ROOT / f"src/client/Screens/{route}.luau").is_file(), f"Tela ausente: {route}")
+    require("HomeTraining" not in app_text, "HomeTraining nao pode permanecer no App.")
+    require("function Scene:_training" not in (ROOT / "src/client/Scene.luau").read_text(), "Geometria 3D de treinamento deve permanecer removida.")
     for doc in ("AGENTS.md", "CL27_PLAN.md", "CL27_PROGRESS.md"):
         require((ROOT / doc).is_file(), f"Documento obrigatório ausente: {doc}")
     print(f"Estrutura: {len(sources)} fontes, 14 rotas, mapeamento Rojo e require locais verificados.")
