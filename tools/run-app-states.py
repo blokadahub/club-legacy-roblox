@@ -15,10 +15,12 @@ parser.add_argument("--runtime", required=True)
 args = parser.parse_args()
 prelude = (root / "tools/runtime-smoke.luau").read_text().split("-- MODULES", 1)[0]
 setup = r'''
+events.Ended = true
 local constructInstance = Instance.new
 function Instance.new(className)
     local object = constructInstance(className)
     if object:IsA('GuiButton') then object.Visible = true end
+    if className == 'Sound' then object.IsLoaded = true; object.IsPlaying = false; object.TimePosition = 0 end
     return object
 end
 local now, queue, activeTweens = 0, {}, {}
@@ -89,6 +91,11 @@ local workspace = Instance.new('Workspace')
 workspace.CurrentCamera = Instance.new('Camera')
 workspace.CurrentCamera.ViewportSize = Vector2.new(1600, 900)
 services.Workspace = workspace
+services.SoundService = Instance.new('SoundService')
+function methods:Play() assert(self.ClassName == 'Sound'); self.IsPlaying = true end
+function methods:Pause() assert(self.ClassName == 'Sound'); self.IsPlaying = false end
+function methods:Resume() assert(self.ClassName == 'Sound'); self.IsPlaying = true end
+function methods:Stop() assert(self.ClassName == 'Sound'); self.IsPlaying = false; self.TimePosition = 0 end
 services.Players = {LocalPlayer = Instance.new('Player')}
 local playerGui = Instance.new('PlayerGui'); playerGui.Parent = services.Players.LocalPlayer
 services.GuiService = {GetGuiInset = function() return Vector2.new(), Vector2.new() end}
@@ -99,7 +106,7 @@ services.Lighting = Instance.new('Lighting')
 services.RunService = {RenderStepped = signal()}
 '''
 paths = sorted((root / "src/shared").glob("*.luau"))
-paths += [root / f"src/client/{name}.luau" for name in ("Scope", "Rig", "UI", "App")]
+paths += [root / f"src/client/{name}.luau" for name in ("Scope", "Rig", "UI", "Soundtrack", "App")]
 paths += sorted((root / "src/client/Screens").glob("*.luau"))
 paths.append(root / "src/client/Scene.luau")
 parts = ["local factories, moduleNodes, cache = {}, {}, {}\nlocal require\n"]
