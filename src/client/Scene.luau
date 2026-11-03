@@ -6,6 +6,8 @@ local Workspace = game:GetService("Workspace")
 local TweenService = game:GetService("TweenService")
 local Rig = require(script.Parent.Rig)
 local MenuAvatar = require(script.Parent.MenuAvatar)
+local TunnelScene = require(script.Parent.Environments.TunnelScene)
+local TunnelGeometry = require(script.Parent.Environments.TunnelGeometry)
 local Scene = {}
 Scene.__index = Scene
 
@@ -131,11 +133,12 @@ function Scene.new(settings)
 	self.settings, self.actors, self.effects, self.lightTweens = settings or {}, {}, {}, {}
 	self.settingsNeon = nil
 	self.settingsRings = {}
+	self.tunnel = nil
 	self.folder = Instance.new("Folder")
 	self.folder.Name = "CL27_CenarioLocal"
 	self.folder.Parent = Workspace
 	self.oldLighting = {}
-	for _, key in ipairs({ "Ambient", "OutdoorAmbient", "Brightness", "ClockTime", "ExposureCompensation", "EnvironmentDiffuseScale", "EnvironmentSpecularScale", "GlobalShadows", "ShadowSoftness", "LightingStyle", "PrioritizeLightingQuality" }) do
+	for _, key in ipairs({ "Ambient", "OutdoorAmbient", "Brightness", "ClockTime", "ExposureCompensation", "EnvironmentDiffuseScale", "EnvironmentSpecularScale", "GlobalShadows", "ShadowSoftness", "LightingStyle", "PrioritizeLightingQuality", "FogColor", "FogStart", "FogEnd" }) do
 		self.oldLighting[key] = Lighting[key]
 	end
 	self.cameraSnapshots = setmetatable({}, { __mode = "k" })
@@ -189,7 +192,7 @@ function Scene.new(settings)
 		local fittedHeight = self.canvasHeight or camera.ViewportSize.Y
 		local viewportHeight = math.max(1, camera.ViewportSize.Y)
 		camera.FieldOfView = math.clamp(math.deg(2 * math.atan(math.tan(math.rad(referenceFov / 2)) * viewportHeight / math.max(1, fittedHeight))), 1, 120)
-		local strength = self.settings.reducedMotion and 0 or 1
+		local strength = (self.mode == "Tunnel" or self.settings.reducedMotion) and 0 or 1
 		local drift = Vector3.new(math.sin(self.elapsed * 0.16) * 0.065, math.sin(self.elapsed * 0.2) * 0.027, 0) * strength
 		camera.CFrame = CFrame.lookAt(self.cameraPosition + drift, self.cameraTarget + drift * 0.3)
 		camera.Focus = CFrame.new(self.cameraTarget)
@@ -212,23 +215,29 @@ function Scene:_light(mode)
 	Lighting.GlobalShadows, Lighting.ShadowSoftness = true, 0.35
 	local training = mode == "Training"
 	local interior = mode == "Interior"
+	local tunnel = mode == "Tunnel"
+	-- O controlador principal continua sendo o unico dono da Camera/Lighting.
+	-- O tunel fornece apenas geometria e emissores locais.
+	Lighting.FogColor = if tunnel then Color3.fromRGB(27, 65, 68) else self.oldLighting.FogColor
+	Lighting.FogStart = if tunnel then 74 else self.oldLighting.FogStart
+	Lighting.FogEnd = if tunnel then 168 else self.oldLighting.FogEnd
 	local target = {
-		Ambient = training and Color3.fromRGB(109, 126, 137) or (interior and Color3.fromRGB(36, 45, 46) or Color3.fromRGB(27, 59, 64)),
-		OutdoorAmbient = training and Color3.fromRGB(155, 175, 185) or (interior and Color3.fromRGB(22, 29, 33) or Color3.fromRGB(35, 55, 60)),
-		Brightness = training and 2.6 or (interior and 1.15 or 1.6),
-		ClockTime = training and 14.25 or (interior and 16.4 or 21),
-		ExposureCompensation = training and 0.05 or (interior and -0.32 or -0.24),
-		EnvironmentDiffuseScale = training and 0.85 or (interior and 0.35 or 0.55),
-		EnvironmentSpecularScale = interior and 0.3 or 0.85,
+		Ambient = if tunnel then Color3.fromRGB(8, 11, 20) else (training and Color3.fromRGB(109, 126, 137) or (interior and Color3.fromRGB(36, 45, 46) or Color3.fromRGB(27, 59, 64))),
+		OutdoorAmbient = if tunnel then Color3.fromRGB(3, 5, 10) else (training and Color3.fromRGB(155, 175, 185) or (interior and Color3.fromRGB(22, 29, 33) or Color3.fromRGB(35, 55, 60))),
+		Brightness = if tunnel then 0.45 else (training and 2.6 or (interior and 1.15 or 1.6)),
+		ClockTime = if tunnel then 0 else (training and 14.25 or (interior and 16.4 or 21)),
+		ExposureCompensation = if tunnel then -0.32 else (training and 0.05 or (interior and -0.32 or -0.24)),
+		EnvironmentDiffuseScale = if tunnel then 0.18 else (training and 0.85 or (interior and 0.35 or 0.55)),
+		EnvironmentSpecularScale = if tunnel then 0.3 else (interior and 0.3 or 0.85),
 	}
 	-- The graphic wipe covers the geometry swap; lighting settles beneath it.
 	local tween = TweenService:Create(Lighting, TweenInfo.new(self.settings.reducedMotion and 0 or 0.32, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), target)
 	table.insert(self.lightTweens, tween)
 	tween:Play()
 	self.rays.Enabled = training
-	self.atmosphere.Density = training and 0.15 or 0.035
+	self.atmosphere.Density = if tunnel then 0 else (training and 0.15 or 0.035)
 	self.atmosphere.Haze = training and 0.6 or 0
-	self.grade.TintColor = training and Color3.fromRGB(247, 252, 255) or (interior and Color3.fromRGB(255, 248, 233) or Color3.fromRGB(221, 255, 247))
+	self.grade.TintColor = if tunnel then Color3.fromRGB(229, 244, 246) else (training and Color3.fromRGB(247, 252, 255) or (interior and Color3.fromRGB(255, 248, 233) or Color3.fromRGB(221, 255, 247)))
 end
 
 function Scene:_actor(club, kit, position, yaw, pose, number)
@@ -372,15 +381,35 @@ function Scene:Show(mode, homeClub, awayClub, homeKitIndex, awayKitIndex)
 		return
 	end
 	if self.menuAvatar then self.menuAvatar:Destroy(); self.menuAvatar = nil end
+	if self.tunnel then self.tunnel:Destroy(); self.tunnel = nil end
 	self.mode, self.clubText = mode, nil
 	table.clear(self.actors)
 	self.settingsNeon = nil
 	table.clear(self.settingsRings)
 	self.folder:ClearAllChildren()
-	if mode == "Training" then self:_training(homeClub, homeKitIndex)
+	if mode == "Tunnel" then
+		local quality = if self.settings.quality == "Baixa" then "Low" elseif self.settings.quality == "Alta" then "High" else "Medium"
+		local success, result = pcall(function()
+			return TunnelScene.new({
+				parent = self.folder, origin = CFrame.new(), quality = quality,
+				camera = false, takeOverLighting = false,
+			})
+		end)
+		if success then
+			self.tunnel = result
+			local eye, target = TunnelGeometry.CameraPosition, TunnelGeometry.CameraTarget
+			self.cameraPosition = Vector3.new(eye[1], eye[2], eye[3])
+			self.cameraTarget = Vector3.new(target[1], target[2], target[3])
+			self.fov = TunnelGeometry.FieldOfView
+		else
+			warn("[CL27] Túnel indisponível, apresentando cenário seguro: " .. tostring(result))
+			self.mode = "Arena"
+			self:_arena(homeClub, awayClub, homeKitIndex, awayKitIndex, false)
+		end
+	elseif mode == "Training" then self:_training(homeClub, homeKitIndex)
 	elseif mode == "Arena" or mode == "Kits" then self:_arena(homeClub, awayClub, homeKitIndex, awayKitIndex, mode == "Kits")
 	else self:_interior(homeClub, homeKitIndex) end
-	self:_light(mode)
+	self:_light(self.mode)
 	self:ApplySettings()
 end
 
@@ -450,7 +479,16 @@ function Scene:ApplySettings(settings)
 	Lighting.PrioritizeLightingQuality = high
 	Lighting.GlobalShadows = not low
 	self.bloom.Enabled = not low
-	self.bloom.Intensity = self.mode == "Interior" and 0.06 or (high and 0.2 or 0.1)
+	self.bloom.Intensity = if self.mode == "Tunnel" then 0.12 else (self.mode == "Interior" and 0.06 or (high and 0.2 or 0.1))
+	if self.tunnel then
+		local tunnelQuality = if quality == "Baixa" then "Low" elseif quality == "Alta" then "High" else "Medium"
+		self.tunnel:ApplyQuality(tunnelQuality)
+		self.bloom.Size, self.bloom.Threshold = 20, 1.15
+		self.grade.Contrast, self.grade.Saturation = 0.12, -0.08
+	else
+		self.bloom.Size, self.bloom.Threshold = 28, 1.15
+		self.grade.Contrast, self.grade.Saturation = 0.1, -0.06
+	end
 	self.rays.Enabled = high and self.mode == "Training"
 	for _, object in ipairs(self.folder:GetDescendants()) do
 		if object:IsA("Light") then
@@ -474,6 +512,7 @@ end
 
 function Scene:Destroy()
 	self:SetSettingsAtmosphere(false)
+	if self.tunnel then self.tunnel:Destroy(); self.tunnel = nil end
 	if self.menuAvatar then self.menuAvatar:Destroy(); self.menuAvatar = nil end
 	if self.connection then self.connection:Disconnect() end
 	for _, tween in ipairs(self.lightTweens) do tween:Cancel() end

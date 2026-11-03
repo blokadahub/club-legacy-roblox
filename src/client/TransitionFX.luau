@@ -38,6 +38,16 @@ function TransitionFX.start(playerGui: Instance)
 		BackgroundTransparency = 1, ZIndex = 7,
 	})
 	local letterFX = OuterGlowSweep.newCL(emblem)
+	-- Indicador de espera continuo: separado do véu escuro e sem interceptar toque.
+	-- O monograma é o MESMO da transição, nunca uma segunda cópia animada.
+	local ambient = make("Frame", gui, {
+		Name = "CarregamentoContinuo",
+		Position = UDim2.fromScale(0, 0),
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		Active = false, Visible = false, ZIndex = 2,
+	})
+	local persistent, persistentReduced = false, false
 	local alive, active, reduced = true, false, false
 	local elapsed, accumulator = 0, 0
 	local tweens: {Tween} = {}
@@ -65,6 +75,8 @@ function TransitionFX.start(playerGui: Instance)
 		Cover = function(_, reducedMotion: boolean)
 			if not alive then return 0 end
 			cancel()
+			ambient.Visible = false
+			emblem.Parent = veil
 			active = true
 			reduced = reducedMotion == true
 			elapsed, accumulator = 0, 0
@@ -86,9 +98,38 @@ function TransitionFX.start(playerGui: Instance)
 		Finish = function()
 			if not alive then return end
 			cancel()
-			active = false
 			veil.GroupTransparency = 1
 			veil.Visible = false
+			if persistent then
+				reduced = persistentReduced
+				letterFX:SetReducedMotion(reduced)
+				emblem.Parent = ambient
+				ambient.Visible = true
+				active = true
+			else
+				ambient.Visible = false
+				active = false
+			end
+		end,
+		SetPersistentLoading = function(_, enabled: boolean, reducedMotion: boolean)
+			if not alive then return end
+			persistent = enabled == true
+			persistentReduced = reducedMotion == true
+			-- A troca de rota ocorre sob o carregamento inicial. Só mostrar
+			-- a marca isolada depois que a transição já tiver revelado a cena.
+			if not veil.Visible then
+				if persistent then
+					reduced = persistentReduced
+					letterFX:SetReducedMotion(reduced)
+					emblem.Parent = ambient
+					ambient.Visible = true
+					active = true
+				else
+					ambient.Visible = false
+					emblem.Parent = veil
+					active = false
+				end
+			end
 		end,
 		Destroy = function()
 			if not alive then return end

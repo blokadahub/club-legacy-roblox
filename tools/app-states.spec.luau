@@ -426,25 +426,51 @@ advance(0.24)
 check(not wipe.Visible and not UI.inputLocked, "Loading de 2,5 segundos deve terminar")
 check(services.GuiService.SelectedObject ~= nil, "Foco do controle deve voltar apos loading")
 
--- An open central menu must isolate both global key listeners and old buttons.
-local priorSelection = services.GuiService.SelectedObject
-local clubBefore = handle.state.homeClub
+-- CLUBS é uma apresentação de túnel. Não renderizar a antiga seleção
+-- de equipes, menus, overlays coloridos ou o rodapé inteiro.
+local ambient = transitionGui:FindFirstChild("CarregamentoContinuo")
+check(ambient ~= nil and ambient.Visible and not ambient.Active
+	and ambient.BackgroundTransparency == 1 and emblem.Parent == ambient,
+	"CL de carregamento deve permanecer no rodape sem escurecer o tunel")
+check(wipe.Visible == false and not UI.inputLocked and not handle.state.menuInputLocked,
+	"Carregamento infinito é apenas visual: nunca bloquear saída ou tela 3D")
+local tunnelPage = canvas.Clubs
+local backGui = playerGui:FindFirstChild("CL27_TunnelBack")
+local backFromTunnel = backGui and backGui:FindFirstChild("VoltarDoTunel")
+check(backGui and backGui.Enabled and backFromTunnel and backFromTunnel:IsA("TextButton")
+	and backFromTunnel.Size.X.Offset == 54 and backFromTunnel.Size.Y.Offset == 54
+	and backGui.DisplayOrder > gui.DisplayOrder,
+	"Clubs deve ter retorno de 54 px reais, sem escala de 16:9 no Android")
+check(tunnelPage:FindFirstChild("Action_≡  CENTRAL",true)==nil
+	and tunnelPage:FindFirstChild("Action_‹  VOLTAR",true)==nil,
+	"Clubs não deve mostrar rodapé ou seleção de equipes por cima do túnel")
+local beforeClub = handle.state.homeClub
 key(Enum.KeyCode.M)
-check(UI.inputLocked, "Central menu must lock underlying header tabs")
+check(handle.state.screen == "Clubs" and not UI.inputLocked,
+	"Atalho de central não pode encobrir o túnel")
 key(Enum.KeyCode.Right)
-check(handle.state.homeClub == clubBefore, "Club keyboard input leaked beneath central menu")
-local sourcePage = canvas.Clubs
-for _, button in ipairs(sourcePage:GetDescendants()) do
-	if button:IsA("GuiButton") and button.Text == "›" then button.Activated:Fire(); break end
-end
-check(handle.state.homeClub == clubBefore, "Underlying page button activated beneath central menu")
-key(Enum.KeyCode.ButtonB)
-check(handle.state.screen == "Clubs" and not UI.inputLocked, "Back must dismiss central menu before navigating")
-check(services.GuiService.SelectedObject == priorSelection, "Closing central menu must restore controller selection")
-key(Enum.KeyCode.DPadRight)
-check(handle.state.homeClub == clubBefore, "Controller focus movement must not cycle clubs globally")
-key(Enum.KeyCode.Right)
-check(handle.state.homeClub ~= clubBefore, "Closing central menu must resume page input")
+check(handle.state.homeClub == beforeClub,
+	"Setas não devem alterar clubes enquanto o túnel é apresentado")
+local oldHeading = tunnelPage:FindFirstChild("PAÍS    Todos   ›", true)
+check(oldHeading == nil and #tunnelPage:GetChildren() == 0,
+	"Clubs deve manter o canvas vazio; o retorno fica em camada mobile separada")
+advance(9)
+check(ambient.Visible and not wipe.Visible and not UI.inputLocked,
+	"Indicador CL deve continuar indefinidamente sem voltar a sobreposição escura")
+-- O botão de retorno é necessário para celular: fecha o túnel e interrompe
+-- a marca permanente; a transição de volta mantém os 2,5 segundos.
+backFromTunnel.Activated:Fire()
+check(wipe.Visible and UI.inputLocked and handle.state.screen == "Clubs",
+	"Voltar do túnel deve iniciar transição normal, não travar na marca eterna")
+advance(2.51)
+check(handle.state.screen == "HomeInterior" and homeHud.Enabled and not backGui.Enabled
+	and not ambient.Visible and not wipe.Visible and not UI.inputLocked,
+	"Sair do túnel deve restaurar o lobby e remover o indicador persistente")
+primary.Activated:Fire()
+advance(2.51)
+check(handle.state.screen == "Clubs" and backGui.Enabled
+	and ambient.Visible and not wipe.Visible,
+	"Entrar novamente em Clubs deve montar de novo o túnel e o CL infinito")
 
 -- Rotas programaticas em fila nao interrompem o loading ativo.
 -- O ultimo destino continua vencendo apos o tempo de 2,5 segundos.
@@ -526,7 +552,8 @@ handle.destroy()
 advance(2)
 check(scene.destroyed and gui.Destroyed and settingsGui.Destroyed and transitionGui.Destroyed,
 	"Disposal must destroy scene, principal UI, Settings HUD and transition overlay")
-check(homeHud.Destroyed, "HUD independente não foi destruído com o App")
+check(homeHud.Destroyed and backGui.Destroyed,
+	"HUD e retorno mobile devem ser destruídos com o App")
 check(not UI.inputLocked, "Disposal must release shared input lock")
 handle.go("Finance")
 advance(1)
@@ -573,6 +600,33 @@ check(presentation.settingsRings[1].light.Brightness ~= 0.38,
 presentation:SetSettingsAtmosphere(false)
 check(presentation.settingsNeon == nil and #presentation.settingsRings == 0 and neon.Parent == nil,
 	"Neons continuam na arena depois de sair de Configurações")
+-- A Scene real utiliza os módulos copiados do PR #7 sem câmera própria:
+-- o App é o único controlador da câmera e da iluminação.
+presentation:ApplySettings({quality="Alta", reducedMotion=false})
+presentation:Show("Tunnel", Data.clubs[1], Data.clubs[2], 1, 1)
+check(presentation.tunnel ~= nil
+	and presentation.folder:FindFirstChild("CinematicTunnel", true) ~= nil,
+	"Scene deve montar a arquitetura real do túnel no Workspace")
+check(presentation.tunnel.model:GetAttribute("PartCount") == 366,
+	"Qualidade Alta deve usar geometria real com 366 peças")
+check(presentation.fov == 54 and presentation.cameraPosition.Y == 5.2
+	and presentation.tunnel.camera == nil,
+	"Túnel deve reutilizar a câmera principal no FOV original de 54 graus")
+check(presentation.atmosphere.Density == 0 and services.Lighting.FogStart == 74,
+	"Atmosfera original não pode encobrir a névoa distante do túnel")
+presentation:ApplySettings({quality="Baixa",reducedMotion=true})
+check(presentation.tunnel.quality == "Low"
+	and presentation.tunnel.model:GetAttribute("PartCount") == 238,
+	"Modo Baixa deve reduzir o túnel para 238 partes")
+presentation:ApplySettings({quality="Média",reducedMotion=true})
+check(presentation.tunnel.quality == "Medium"
+	and presentation.tunnel.model:GetAttribute("PartCount") == 334,
+	"Modo Média deve usar 334 partes sem alterar o módulo original")
+local formerTunnel = presentation.tunnel
+presentation:Show("Arena", Data.clubs[1], Data.clubs[2], 1, 1)
+check(presentation.tunnel == nil and formerTunnel.destroyed
+	and services.Lighting.FogStart ~= 74,
+	"Sair do túnel deve liberar a geometria e restaurar a névoa")
 local replacement = Instance.new("Camera")
 replacement.ViewportSize = Vector2.new(1600, 900)
 replacement.CameraType = Enum.CameraType.Custom

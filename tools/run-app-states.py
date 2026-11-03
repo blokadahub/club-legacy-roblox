@@ -88,6 +88,9 @@ local function advance(seconds)
     now = target
     interpolate(now)
 end
+function methods:ClearAllChildren()
+    for _, child in ipairs(self:GetChildren()) do child:Destroy() end
+end
 function methods:GetAttributeChangedSignal(key)
     if not self._events['Attribute_' .. key] then self._events['Attribute_' .. key] = signal() end
     return self._events['Attribute_' .. key]
@@ -121,6 +124,7 @@ services.RunService = {RenderStepped = signal(), Heartbeat = signal()}
 paths = sorted((root / "src/shared").glob("*.luau"))
 paths += [root / f"src/client/{name}.luau" for name in ("Scope", "Rig", "UI", "SettingsIcons", "Soundtrack", "MenuAvatar", "OuterGlowSweep", "HomeShowcase", "RadialGlow", "HomeHUD", "SettingsHUD", "TransitionFX", "App")]
 paths += sorted((root / "src/client/Screens").glob("*.luau"))
+paths += sorted((root / "src/client/Environments").glob("*.luau"))
 paths.append(root / "src/client/Scene.luau")
 parts = ["local factories, moduleNodes, cache = {}, {}, {}\nlocal require\n"]
 parts.append("local clientRoot = Instance.new('Folder')\nlocal sharedRoot = Instance.new('Folder'); sharedRoot.Name = 'CL27'; sharedRoot.Parent = services.ReplicatedStorage\n")
@@ -150,6 +154,8 @@ for path in paths:
     parent = path.parent.relative_to(root).as_posix()
     if parent == "src/client/Screens":
         parts.append("if not folders['src/client/Screens'] then local folder = Instance.new('Folder'); folder.Name = 'Screens'; folder.Parent = clientRoot; folders['src/client/Screens'] = folder end\n")
+    if parent == "src/client/Environments":
+        parts.append("if not folders['src/client/Environments'] then local folder = Instance.new('Folder'); folder.Name = 'Environments'; folder.Parent = clientRoot; folders['src/client/Environments'] = folder end\n")
     name = "SceneReal" if path.stem == "Scene" else path.stem
     parts.append(f"do local node = Instance.new('ModuleScript'); node.Name = '{name}'; node.Parent = folders['{parent}']; node:SetAttribute('ModulePath', '{relative}'); moduleNodes['{relative}'] = node end\n")
     parts.append(f"factories['{relative}'] = function(script)\n{path.read_text()}\nend\n")
