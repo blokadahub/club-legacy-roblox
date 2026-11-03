@@ -21,16 +21,33 @@ check(transitionGui.IgnoreGuiInset and transitionGui.DisplayOrder > 85,
 	"Carregamento precisa sobrepor os dois menus sem margens")
 check(wipe.BackgroundTransparency >= 0.50 and wipe.BackgroundTransparency <= 0.70 and wipe.Active,
 	"Fundo do loading deve permanecer visivel e bloquear cliques")
-local emblem = wipe:FindFirstChild("IndicadorCL")
+local emblem = wipe:FindFirstChild("IndicadorDL")
 check(emblem ~= nil and emblem.Size.X.Offset == 32 and emblem.Size.Y.Offset == 32
 	and emblem.AnchorPoint.X == 0.5 and emblem.AnchorPoint.Y == 1
 	and emblem.Position.X.Scale == 0.5 and emblem.Position.Y.Scale == 1,
-	"CL deve medir 32 px e permanecer no rodape central da tela")
-for i=1,4 do
-	local segment=emblem:FindFirstChild(string.format("SegmentoCL_%02d",i))
+	"DL deve medir 32 px e permanecer no rodape central")
+for i=1,8 do
+	local segment=emblem:FindFirstChild(string.format("SegmentoDL_%02d",i))
 	check(segment and segment:IsA("CanvasGroup") and segment:FindFirstChild("AuraDifusa")
-		and segment:FindFirstChild("LuzVerde") and segment:FindFirstChild("NucleoClaro"),
-		"Monograma segmentado deve ter brilho, neon e nucleo claro")
+		and segment:FindFirstChild("HaloNeon") and segment:FindFirstChild("NucleoClaro"),
+		"Monograma DL precisa de oito segmentos finos e camadas de luz")
+	check(segment:FindFirstChild("NucleoClaro").Size.Y.Offset == 1.2,
+		"O nucleo do tracado deve ter apenas 1,2 px")
+	check(segment:FindFirstChild("AuraDifusa").Size.Y.Offset == 9,
+		"Cada linha deve ter uma aura translucida separada")
+end
+check(emblem:FindFirstChild("SegmentoCL_01")==nil,
+	"Traços anteriores nao devem permanecer no indicador")
+local outer = emblem:FindFirstChild("OrbitaExterna")
+local inner = emblem:FindFirstChild("OrbitaInterna")
+check(outer and inner
+	and outer:FindFirstChild("TracoCircular"):FindFirstChild("FendaLuminosa")
+	and inner:FindFirstChild("TracoCircular"):FindFirstChild("FendaLuminosa"),
+	"Efeitos especiais precisam de duas orbitas com reflexos")
+for i=1,3 do
+	local spark=emblem:FindFirstChild("ParticulaLuminosa_"..i)
+	check(spark and spark:FindFirstChild("HaloParticula"),
+		"Faiscas precisam de aura propria")
 end
 check(transitionGui:FindFirstChild("MarcaCentral",true)==nil
 	and transitionGui:FindFirstChild("FaixaDeLuz_1",true)==nil,
@@ -275,7 +292,7 @@ check(handle.state.screen == "HomeInterior" and wipe.Visible
 	and wipe.GroupTransparency == 1 and UI.inputLocked,
 	"Entrar em Configuracoes deve iniciar loading sem esconder o fundo abruptamente")
 services.RunService.Heartbeat:Fire(0.09)
-local logoSegment = emblem:FindFirstChild("SegmentoCL_01")
+local logoSegment = emblem:FindFirstChild("SegmentoDL_01")
 check(logoSegment.GroupTransparency < 1,
 	"Tracos do CL precisam ser desenhados em etapas durante o loading")
 advance(0.18)
@@ -449,7 +466,7 @@ handle.go("HomeTraining")
 advance(0.15)
 check(handle.state.screen == "Squad" and UI.inputLocked and wipe.Visible,
 	"Movimento reduzido mantem 2,5 s, apenas elimina a animacao segmentada")
-local reducedSegment=emblem:FindFirstChild("SegmentoCL_01")
+local reducedSegment=emblem:FindFirstChild("SegmentoDL_01")
 check(reducedSegment.GroupTransparency == 0,
 	"Movimento reduzido deve manter marca CL completa sem pulsacao")
 advance(2.0)
