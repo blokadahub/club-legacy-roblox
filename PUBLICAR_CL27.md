@@ -8,10 +8,10 @@ Este guia usa **GitHub Actions + Rojo + Roblox Open Cloud**, sem exigir que o co
 
 Use preferencialmente uma **experiência privada de testes** para a primeira publicação. Não presuma que os IDs da versão antiga do Club Legacy sejam os corretos.
 
-1. Abra [Creator Dashboard](https://create.roblox.com/dashboard/creations) na conta proprietária.
-2. Identifique a experiência que receberá o CL 27. Copie o **Universe ID** pelo menu da experiência.
-3. Abra a experiência, vá à área **Places** e consulte o lugar de destino. O **Place ID** aparece na URL das configurações do lugar.
-4. Verifique que ambos pertencem à **mesma experiência** e que você tem permissão para publicá-la.
+1. O destino autorizado para substituir o conteúdo anterior da Backrooms é **Universe ID `9749365367`**, **Place ID `86256105108811`**. São valores públicos já configurados no workflow e confirmados pelo proprietário.
+2. Abra [Creator Dashboard](https://create.roblox.com/dashboard/creations) na conta proprietária e confirme visualmente que esse par identifica a experiência desejada.
+3. Abra a experiência, vá à área **Places** e confirme o Place ID mostrado no painel.
+4. O workflow agora consulta a API Roblox para validar que o Place ID pertence ao Universe ID antes de publicar. A publicação ficará bloqueada caso a relação não seja confirmada.
 
 ## 2. Criar uma chave Open Cloud restrita
 
@@ -24,13 +24,11 @@ Use preferencialmente uma **experiência privada de testes** para a primeira pub
 
 1. Abra [Settings → Environments](https://github.com/blokadahub/club-legacy-roblox/settings/environments) do repositório.
 2. Crie ou abra o ambiente de publicação chamado **`roblox-production`** (escrita exata).
-3. Na seção **Environment variables**, adicione:
-   - `ROBLOX_UNIVERSE_ID` — Universe ID da experiência confirmada.
-   - `ROBLOX_PLACE_ID` — Place ID que pertence àquela experiência.
-4. Na seção **Environment secrets**, adicione `ROBLOX_API_KEY` com a chave criada no Creator Dashboard.
+3. Os identificadores não precisam ser adicionados como variáveis: estão fixados no workflow após autorização para substituir a Backrooms.
+4. Na seção **Environment secrets**, adicione `ROBLOX_API_KEY` com a chave criada no Creator Dashboard. Alternativamente, use um Repository secret com esse nome.
 5. Se desejar, configure aprovação manual e restrição da branch `main` nas regras de proteção do ambiente.
 
-**Alternativa:** o workflow também consegue ler `ROBLOX_API_KEY` como repository secret, e as duas variáveis como repository variables; porém, concentrar os três valores no ambiente `roblox-production` é a organização recomendada.
+**Atenção:** o workflow está intencionalmente vinculado à experiência Backrooms autorizada. Para mudar o destino, altere os dois IDs no workflow após nova confirmação. Nunca coloque a chave `ROBLOX_API_KEY` nos arquivos do repositório.
 
 ## 4. Compilar sem publicar
 
@@ -47,7 +45,7 @@ Faça esta etapa somente depois de verificar os IDs e saber qual experiência se
 1. No mesmo workflow, clique novamente em **Run workflow**.
 2. Selecione `main`.
 3. Marque **`publicar`**.
-4. Em **`confirmar_place_id`**, digite o Place ID **exatamente igual** ao `ROBLOX_PLACE_ID` configurado.
+4. Em **`confirmar_place_id`**, digite **`86256105108811`** (o Place ID confirmado).
 5. Execute. O job de compilação deve terminar antes do job de publicação. Se houver aprovação do ambiente, revise e aprove.
 6. No log da publicação e no resumo do job, procure o **número da versão devolvido pelo Roblox** (`versionNumber`). Sem essa confirmação, não considere a publicação concluída.
 7. Confira a versão no [Creator Dashboard](https://create.roblox.com/dashboard/creations) e teste a experiência no Roblox.
@@ -59,8 +57,8 @@ Faça esta etapa somente depois de verificar os IDs e saber qual experiência se
 | Mensagem ou situação | Providência |
 | --- | --- |
 | `ROBLOX_API_KEY` ausente | Adicione o secret ao ambiente `roblox-production` ou ao repositório. |
-| Universe ID ou Place ID ausente | Configure as duas variáveis com IDs numéricos válidos. |
-| Confirmação divergente | Digite exatamente o Place ID da variável `ROBLOX_PLACE_ID`. |
+| Universe ID ou Place ID divergente | Confira a relação no Creator Dashboard; o workflow impede publicar quando a API Roblox reporta Universe diferente. |
+| Confirmação divergente | Digite exatamente `86256105108811`. |
 | Erro 401 | Revise validade e permissão `universe-places:write` da chave. |
 | Erro 403 | Revise permissões do proprietário e autorização da experiência. |
 | Erro 404 ou 409 | Confirme que o Place ID pertence ao Universe ID informado. |
