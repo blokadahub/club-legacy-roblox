@@ -57,48 +57,66 @@ check(homeRoot:FindFirstChild("NomeRealJogador").Text == services.Players.LocalP
 	"Nome/nível do Roblox não foram criados corretamente")
 local clubOption = homeList:FindFirstChild("Opcao_4")
 local kickOff = homeList:FindFirstChild("Opcao_3")
-local clubMist = homeList:FindFirstChild("FumacaVerde_4")
-check(clubMist ~= nil and clubMist:IsA("CanvasGroup"), "Névoa animável de Clubes não foi criada")
-check(clubMist.GroupTransparency == 1, "Efeito de opção inativa deve iniciar invisível")
-check(clubMist.Size.X.Offset <= 300 and clubMist.Size.Y.Offset <= 115,
-	"Névoa deve caber atrás do texto, sem ocupar a lateral inteira")
-local pulse = clubMist:FindFirstChild("PulsoSelecao")
-check(pulse ~= nil and pulse:IsA("ImageLabel"),
-	"Uma seleção branca precisa produzir pulso verde independente das nuvens")
-local cloudGradient = clubMist:FindFirstChild("Nuvem1"):FindFirstChild("UIGradient")
-check(cloudGradient ~= nil and cloudGradient.Rotation == 90,
-	"Camadas da névoa precisam dissipar nas bordas verticais")
+local glow = homeList:FindFirstChild("BrilhoRadialSelecao")
+check(glow ~= nil and glow:IsA("CanvasGroup"),
+	"Não foi criada a camada radial única atrás do menu")
+check(glow.Size.X.Offset <= 318 and glow.Size.Y.Offset == 92
+	and glow.ZIndex < kickOff.ZIndex,
+	"Brilho deve ficar atrás das letras e não ocupar um retângulo grande")
+local halos = 0
+for _, node in ipairs(homeList:GetChildren()) do
+	if node.Name == "BrilhoRadialSelecao" then halos += 1 end
+end
+check(halos == 1, "Cada item não pode criar sua própria névoa redundante")
+for _, node in ipairs(homeList:GetDescendants()) do
+	if node:IsA("ImageLabel") then
+		check(not string.find(tostring(node.Image), "smoke_main.dds", 1, true),
+			"Textura de fumaça antiga ainda existe no lobby")
+	end
+end
+for i = 1, 14 do
+	local layer = glow:FindFirstChild(string.format("CamadaRadial_%02d", i))
+	check(layer ~= nil and layer:IsA("Frame") and layer:FindFirstChildOfClass("UICorner") ~= nil,
+		"Halo precisa de elipses concêntricas sem bordas retangulares")
+	local gradient = layer:FindFirstChildOfClass("UIGradient")
+	check(gradient ~= nil and gradient.Rotation == 90,
+		"Camadas radiais devem dissolver verticalmente")
+end
+local pulse = glow:FindFirstChild("PulsoSelecao")
+check(pulse ~= nil and pulse:IsA("CanvasGroup") and pulse.GroupTransparency == 1,
+	"Pulso radial deve ser independente e começar transparente")
+local yBefore = glow.Position.Y.Offset
 clubOption.Activated:Fire()
-check(pulse.ImageTransparency < 0.2,
-	"Efeito de impacto deve reagir imediatamente ao toque, sem virar animação de botão elástica")
+check(pulse.GroupTransparency < 0.5,
+	"Seleção deve produzir pulso discreto no halo radial")
 check(handle.state.homeFocus == 4 and handle.state.screen == "HomeInterior",
 	"Seleção lateral não pode navegar sem usar o botão principal")
 local lessons = homeList:FindFirstChild("SubmenuAprenda")
 check(lessons ~= nil and lessons.Visible
 	and lessons:FindFirstChild("SubOpcao_4") ~= nil,
 	"Aprenda a Jogar deve expandir quatro subopções")
-check(clubOption.TextTransparency > 0,
-	"Transição de destaque deve começar a partir do estado anterior, sem salto")
+check(clubOption.TextTransparency > 0 and glow.Position.Y.Offset == yBefore,
+	"Troca de seleção deve iniciar sem deslocamento instantâneo")
 advance(0.16)
 check(clubOption.TextTransparency > 0 and clubOption.TextTransparency < 0.32
-	and clubMist.GroupTransparency > 0.035 and clubMist.GroupTransparency < 1,
-	"Aos 160 ms, texto e fumaça devem estar no meio da transição")
+	and glow.Position.Y.Offset > yBefore and glow.Position.Y.Offset < 203,
+	"Aos 160 ms, texto e halo radial devem estar em transição")
 advance(0.36)
-check(clubOption.TextTransparency == 0 and clubMist.GroupTransparency == 0.035,
-	"Opção selecionada não terminou o destaque suave")
+check(clubOption.TextTransparency == 0 and glow.Position.Y.Offset == 203
+	and glow.GroupTransparency == 0.09 and pulse.GroupTransparency == 1,
+	"Brilho radial não chegou suavemente à nova linha ou manteve o pulso")
 check(homeList:FindFirstChild("Opcao_5").Position.Y.Offset > 400,
 	"Upgrade deve terminar o deslocamento suave quando o submenu expande")
-local mistCloud = clubMist:FindFirstChild("Nuvem1")
-check(mistCloud ~= nil, "Névoa selecionada não possui a primeira camada")
-local cloudBefore = mistCloud.Position
+local core = glow:FindFirstChild("CamadaRadial_14")
+local brightnessBefore = core.BackgroundTransparency
 services.RunService.Heartbeat:Fire(0.05)
-check(mistCloud.Position ~= cloudBefore,
-	"A névoa não recebeu movimento contínuo do loop leve")
+check(core.BackgroundTransparency ~= brightnessBefore,
+	"Centro do halo deve respirar discretamente sem partículas")
 kickOff.Activated:Fire()
 advance(0.51)
 check(handle.state.homeFocus == 3 and kickOff.TextTransparency == 0
-	and clubMist.GroupTransparency == 1 and not lessons.Visible,
-	"Transição de Aprenda para Jogo Rápido não recolheu submenu e névoa")
+	and glow.Position.Y.Offset == yBefore and not lessons.Visible,
+	"Troca de Aprenda para Jogo Rápido não moveu o brilho ou recolheu submenu")
 local news = homeList:FindFirstChild("Opcao_1")
 news.MouseEnter:Fire()
 advance(0.32)
