@@ -11,10 +11,11 @@ end
 
 -- Carrega somente UMA VEZ por servidor o modelo escolhido no Creator Store.
 -- O cliente recebe uma cópia visual limpa pelo ReplicatedStorage.
--- Requer a opção Experience Settings > Security > Allow Loading Third Party Assets
--- quando a experiência não é dona do asset.
+-- Primeiro tenta o modelo adquirido pelo titular da experiência (inventário).
+-- Se não houver autorização, a API alternativa depende da configuração do Studio.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local AssetService = game:GetService("AssetService")
+local InsertService = game:GetService("InsertService")
 
 local ACADEMY_SOCCER_BALL_ID = 17275757538
 local templates = Instance.new("Folder")
@@ -22,12 +23,24 @@ templates.Name = "CL27Assets"
 templates.Parent = ReplicatedStorage
 
 task.spawn(function()
+	-- InsertService aceita assets do inventário do criador da experiência,
+	-- independentemente da opção global de modelos públicos de terceiros.
 	local ok, result = pcall(function()
-		return AssetService:LoadAssetAsync(ACADEMY_SOCCER_BALL_ID)
+		return InsertService:LoadAsset(ACADEMY_SOCCER_BALL_ID)
 	end)
+	local method = "InsertService (inventário)"
 	if not ok or typeof(result) ~= "Instance" then
-		warn("[CL27] Academy soccer ball indisponível. Verifique a permissão de assets de terceiros: " .. tostring(result))
-		return
+		-- Compatibilidade com o carregamento de modelos públicos, caso a
+		-- configuração Allow Loading Third Party Assets já esteja habilitada.
+		local inventoryError = tostring(result)
+		ok, result = pcall(function()
+			return AssetService:LoadAssetAsync(ACADEMY_SOCCER_BALL_ID)
+		end)
+		method = "AssetService"
+		if not ok or typeof(result) ~= "Instance" then
+			warn("[CL27] Academy soccer ball indisponível. A experiência precisa ser da conta que adquiriu o modelo, ou ter acesso autorizado. InsertService: " .. inventoryError .. "; AssetService: " .. tostring(result))
+			return
+		end
 	end
 
 	local source = result :: Instance
@@ -69,5 +82,5 @@ task.spawn(function()
 
 	-- Inicia a replicação somente depois da limpeza.
 	template.Parent = templates
-	print("[CL27] Bola Academy preparada: " .. tostring(count) .. " partes visuais.")
+	print("[CL27] Bola Academy preparada via " .. method .. ": " .. tostring(count) .. " partes visuais.")
 end)
