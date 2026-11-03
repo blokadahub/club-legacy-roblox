@@ -2,6 +2,7 @@
 -- CL 27 / Soundtrack: player local e independente das rotas.
 -- Assets privados ou indisponíveis não podem ser liberados por código.
 local SoundService = game:GetService("SoundService")
+local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 local UI = require(script.Parent.UI)
@@ -90,6 +91,7 @@ function Soundtrack.start(screenGui: ScreenGui)
 	local pauseButton
 	local nextButton
 	local volumeLabel
+	local trackButtons = {}
 	local currentIndex = 0
 	local generation = 0
 	local toastGeneration = 0
@@ -111,6 +113,10 @@ function Soundtrack.start(screenGui: ScreenGui)
 		nowPlaying.Text = if currentIndex > 0 then nameFor(currentIndex) else "Aguardando faixa"
 		pauseButton.Text = if paused then "TOCAR" else "PAUSAR"
 		volumeLabel.Text = tostring(math.floor(volume * 100 + 0.5)) .. "%"
+		for index, control in ipairs(trackButtons) do
+			control.TextColor3 = if index == currentIndex then Color3.fromRGB(151, 214, 255) else Color3.fromRGB(230, 240, 251)
+			control.BackgroundTransparency = if index == currentIndex then 0.53 else 0.81
+		end
 	end
 
 	local function showNotification(index: number)
@@ -202,6 +208,31 @@ function Soundtrack.start(screenGui: ScreenGui)
 		end)
 	end
 
+	-- Tracklist recolhível: mantém o menu limpo e todas as faixas acessíveis.
+	local tracklist = UI.new("Frame", {
+		Name = "TracklistPanel", AnchorPoint = Vector2.new(1, 1),
+		Position = UDim2.new(1, -17, 1, -132), Size = UDim2.fromOffset(390, 202),
+		BackgroundColor3 = Color3.fromRGB(9, 27, 49), BackgroundTransparency = 0.32,
+		BorderSizePixel = 0, Visible = false, ZIndex = 260,
+	}, overlay)
+	corner(tracklist, 8)
+	UI.new("UIStroke", {Color = Color3.fromRGB(101, 158, 205), Transparency = 0.7, Thickness = 1}, tracklist)
+	makeLabel(tracklist, "TRACKLIST  /  03 FAIXAS", 15, 11, 335, 25, 12, Color3.fromRGB(169, 205, 230), 261)
+	local listButton = button(dock, "ToggleTracklist", "LISTA", 306, 7, 69, 22, 251, scope, function()
+		tracklist.Visible = not tracklist.Visible
+	end)
+	listButton.TextSize = 11
+	for index, track in ipairs(Soundtrack.tracks) do
+		local control = button(tracklist, "Track" .. tostring(index),
+			string.format("  %02d    %s — %s", index, track.artist, track.title),
+			13, 42 + (index - 1) * 49, 364, 42, 261, scope, function()
+				switchTo(index, true)
+			end)
+		control.TextSize = 14
+		control.TextXAlignment = Enum.TextXAlignment.Left
+		table.insert(trackButtons, control)
+	end
+
 	previousButton = button(dock, "PreviousTrack", "ANT.", 13, 63, 60, 30, 251, scope, function()
 		if #history > 1 then
 			table.remove(history)
@@ -226,7 +257,12 @@ function Soundtrack.start(screenGui: ScreenGui)
 			end
 		else
 			paused = true
-			-- Pause preserva a posição da faixa e desativa o timer de falha.
+			-- Pause preserva a posição da faixa e cancela uma troca já agendada.
+			if waiting then
+				pendingIndex = pendingIndex or randomIndex()
+				waiting = false
+			end
+			transitioning = false
 			generation += 1
 			trackSound:Pause()
 		end
@@ -263,10 +299,22 @@ function Soundtrack.start(screenGui: ScreenGui)
 		end)
 	end)
 
+	-- Fade-out no fim natural da música, antes do evento Ended.
+	scope:Connect(RunService.Heartbeat, function()
+		if paused or waiting or transitioning or not trackSound.IsPlaying or not trackSound.IsLoaded then return end
+		local duration = trackSound.TimeLength
+		if duration <= 0 then return end
+		local remaining = duration - trackSound.TimePosition
+		if remaining > 0 and remaining <= FADE_SECONDS then
+			trackSound.Volume = volume * math.clamp(remaining / FADE_SECONDS, 0, 1)
+		end
+	end)
+
 	-- Um aviso de carregamento tardio não é um erro definitivo; a checagem após 18s
 	-- apenas evita que uma faixa bloqueada impeça a playlist inteira de avançar.
 	local notificationScale = UI.new("UIScale", {Scale = 1}, toast)
 	local playerScale = UI.new("UIScale", {Scale = 1}, dock)
+	local listScale = UI.new("UIScale", {Scale = 1}, tracklist)
 	local function resize()
 		local camera = Workspace.CurrentCamera
 		if not camera then return end
@@ -274,6 +322,7 @@ function Soundtrack.start(screenGui: ScreenGui)
 		local factor = math.clamp(math.min(size.X / 690, size.Y / 480), 0.65, 1)
 		notificationScale.Scale = factor
 		playerScale.Scale = factor
+		listScale.Scale = factor
 	end
 	local cameraConnection: RBXScriptConnection? = nil
 	local function watchCamera()
