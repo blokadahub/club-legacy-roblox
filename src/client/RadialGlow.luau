@@ -16,7 +16,7 @@ function RadialGlow.new(parent: Instance, y: number, width: number)
 	local group = create("CanvasGroup", parent, {
 		Name = "BrilhoRadialSelecao",
 		BackgroundTransparency = 1,
-		GroupTransparency = 0.09,
+		GroupTransparency = 1,
 		Position = UDim2.fromOffset(-27, y - 21),
 		Size = UDim2.fromOffset(width, 92),
 		ClipsDescendants = false,
@@ -39,7 +39,7 @@ function RadialGlow.new(parent: Instance, y: number, width: number)
 				math.floor(163 + depth * 70),
 				math.floor(73 + depth * 76)
 			),
-			BackgroundTransparency = 0.936 - depth * 0.014,
+			BackgroundTransparency = 0.91 - depth * 0.04,
 			BorderSizePixel = 0,
 			ZIndex = 2,
 		})
@@ -75,7 +75,7 @@ function RadialGlow.new(parent: Instance, y: number, width: number)
 			Position = UDim2.fromScale(inset, inset),
 			Size = UDim2.fromScale(1 - inset * 2, 1 - inset * 2),
 			BackgroundColor3 = Color3.fromRGB(129, 223, 135),
-			BackgroundTransparency = 0.84,
+			BackgroundTransparency = 0.64,
 			BorderSizePixel = 0,
 			ZIndex = 3,
 		})
