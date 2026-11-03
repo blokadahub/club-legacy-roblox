@@ -1,0 +1,56 @@
+{
+  "name": "CL 27 — Cinematic Tunnel Experiment",
+  "tree": {
+    "$className": "DataModel",
+    "Workspace": {
+      "$className": "Workspace",
+      "$properties": {"StreamingEnabled": false},
+      "CinematicTunnelPreview": {"$path": ".generated/preview.rbxmx"},
+      "TunnelPreviewCamera": {
+        "$className": "Camera",
+        "$properties": {"CameraType": "Scriptable", "FieldOfView": 54, "FieldOfViewMode": "Vertical"}
+      }
+    },
+    "Lighting": {
+      "$className": "Lighting",
+      "$properties": {
+        "LightingStyle": "Realistic", "PrioritizeLightingQuality": true,
+        "Ambient": [0.03137255,0.04313725,0.07843137],
+        "OutdoorAmbient": [0.01176471,0.01960784,0.03921569],
+        "Brightness": 0.45, "ClockTime": 0, "ExposureCompensation": -0.32,
+        "GlobalShadows": true, "EnvironmentDiffuseScale": 0.18,
+        "EnvironmentSpecularScale": 0.3, "ShadowSoftness": 0.35,
+        "FogColor": [0.10588235,0.25490196,0.26666667], "FogStart": 74, "FogEnd": 168
+      },
+      "TunnelPreviewBloom": {
+        "$className": "BloomEffect",
+        "$properties": {"Intensity": 0.12, "Size": 20, "Threshold": 1.15}
+      },
+      "TunnelPreviewGrade": {
+        "$className": "ColorCorrectionEffect",
+        "$properties": {"Contrast": 0.12, "Saturation": -0.08, "TintColor": [0.89803922,0.95686275,0.96470588]}
+      }
+    },
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "TunnelNoCharacter": {"$path": "src/NoCharacter.server.luau"}
+    },
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "CinematicTunnel": {
+          "$className": "Folder",
+          "Tunnel": {
+            "$path": "src/Tunnel.client.luau",
+            "$attributes": {"Quality": "Medium", "Animate": false, "ReducedMotion": true, "EffectsEnabled": true}
+          },
+          "TunnelScene": {"$path": "src/TunnelScene.luau"},
+          "TunnelGeometry": {"$path": "src/TunnelGeometry.luau"},
+          "TunnelLighting": {"$path": "src/TunnelLighting.luau"},
+          "TunnelCamera": {"$path": "src/TunnelCamera.luau"}
+        }
+      }
+    }
+  }
+}

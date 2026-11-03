@@ -1,0 +1,49 @@
+name: CL 27 | Experimento de túnel
+
+on:
+  push:
+    paths:
+      - 'experiments/cinematic-tunnel/**'
+      - '.github/workflows/cinematic-tunnel.yml'
+  pull_request:
+    paths:
+      - 'experiments/cinematic-tunnel/**'
+      - '.github/workflows/cinematic-tunnel.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  tunnel:
+    name: Túnel isolado | Luau 0.745 + Rojo 7.7.1
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Obter fontes
+        uses: actions/checkout@v4
+
+      - name: Instalar ferramentas oficiais com checksums
+        run: bash experiments/cinematic-tunnel/tools/install-tools.sh .tools/cinematic-tunnel
+
+      - name: Testar, gerar geometria, compilar e conferir o XML
+        run: |
+          python3 experiments/cinematic-tunnel/tools/build.py \
+            --runtime .tools/cinematic-tunnel/luau/luau \
+            --compiler .tools/cinematic-tunnel/luau/luau-compile \
+            --rojo .tools/cinematic-tunnel/rojo/rojo
+
+      - name: Conferir compatibilidade estrutural do projeto principal
+        run: |
+          python3 tools/validate.py --compiler .tools/cinematic-tunnel/luau/luau-compile
+          .tools/cinematic-tunnel/rojo/rojo build default.project.json --output /tmp/cl27-main.rbxlx
+          python3 tools/validate.py --place /tmp/cl27-main.rbxlx
+
+      - name: Disponibilizar túnel para inspeção no Roblox Studio
+        uses: actions/upload-artifact@v4
+        with:
+          name: cinematic-tunnel-rbxlx
+          path: |
+            experiments/cinematic-tunnel/dist/cinematic-tunnel.rbxlx
+            experiments/cinematic-tunnel/dist/counts.json
+          if-no-files-found: error
+          retention-days: 14
