@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--runtime", required=True, help="Path to official luau executable")
 args = parser.parse_args()
 paths = sorted((root / "src/shared").glob("*.luau"))
-paths += [root / f"src/client/{name}.luau" for name in ("Scope", "Rig", "UI")]
+paths += [root / f"src/client/{name}.luau" for name in ("Scope", "Rig", "UI", "SettingsIcons")]
 paths += sorted((root / "src/client/Screens").glob("*.luau"))
 parts = ["local factories, moduleNodes, cache = {}, {}, {}\nlocal require\n"]
 parts.append("local clientRoot = Instance.new('Folder')\nlocal sharedRoot = Instance.new('Folder'); sharedRoot.Name = 'CL27'; sharedRoot.Parent = services.ReplicatedStorage\n")
