@@ -8,36 +8,23 @@ local RunService = game:GetService("RunService")
 local MenuAvatar = {}
 MenuAvatar.__index = MenuAvatar
 
-local INTERVAL = 10
-local TRANSITION = 0.85
-local POSES = {
-	-- Segura a bola de futebol à frente do tronco.
-	hold = {
-		Waist = CFrame.Angles(0, math.rad(-5), 0),
-		Neck = CFrame.Angles(math.rad(-3), math.rad(5), 0),
-		LeftShoulder = CFrame.Angles(math.rad(48), math.rad(-8), math.rad(-17)),
-		RightShoulder = CFrame.Angles(math.rad(48), math.rad(9), math.rad(17)),
-		LeftElbow = CFrame.Angles(math.rad(-62), 0, 0),
-		RightElbow = CFrame.Angles(math.rad(-62), 0, 0),
-	},
-	-- Um pé sobre a bola; o outro sustenta o corpo.
-	foot = {
-		Waist = CFrame.Angles(math.rad(2), math.rad(5), math.rad(-2)),
-		Neck = CFrame.Angles(math.rad(-3), math.rad(-5), 0),
-		LeftShoulder = CFrame.Angles(math.rad(4), 0, math.rad(-8)),
-		RightShoulder = CFrame.Angles(math.rad(-8), 0, math.rad(11)),
-		LeftElbow = CFrame.Angles(math.rad(-14), 0, 0),
-		RightElbow = CFrame.Angles(math.rad(-13), 0, 0),
-		RightHip = CFrame.Angles(math.rad(-34), math.rad(-3), math.rad(-3)),
-		RightKnee = CFrame.Angles(math.rad(46), 0, 0),
-		RightAnkle = CFrame.Angles(math.rad(-13), 0, 0),
-	},
+-- Pose única: pé direito apoiado na bola, com respiração leve.
+local FOOT_POSE = {
+	Waist = CFrame.Angles(math.rad(2), math.rad(5), math.rad(-2)),
+	Neck = CFrame.Angles(math.rad(-3), math.rad(-5), 0),
+	LeftShoulder = CFrame.Angles(math.rad(4), 0, math.rad(-8)),
+	RightShoulder = CFrame.Angles(math.rad(-8), 0, math.rad(11)),
+	LeftElbow = CFrame.Angles(math.rad(-14), 0, 0),
+	RightElbow = CFrame.Angles(math.rad(-13), 0, 0),
+	RightHip = CFrame.Angles(math.rad(-34), math.rad(-3), math.rad(-3)),
+	RightKnee = CFrame.Angles(math.rad(46), 0, 0),
+	RightAnkle = CFrame.Angles(math.rad(-13), 0, 0),
 }
 
-local function cubic(value: number): number
-	local t = math.clamp(value, 0, 1)
-	return t * t * (3 - 2 * t)
-end
+-- Creator Store: Soccer Ball MeshPart (sem scripts).
+-- A autorização de assets externos varia por experiência.
+local SOCCER_BALL_ASSET = 447114367
+local SOCCER_BALL_TEXTURE = 447114306
 
 local function soccerBall(parent: Instance, diameter: number)
 	local model = Instance.new("Model")
@@ -49,6 +36,12 @@ local function soccerBall(parent: Instance, diameter: number)
 	sphere.Color = Color3.fromRGB(238, 243, 241)
 	sphere.Material = Enum.Material.SmoothPlastic
 	sphere.Anchored, sphere.CanCollide, sphere.CanTouch, sphere.CanQuery = true, false, false, false
+	-- Superfície arredondada com textura de bola; os painéis 3D ficam como fallback
+	-- visual caso a textura não seja exibida por permissão ou compatibilidade.
+	local skin = Instance.new("SpecialMesh")
+	skin.MeshType = Enum.MeshType.Sphere
+	skin.TextureId = "rbxassetid://" .. tostring(SOCCER_BALL_TEXTURE)
+	skin.Parent = sphere
 	sphere.Parent = model
 	model.PrimaryPart = sphere
 
@@ -69,6 +62,53 @@ local function soccerBall(parent: Instance, diameter: number)
 	end
 	model.Parent = parent
 	return model
+end
+
+-- Tenta usar a MeshPart real do Creator Store. Se não houver autorização,
+-- mantém a bola local já criada; nenhuma configuração de segurança é alterada.
+local function creatorBall(diameter: number): Model?
+	local assetService = game:GetService("AssetService")
+	local loaded: Instance? = nil
+	local success, result = pcall(function()
+		return assetService:LoadAssetAsync(SOCCER_BALL_ASSET)
+	end)
+	if success and typeof(result) == "Instance" then
+		loaded = result
+	end
+	local meshPart: MeshPart? = nil
+	if loaded then
+		local candidate = if loaded:IsA("MeshPart") then loaded else loaded:FindFirstChildWhichIsA("MeshPart", true)
+		if candidate and candidate:IsA("MeshPart") then meshPart = candidate end
+	end
+	if not meshPart then
+		if loaded then loaded:Destroy() end
+		local meshSuccess, meshResult = pcall(function()
+			return assetService:CreateMeshPartAsync(
+				Content.fromUri("rbxassetid://" .. tostring(SOCCER_BALL_ASSET)),
+				{RenderFidelity = Enum.RenderFidelity.Precise, CollisionFidelity = Enum.CollisionFidelity.Box}
+			)
+		end)
+		if meshSuccess and typeof(meshResult) == "Instance" and meshResult:IsA("MeshPart") then
+			meshPart = meshResult
+		else
+			return nil
+		end
+	end
+	local ballModel = Instance.new("Model")
+	ballModel.Name = "CL27_BolaFutebol_Mesh"
+	meshPart.Parent = ballModel
+	if loaded and loaded ~= meshPart then loaded:Destroy() end
+	meshPart.Name = "BolaFutebol"
+	meshPart.Size = Vector3.new(diameter, diameter, diameter)
+	meshPart.Color = Color3.fromRGB(255, 255, 255)
+	meshPart.Material = Enum.Material.SmoothPlastic
+	meshPart.Anchored = true
+	meshPart.CanCollide = false
+	meshPart.CanQuery = false
+	meshPart.CanTouch = false
+	meshPart.TextureID = "rbxassetid://" .. tostring(SOCCER_BALL_TEXTURE)
+	ballModel.PrimaryPart = meshPart
+	return ballModel
 end
 
 local function jointsOf(model: Model): {[string]: Instance}
@@ -96,10 +136,6 @@ function MenuAvatar.mount(parent: Instance, groundPosition: Vector3, cameraPosit
 		ball = nil,
 		joints = {},
 		elapsed = 0,
-		blend = 0,
-		pose = 0,
-		fromBlend = 0,
-		changeElapsed = TRANSITION,
 		ballGround = nil,
 		connection = nil,
 	}, MenuAvatar)
@@ -179,6 +215,18 @@ function MenuAvatar.mount(parent: Instance, groundPosition: Vector3, cameraPosit
 		local right = root.CFrame.RightVector
 		self.ballGround = groundPosition + right * 0.62 + forward * 0.92 + Vector3.new(0, self.radius, 0)
 		self:_step(0)
+		task.spawn(function()
+			local meshModel = creatorBall(diameter)
+			if not meshModel then return end
+			if not self.alive or not self.parent.Parent then
+				meshModel:Destroy()
+				return
+			end
+			meshModel.Parent = self.parent
+			if self.ball then self.ball:Destroy() end
+			self.ball = meshModel
+			self.ball:PivotTo(CFrame.new(self.ballGround))
+		end)
 	end)
 	return self
 end
@@ -186,44 +234,19 @@ end
 function MenuAvatar:_step(dt: number)
 	if not self.alive or not self.model or not self.root or not self.ball then return end
 	self.elapsed += dt
-	local currentPose = math.floor(self.elapsed / INTERVAL) % 2
-	if currentPose ~= self.pose then
-		self.pose = currentPose
-		self.fromBlend = self.blend
-		self.changeElapsed = 0
-	end
 	local reduced = self.settings and self.settings.reducedMotion
-	if reduced then
-		self.blend = currentPose
-	else
-		self.changeElapsed = math.min(TRANSITION, self.changeElapsed + dt)
-		self.blend = self.fromBlend + (currentPose - self.fromBlend) * cubic(self.changeElapsed / TRANSITION)
-	end
-
 	local breathing = if reduced then 0 else math.sin(self.elapsed * 1.35) * 0.018
 	for name, joint in pairs(self.joints) do
-		local hold = POSES.hold[name] or CFrame.identity
-		local foot = POSES.foot[name] or CFrame.identity
-		local pose = hold:Lerp(foot, self.blend)
+		local pose = FOOT_POSE[name] or CFrame.identity
 		if name == "Waist" then
 			pose *= CFrame.Angles(breathing, 0, 0)
 		elseif name == "Neck" then
 			pose *= CFrame.Angles(breathing * 0.4, 0, 0)
 		end
-		-- Transform funciona nos modelos clássicos e nos avatares com AJU.
 		(joint :: any).Transform = pose
 	end
-
-	local hand = self.hand
-	local holdPosition
-	if hand then
-		holdPosition = (hand.CFrame * CFrame.new(0, -0.12, -self.radius * 0.5)).Position
-	else
-		holdPosition = (self.root.CFrame * CFrame.new(0, 0.7, -0.95)).Position
-	end
-	local holdCFrame = CFrame.new(holdPosition)
-	local footCFrame = CFrame.new(self.ballGround)
-	self.ball:PivotTo(holdCFrame:Lerp(footCFrame, self.blend))
+	-- A bola permanece sob o pé. Não há transição para a pose com as mãos.
+	self.ball:PivotTo(CFrame.new(self.ballGround))
 end
 
 function MenuAvatar:SetSettings(settings)
