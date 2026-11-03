@@ -12,7 +12,7 @@ Git clone via shell falhou ao conectar ao proxy. O conector GitHub permite ler e
 1. `ReplicatedStorage.CL27`: tema, dados fictícios coerentes, estado e seleções.
 2. `StarterPlayerScripts.CL27`: App, componentes UI, Scope para descarte, módulos de telas, Scene e Rig.
 3. `ServerScriptService`: desativação de spawn automático; produto sem gameplay.
-4. Workspace local: interior arquitetônico com telão, piso, luzes e atleta; centro de treinamento diurno com campo, edifícios e atleta; arena escura e apresentação de dois uniformes.
+4. Workspace local: interior arquitetônico com telão, piso, luzes e atleta; arena escura, túnel de Clubs e apresentação de dois uniformes. A cena de treinamento foi removida.
 5. Canvas 1600×900 ajustado à área segura. Navegação comum por mouse, toque, teclado e seleção de controle; transição cromática azul/esmeralda/turquesa cobre trocas de cena.
 6. Todos os dados de demonstração são locais à sessão. Sem economia, transferências ou partidas reais.
 
@@ -20,7 +20,7 @@ Git clone via shell falhou ao conectar ao proxy. O conector GitHub permite ler e
 
 Cada tela exporta função `(root, ctx)`. Contexto: `state`, `scope`, `go(id)`, `rerender()`, `notify(text)`, `scene`. UI compartilhada: `new`, `frame`, `panel`, `text`, `button`, `line`, `gradient`, `stroke`, `badge`, `portrait`, `header`, `section`, `stat`, `bar`. Coordenadas em pixels no canvas de referência. O App desenha navegação global e rodapé. Cada scope é descartado na navegação.
 
-IDs: HomeInterior, HomeTraining, Overview, Squad, Tactics, Assignments, Calendar, Transfers, Finance, Development, Competitions, Customization, Settings, Clubs, Kits.
+IDs: HomeInterior, Overview, Squad, Tactics, Assignments, Calendar, Transfers, Finance, Development, Competitions, Customization, Settings, Clubs, Kits.
 
 ## Ciclos e validação
 
