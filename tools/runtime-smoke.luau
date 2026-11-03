@@ -239,6 +239,46 @@ for _, id in ipairs(routes) do
 	print("PASS route " .. id .. ": " .. count .. " callbacks")
 end
 
+-- Contrato do menu FC: cinco opções selecionáveis, nenhuma rota fictícia.
+do
+	local root, ctx = mounted("HomeInterior")
+	local list = root:FindFirstChild("MenuPrincipalFC", true)
+	check(list ~= nil and list:IsA("ScrollingFrame"), "Menu inicial não contém a coluna rolável")
+	check(root:FindFirstChild("Configuracoes", true) ~= nil and root:FindFirstChild("Acessibilidade", true) ~= nil,
+		"Ícones superiores do menu inicial ausentes")
+	check(root:FindFirstChild("NomeRealJogador", true).Text == services.Players.LocalPlayer.Name,
+		"Menu não mostra o username verdadeiro")
+	check(root:FindFirstChild("NivelRealJogador", true).Text == "Nível —",
+		"Menu inventou um nível inexistente")
+	for i = 1, 5 do
+		check(list:FindFirstChild("Opcao_" .. tostring(i)) ~= nil, "Menu perdeu uma das cinco opções")
+	end
+	check(list:FindFirstChild("Texto_3").Text == "Kick Off"
+		and list:FindFirstChild("Texto_3").TextTransparency == 0,
+		"Kick Off deve começar selecionado")
+	local first = list:FindFirstChild("Opcao_1")
+	first.MouseEnter:Fire()
+	check(list:FindFirstChild("Texto_1").TextTransparency == 0
+		and list:FindFirstChild("Texto_1").Text == "CL News",
+		"Hover não deixa a opção branca")
+	first.MouseLeave:Fire()
+	check(list:FindFirstChild("Texto_1").TextTransparency > 0,
+		"Opção inativa não voltou a ficar translúcida")
+	local fourth = list:FindFirstChild("Opcao_4")
+	fourth.Activated:Fire()
+	check(ctx.state.homeFocus == 4 and ctx.lastRoute == nil,
+		"Seleção de Clubes tentou navegar sem conteúdo")
+	check(list:FindFirstChild("Texto_4").TextTransparency == 0,
+		"Item clicado não permaneceu ativo")
+	dispose(root, ctx)
+	services.Players.LocalPlayer:SetAttribute("Level", 12)
+	root, ctx = mounted("HomeInterior")
+	check(root:FindFirstChild("NivelRealJogador", true).Text == "Nível 12",
+		"Menu deve ler o nível real do atributo do jogador")
+	dispose(root, ctx)
+	services.Players.LocalPlayer:SetAttribute("Level", nil)
+end
+
 -- Additional branches and important stateful sequences.
 for _, id in ipairs({"Settings", "Competitions", "Finance", "Tactics"}) do
 	for variant = 1, (if id == "Settings" or id == "Tactics" then 3 else 2) do
