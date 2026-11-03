@@ -222,6 +222,22 @@ function Scene:_light(mode)
 	for _, tween in ipairs(self.lightTweens) do tween:Cancel() end
 	table.clear(self.lightTweens)
 	Lighting.GlobalShadows, Lighting.ShadowSoftness = true, 0.35
+	if mode == "Stadium" then
+		-- No lobby cinematográfico o controlador regula hora e exposição
+		-- diretamente. Sem tween concorrente sobre ClockTime/Brightness.
+		Lighting.Ambient = Color3.fromRGB(79, 92, 97)
+		Lighting.OutdoorAmbient = Color3.fromRGB(95, 116, 122)
+		Lighting.Brightness = 2.25
+		Lighting.ClockTime = 16.3
+		Lighting.ExposureCompensation = -0.05
+		Lighting.EnvironmentDiffuseScale = 0.78
+		Lighting.EnvironmentSpecularScale = 0.72
+		self.rays.Enabled = false
+		self.atmosphere.Density = 0.035
+		self.atmosphere.Haze = 0
+		self.grade.TintColor = Color3.fromRGB(238, 250, 247)
+		return
+	end
 	local training = mode == "Training"
 	local interior = mode == "Interior"
 	local target = {
@@ -392,7 +408,14 @@ function Scene:Show(mode, homeClub, awayClub, homeKitIndex, awayKitIndex)
 	self.folder:ClearAllChildren()
 	if mode == "Stadium" then
 		local registry = ReplicatedStorage:FindFirstChild("CL27Stadium")
-		if registry then self.stadium = StadiumCinematics.new(registry,self.settings) end
+		if registry then
+			local ok, controller = pcall(StadiumCinematics.new, registry, self.settings)
+			if ok then
+				self.stadium = controller
+			else
+				warn("[CL27 Stadium] Câmera não inicializou: "..tostring(controller))
+			end
+		end
 		if self.stadium then
 			-- Referência inicial segura; o controlador assume a câmera no
 			-- primeiro RenderStepped, sem recriar personagem ou cenário falso.
