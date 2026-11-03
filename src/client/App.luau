@@ -12,6 +12,7 @@ local Scene=require(script.Parent.Scene)
 local Soundtrack=require(script.Parent.Soundtrack)
 local HomeHUD=require(script.Parent.HomeHUD)
 local SettingsHUD=require(script.Parent.SettingsHUD)
+local TransitionFX=require(script.Parent.TransitionFX)
 local App={}
 App.routes={"HomeInterior","HomeTraining","Overview","Squad","Tactics","Assignments","Calendar","Transfers","Finance","Development","Competitions","Customization","Settings","Clubs","Kits"}
 local labels={HomeInterior="Menu • galeria",HomeTraining="Menu • treinamento",Overview="Visão geral",Squad="Elenco",Tactics="Táticas",Assignments="Atribuições",Calendar="Calendário",Transfers="Transferências",Finance="Finanças",Development="Desenvolvimento",Competitions="Competições",Customization="Personalização",Settings="Configurações",Clubs="Seleção de clubes",Kits="Seleção de uniformes"}
@@ -79,16 +80,11 @@ function App.start()
 	local pending=nil
 	local mode=nil
 	local render,go
-	local transition=UI.new("CanvasGroup",{Name="Transicao",Size=UDim2.fromScale(1,1),BackgroundColor3=Color3.new(1,1,1),
-		BorderSizePixel=0,GroupTransparency=1,Visible=false,ZIndex=100},canvas)
-	UI.gradient(transition,{Theme.blue,Color3.fromRGB(5,86,79),Color3.fromRGB(21,171,159)},28)
-	for i=1,4 do
-		local ribbon=UI.frame(transition,-320+i*410,540-i*80,1600,140,if i%2==0 then UI.accent else Theme.blue,.83)
-		ribbon.Rotation=-27
-	end
-	UI.line(transition,180,845,1510,140,UI.accent,2).BackgroundTransparency=.45
-	UI.logo(transition,626,413,2.1)
-	UI.text(transition,"CLUB LEGACY / 27",645,535,430,30,16,Theme.white,Enum.Font.GothamBold)
+	-- Transição global ocupa o viewport inteiro e fica ACIMA dos dois HUDs.
+	-- A antiga camada no Canvas 16:9 provocava retângulo e flashes.
+	local transitionFx=TransitionFX.start(playerGui)
+	lifetime:Add(function() transitionFx:Destroy() end)
+	local transition=transitionFx.layer
 	local toast=UI.panel(canvas,490,786,620,48,Theme.background,.05)
 	toast.ZIndex=120
 	toast.Visible=false
@@ -235,40 +231,44 @@ function App.start()
 		UI.inputLocked=true
 		if pageScope then pageScope.inputsPaused=true end
 		pending=nil
-		transition.Visible=true
-		transition.GroupTransparency=1
-		local duration=if state.settings.reducedMotion then .06 else .22
-		lifetime:Tween(transition,{GroupTransparency=0},duration)
-		lifetime:Delay(duration,function()
+
+		-- Primeiro encobrir TUDO (cena 3D, Roblox HUD, Home e Settings).
+		-- Só trocar a cena quando a cobertura estiver totalmente opaca.
+		local enter=transitionFx:Cover(state.settings.reducedMotion)
+		lifetime:Delay(enter,function()
 			if not lifetime.alive then return end
 			if not back then table.insert(history,state.screen) end
 			state.screen=id
-			-- Nunca deixar o retângulo de Transicao permanentemente opaco.
-			-- Um erro de render devolve controle, escreve o diagnóstico no Output
-			-- e permite usar o HUD independente para voltar ao lobby.
-			local ok, errorMessage=xpcall(render, function(err)
+			-- HUD independente continua acessível caso a geometria falhe.
+			local ok, errorMessage=xpcall(render,function(err)
 				return tostring(err)..(debug and debug.traceback and "\n"..debug.traceback() or "")
 			end)
 			if not ok then
 				warn("[CL27] Erro ao abrir "..tostring(id)..": "..tostring(errorMessage))
 				settingsHud:SetVisible(id=="Settings")
 				homeHud:SetVisible(id=="HomeInterior" or id=="HomeTraining")
-				transition.GroupTransparency=1
-				transition.Visible=false
-				busy=false
-				UI.inputLocked=false
-				if pageScope then pageScope.inputsPaused=false end
-				return
 			end
-			local fade=if state.settings.reducedMotion then .08 else .36
-			lifetime:Tween(transition,{GroupTransparency=1},fade)
-			lifetime:Delay(fade,function()
+
+			-- Pausa discreta com a tela coberta, evitando revelar partes de
+			-- cenários no meio da construção ou um flash retangular.
+			local hold=if state.settings.reducedMotion then 0.02 else 0.08
+			lifetime:Delay(hold,function()
 				if not lifetime.alive then return end
-				transition.Visible=false
-				busy=false
-				UI.inputLocked=false
-				if pageScope then pageScope.inputsPaused=false end
-				if pending then local nextRoute=pending;pending=nil;go(nextRoute[1],nextRoute[2]) else focusPage() end
+				local exit=transitionFx:Reveal(state.settings.reducedMotion)
+				lifetime:Delay(exit,function()
+					if not lifetime.alive then return end
+					transitionFx:Finish()
+					busy=false
+					UI.inputLocked=false
+					if pageScope then pageScope.inputsPaused=false end
+					if pending then
+						local nextRoute=pending
+						pending=nil
+						go(nextRoute[1],nextRoute[2])
+					elseif ok then
+						focusPage()
+					end
+				end)
 			end)
 		end)
 	end
