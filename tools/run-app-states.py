@@ -20,7 +20,7 @@ local constructInstance = Instance.new
 function Instance.new(className)
     local object = constructInstance(className)
     if object:IsA('GuiButton') then object.Visible = true end
-    if className == 'Sound' then object.IsLoaded = true; object.IsPlaying = false; object.TimePosition = 0 end
+    if className == 'Sound' then object.IsLoaded = true; object.IsPlaying = false; object.TimePosition = 0; object.TimeLength = 180 end
     return object
 end
 local now, queue, activeTweens = 0, {}, {}
