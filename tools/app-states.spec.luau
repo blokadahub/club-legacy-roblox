@@ -35,7 +35,7 @@ for i = 1, 5 do
 		and line:FindFirstChild("HaloNeon") ~= nil
 		and line:FindFirstChild("NucleoCL") ~= nil,
 		"CL deve ter cinco bordas vetoriais e tres camadas de luz")
-	check(line:FindFirstChild("NucleoCL").Size.Y.Offset == 2.8,
+	check(line:FindFirstChild("NucleoCL").Size.Y.Offset == 3.1,
 		"Traco CL deve ser um pouco grosso, mas sem blocos pesados")
 end
 local clSweep = mark:FindFirstChild("VarreduraOuterGlowCL")
@@ -45,9 +45,16 @@ check(clSweep and clPiece and clPiece:IsA("CanvasGroup")
 	and clPiece:FindFirstChild("GlowMedio")
 	and clPiece:FindFirstChild("LinhaBranca"),
 	"CL deve ter varredura branca em faixas, com halo difuso e linha definida")
-check(clPiece:FindFirstChild("LinhaBranca").Size.Y.Offset == 1.65
-	and clPiece:FindFirstChild("HaloExternoSuave").Size.Y.Offset == 15,
-	"Camadas do Outer Glow precisam ter espessuras distintas e um núcleo fino")
+check(clPiece:FindFirstChild("LinhaBranca").Size.Y.Offset == 2.25
+	and clPiece:FindFirstChild("GlowMedio").Size.Y.Offset == 8.4
+	and clPiece:FindFirstChild("HaloExternoSuave").Size.Y.Offset == 16,
+	"Outer Glow deve ter nucleo um pouco mais espesso e halos difusos graduados")
+local coreTint=clPiece:FindFirstChild("LinhaBranca").BackgroundColor3
+local middleTint=clPiece:FindFirstChild("GlowMedio").BackgroundColor3
+local outerTint=clPiece:FindFirstChild("HaloExternoSuave").BackgroundColor3
+check(coreTint.G > coreTint.R and coreTint.G > coreTint.B
+	and middleTint.G > middleTint.R and outerTint.G > outerTint.R,
+	"Reflexo deve ter tonalidade branca-esverdeada, glow menta e halo verde claro")
 check(clPiece:FindFirstChild("HaloExternoSuave"):FindFirstChildOfClass("UIGradient") ~= nil,
 	"Halo precisa suavizar as bordas, não exibir retângulos opacos")
 check(mark:FindFirstChild("CobraLuz_1") == nil,
@@ -107,7 +114,10 @@ check(ctaSweep and ctaPiece and ctaPiece:IsA("CanvasGroup")
 	and ctaPiece:FindFirstChild("HaloExternoSuave")
 	and ctaPiece:FindFirstChild("GlowMedio")
 	and ctaPiece:FindFirstChild("LinhaBranca"),
-	"Botao X deve ter Outer Glow Sweep branco, sem pontos em fila")
+	"Botao X deve manter Outer Glow Sweep branco-menta sem pontos em fila")
+check(ctaPiece:FindFirstChild("LinhaBranca").Size.Y.Offset == 2.25
+	and ctaPiece:FindFirstChild("GlowMedio").Size.Y.Offset == 8.4,
+	"Capsula X e CL devem compartilhar a nova espessura de brilho")
 check(primary:FindFirstChild("CobraNeonCapsula") == nil
 	and primary:FindFirstChild("ReflexoAnimado") == nil,
 	"Reflexo atravessando o botao e luz cobra devem permanecer removidos")
