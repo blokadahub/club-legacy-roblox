@@ -47,16 +47,17 @@ local function smoke(parent: Instance, offset: number)
 		Name = "FumacaVerde",
 		BackgroundTransparency = 1,
 		GroupTransparency = 1,
-		Position = UDim2.new(0, -43, 0, offset - 22),
-		Size = UDim2.new(1, 95, 0, 97),
+		-- Névoa compacta que termina suavemente abaixo do texto.
+		Position = UDim2.new(0, -24, 0, offset - 21),
+		Size = UDim2.fromOffset(296, 108),
 		ClipsDescendants = false,
 		ZIndex = 2,
 		Visible = true,
 	})
 	local clouds = {}
 	for index = 1, 4 do
-		local x = (index - 1) * 91 - 42
-		local y = if index % 2 == 0 then 8 else -5
+		local x = (index - 1) * 48 - 20
+		local y = if index % 2 == 0 then 24 else 5
 		local image = element("ImageLabel", group, {
 			Name = "Nuvem" .. tostring(index),
 			BackgroundTransparency = 1,
@@ -64,48 +65,89 @@ local function smoke(parent: Instance, offset: number)
 			ImageColor3 = if index % 2 == 0
 				then Color3.fromRGB(32, 158, 100)
 				else Color3.fromRGB(22, 105, 71),
-			ImageTransparency = 0.43 + index * 0.045,
+			ImageTransparency = 0.51 + index * 0.045,
 			Position = UDim2.fromOffset(x, y),
-			Size = UDim2.fromOffset(212 + (index % 2) * 42, 88 + (index % 3) * 13),
+			Size = UDim2.fromOffset(142 + (index % 2) * 30, 87 + (index % 3) * 13),
 			Rotation = (index - 2.5) * 9,
 			ZIndex = 2,
 		})
 		element("UIGradient", image, {
-			Rotation = if index % 2 == 0 then 0 else 180,
+			-- Dissolução vertical: sem linha reta no limite inferior.
+			Rotation = 90,
 			Transparency = NumberSequence.new({
 				NumberSequenceKeypoint.new(0, 1),
-				NumberSequenceKeypoint.new(0.18, 0.33),
-				NumberSequenceKeypoint.new(0.53, 0.04),
-				NumberSequenceKeypoint.new(0.83, 0.42),
+				NumberSequenceKeypoint.new(0.18, 0.58),
+				NumberSequenceKeypoint.new(0.53, 0.10),
+				NumberSequenceKeypoint.new(0.83, 0.67),
 				NumberSequenceKeypoint.new(1, 1),
 			}),
 		})
 		clouds[index] = {
 			image = image, x = x, y = y, phase = index * 1.73,
 			rotation = (index - 2.5) * 9,
-			opacity = 0.43 + index * 0.045,
+			opacity = 0.51 + index * 0.045,
 		}
 	end
 	return group, clouds
 end
 
-local function icon(parent: Instance, name: string, text: string, x: number, y: number)
-	return element("TextButton", parent, {
-		Name = name,
-		Text = text,
-		Font = Enum.Font.GothamMedium,
-		TextSize = 27,
-		TextColor3 = WHITE,
-		TextTransparency = 0.28,
-		TextXAlignment = Enum.TextXAlignment.Center,
-		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		AutoButtonColor = false,
-		Selectable = false,
+-- Símbolos vetoriais nativos, sem emoji ou imagem externa.
+-- A superfície clicável é maior do que o desenho para funcionar no toque.
+local function icon(parent: Instance, name: string, kind: string, x: number, y: number)
+	local button = element("TextButton", parent, {
+		Name = name, Text = "", BackgroundTransparency = 1, BorderSizePixel = 0,
+		AutoButtonColor = false, Selectable = true, Active = true,
 		Position = UDim2.new(x, 0, y, 0),
-		Size = UDim2.new(0, 44, 0, 44),
-		ZIndex = 8,
+		Size = UDim2.fromOffset(46, 52), ZIndex = 8,
 	})
+	local ink = Color3.fromRGB(221, 231, 227)
+	local function strokeSegment(w, h, px, py, angle)
+		local part = element("Frame", button, {
+			Size = UDim2.fromOffset(w, h),
+			Position = UDim2.fromOffset(px, py),
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			BackgroundColor3 = ink, BackgroundTransparency = 0.18,
+			BorderSizePixel = 0, Rotation = angle or 0, ZIndex = 9,
+		})
+		element("UICorner", part, {CornerRadius = UDim.new(1, 0)})
+		return part
+	end
+	if kind == "gear" then
+		for i = 0, 7 do
+			local angle = i * math.pi / 4
+			strokeSegment(4.5, 9, 23 + math.sin(angle) * 14, 25 - math.cos(angle) * 14, i * 45)
+		end
+		local ring = element("Frame", button, {
+			Position = UDim2.fromOffset(12, 14), Size = UDim2.fromOffset(22, 22),
+			BackgroundTransparency = 1, ZIndex = 9,
+		})
+		element("UICorner", ring, {CornerRadius = UDim.new(1, 0)})
+		element("UIStroke", ring, {Color = ink, Transparency = 0.11, Thickness = 4})
+		local hole = element("Frame", button, {
+			Position = UDim2.fromOffset(19, 21), Size = UDim2.fromOffset(8, 8),
+			BackgroundColor3 = Color3.fromRGB(14, 30, 30),
+			BackgroundTransparency = 0.3, BorderSizePixel = 0, ZIndex = 10,
+		})
+		element("UICorner", hole, {CornerRadius = UDim.new(1, 0)})
+	else
+		local head = element("Frame", button, {
+			Position = UDim2.fromOffset(19, 8), Size = UDim2.fromOffset(8, 8),
+			BackgroundColor3 = ink, BackgroundTransparency = 0.1,
+			BorderSizePixel = 0, ZIndex = 9,
+		})
+		element("UICorner", head, {CornerRadius = UDim.new(1, 0)})
+		strokeSegment(31, 3.5, 23, 21, 0)
+		strokeSegment(4, 18, 23, 29, 0)
+		strokeSegment(4, 15, 18, 40, 25)
+		strokeSegment(4, 15, 28, 40, -25)
+	end
+	local gleam = element("Frame", button, {
+		Size = UDim2.new(1, -5, 1, -5), Position = UDim2.fromOffset(2, 2),
+		BackgroundColor3 = Color3.fromRGB(20, 107, 83),
+		BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 7,
+	})
+	element("UICorner", gleam, {CornerRadius = UDim.new(0, 8)})
+	return button, gleam
 end
 
 function HomeHUD.start(playerGui: Instance, state)
@@ -114,6 +156,7 @@ function HomeHUD.start(playerGui: Instance, state)
 	local alive = true
 	local current = math.clamp(state.homeFocus or 3, 1, #ITEMS)
 	local hovered: number? = nil
+	local navigateSettings: ((number) -> ())? = nil
 
 	local gui = element("ScreenGui", playerGui, {
 		Name = "CL27_HomeHUD",
@@ -149,9 +192,23 @@ function HomeHUD.start(playerGui: Instance, state)
 		}),
 	})
 
-	-- Icones continuam decorativos, como solicitado.
-	icon(root, "Configuracoes", "⚙", 0.034, 0.046)
-	icon(root, "Acessibilidade", "♿", 0.034, 0.112)
+	-- Alinhados horizontalmente com CL News; sempre acessíveis por toque.
+	local settingsButton, settingsGleam = icon(root, "Configuracoes", "gear", 0.017, 0.19)
+	local accessibilityButton, accessibilityGleam = icon(root, "Acessibilidade", "access", 0.049, 0.19)
+	for _, entry in ipairs({
+		{button = settingsButton, glow = settingsGleam, tab = 1},
+		{button = accessibilityButton, glow = accessibilityGleam, tab = 2},
+	}) do
+		table.insert(connections, entry.button.Activated:Connect(function()
+			if navigateSettings then navigateSettings(entry.tab) end
+		end))
+		table.insert(connections, entry.button.MouseEnter:Connect(function()
+			TweenService:Create(entry.glow, TweenInfo.new(0.2), {BackgroundTransparency = 0.78}):Play()
+		end))
+		table.insert(connections, entry.button.MouseLeave:Connect(function()
+			TweenService:Create(entry.glow, TweenInfo.new(0.24), {BackgroundTransparency = 1}):Play()
+		end))
+	end
 	element("TextLabel", root, {
 		Name = "MarcaCL27",
 		Text = "CL 27",
@@ -237,7 +294,9 @@ function HomeHUD.start(playerGui: Instance, state)
 	local function repaint(instant: boolean?)
 		if not alive then return end
 		for index, row in ipairs(rows) do
-			local mode = if index == current then 2 elseif index == hovered then 1 else 0
+			-- O hover transfere o foco visual: NUNCA dois textos brancos.
+			local focused = hovered or current
+			local mode = if index == focused then (if index == current then 2 else 1) else 0
 			if instant or row.visual ~= mode then
 				row.visual = mode
 				local active = mode > 0
@@ -325,8 +384,8 @@ function HomeHUD.start(playerGui: Instance, state)
 			if row.fog.GroupTransparency < 0.96 then
 				for index, cloud in ipairs(row.clouds) do
 					local time = elapsed * (0.44 + index * 0.09) + cloud.phase
-					local horizontal = math.sin(time) * (9 + index * 2)
-					local vertical = math.sin(time * 0.68 + cloud.phase) * (3 + index)
+					local horizontal = math.sin(time) * (5 + index * 1.25)
+					local vertical = math.sin(time * 0.68 + cloud.phase) * (4 + index * 1.2)
 					cloud.image.Position = UDim2.fromOffset(cloud.x + horizontal, cloud.y + vertical)
 					cloud.image.Rotation = cloud.rotation + math.sin(time * 0.72) * 4
 					cloud.image.ImageTransparency = math.clamp(
@@ -391,6 +450,9 @@ function HomeHUD.start(playerGui: Instance, state)
 
 	return {
 		gui = gui,
+		SetNavigation = function(_, callback: (number) -> ())
+			navigateSettings = callback
+		end,
 		SetVisible = function(_, visible: boolean)
 			if alive then
 				gui.Enabled = visible
