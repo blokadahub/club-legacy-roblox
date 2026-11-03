@@ -43,10 +43,10 @@ check(clubOption.TextTransparency > 0,
 	"Transição de destaque deve começar a partir do estado anterior, sem salto")
 advance(0.16)
 check(clubOption.TextTransparency > 0 and clubOption.TextTransparency < 0.32
-	and clubMist.GroupTransparency > 0.18 and clubMist.GroupTransparency < 1,
+	and clubMist.GroupTransparency > 0.035 and clubMist.GroupTransparency < 1,
 	"Aos 160 ms, texto e fumaça devem estar no meio da transição")
 advance(0.36)
-check(clubOption.TextTransparency == 0 and clubMist.GroupTransparency == 0.18,
+check(clubOption.TextTransparency == 0 and clubMist.GroupTransparency == 0.035,
 	"Opção selecionada não terminou o destaque suave")
 local mistCloud = clubMist:FindFirstChild("Nuvem1")
 check(mistCloud ~= nil, "Névoa selecionada não possui a primeira camada")
@@ -121,32 +121,71 @@ check(not notification.Visible and notification.GroupTransparency == 1,
 check(gui:FindFirstChild("SoundtrackOverlay") == overlay and sound.Parent == services.SoundService,
 	"Trilha sonora não deve se perder em navegação")
 
--- Os dois ícones não usam emojis e acessam a tela real de preferências.
+-- Ícones compactos em coluna e abertura da nova grade visual.
 local settingsIcon = homeRoot:FindFirstChild("Configuracoes")
 local accessIcon = homeRoot:FindFirstChild("Acessibilidade")
 check(settingsIcon ~= nil and accessIcon ~= nil and settingsIcon.Text == "" and accessIcon.Text == "",
-	"Botões de configurações/acessibilidade ainda usam emoji")
-check(settingsIcon.Position.Y.Scale == homeList.Position.Y.Scale
-	and accessIcon.Position.Y.Scale == homeList.Position.Y.Scale,
-	"Ícones devem estar alinhados verticalmente com CL News")
+	"Configurações e Acessibilidade não podem usar emojis")
+check(settingsIcon.Position.X.Scale == accessIcon.Position.X.Scale
+	and accessIcon.Position.Y.Scale > settingsIcon.Position.Y.Scale + 0.07,
+	"Ícones precisam ficar um acima do outro à esquerda")
+check(settingsIcon:FindFirstChild("EscalaIcone").Scale < 1
+	and accessIcon:FindFirstChild("EscalaIcone").Scale < 1,
+	"Ícones superiores precisam ser visualmente menores")
 accessIcon.Activated:Fire()
-check(handle.state.settingsTab == 2 and handle.state.screen == "HomeInterior" and wipe.Visible,
-	"Ícone de acessibilidade não abre diretamente a aba existente")
+check(handle.state.screen == "HomeInterior" and wipe.Visible,
+	"Ícone de acessibilidade deve iniciar abertura")
 advance(0.22)
 check(handle.state.screen == "Settings" and not homeHud.Enabled,
-	"Acessibilidade não navegou para a tela de configurações")
+	"Acessibilidade não abriu o menu de personalização")
+local settingsPage = canvas.Settings
+local settingsGrid = settingsPage:FindFirstChild("GradeConfiguracoes")
+check(settingsGrid ~= nil and settingsGrid.Size.X.Offset == 1018,
+	"Grade de configurações não apareceu na tela central")
+local settingsScene = services.lastScene
+check(settingsScene.settingsNeonVisible == true, "A arena precisa exibir os neons somente em Settings")
+for i = 1, 8 do
+	local card = settingsGrid:FindFirstChild("Cartao_" .. tostring(i))
+	check(card ~= nil and card:FindFirstChild("TituloCartao") ~= nil,
+		"Falta cartão ou título na posição " .. tostring(i))
+	check(card:FindFirstChild("Icone_" .. ({"settings","profile","online","playtime","edit","sheets","create","music"})[i]) ~= nil,
+		"Falta ícone exclusivo no cartão " .. tostring(i))
+	check(card.Position.X.Offset == ((i - 1) % 4) * 256
+		and card.Position.Y.Offset == math.floor((i - 1) / 4) * 229,
+		"Cartões devem manter grade 4 colunas por 2 linhas")
+end
+check(settingsGrid:FindFirstChild("Cartao_2").BackgroundColor3.R > 0.95,
+	"Perfil deve começar com cartão branco")
+check(settingsGrid:FindFirstChild("Cartao_1").BackgroundColor3.R < 0.1,
+	"Os demais cartões devem permanecer escuros")
+check(settingsPage:FindFirstChild("Action_≡  CENTRAL", true) == nil,
+	"Menu de Configurações não deve conter rodapé antigo")
 advance(0.36)
-handle.go("HomeInterior")
+local beforeSettings = handle.state.settings.quality
+settingsGrid:FindFirstChild("Cartao_6").Activated:Fire()
+advance(0.22)
+check(handle.state.settingsCard == 6 and handle.state.screen == "Settings"
+	and handle.state.settings.quality == beforeSettings,
+	"Cartões devem atualizar somente o foco visual, sem sistemas internos")
+check(settingsGrid:FindFirstChild("Cartao_6").BackgroundColor3.R > 0.95
+	and settingsGrid:FindFirstChild("Cartao_2").BackgroundColor3.R < 0.1,
+	"Somente um cartão pode estar selecionado em branco")
+settingsPage:FindFirstChild("FecharConfiguracoes").Activated:Fire()
+advance(0.58)
+check(handle.state.screen == "HomeInterior" and homeHud.Enabled
+	and services.lastScene.settingsNeonVisible == false,
+	"Voltar precisa restaurar lobby original sem neons de Settings")
+settingsIcon.Activated:Fire()
+check(wipe.Visible, "Engrenagem deve iniciar abertura de Configurações")
+advance(0.58)
+check(handle.state.screen == "Settings" and services.lastScene.settingsNeonVisible,
+	"Engrenagem não exibiu menu e neons")
+check(canvas.Settings:FindFirstChild("GradeConfiguracoes"):FindFirstChild("Cartao_6").BackgroundColor3.R > 0.95,
+	"Seleção visual deve persistir ao reabrir Configurações")
+canvas.Settings:FindFirstChild("FecharConfiguracoes").Activated:Fire()
 advance(0.58)
 check(handle.state.screen == "HomeInterior" and homeHud.Enabled,
-	"Voltar ao menu não restaurou os ícones acessíveis")
-settingsIcon.Activated:Fire()
-check(handle.state.settingsTab == 1 and wipe.Visible, "Engrenagem não abre as configurações")
-advance(0.58)
-check(handle.state.screen == "Settings", "Engrenagem não navegou até Configurações")
-handle.go("HomeInterior")
-advance(0.58)
-check(handle.state.screen == "HomeInterior", "Voltar da engrenagem não reabriu a Home")
+	"Fechar Configurações não retornou ao lobby original")
 
 check(handle.state.screen == "HomeInterior" and not wipe.Visible, "Initial state must be visible and idle")
 handle.go("Clubs")
