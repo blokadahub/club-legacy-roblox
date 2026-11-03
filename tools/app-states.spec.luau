@@ -26,13 +26,52 @@ check(homeList:FindFirstChild("Opcao_3").Text == "Kick Off"
 check(homeRoot:FindFirstChild("NomeRealJogador").Text == services.Players.LocalPlayer.Name
 	and homeRoot:FindFirstChild("NivelRealJogador").Text == "Nível —",
 	"Nome/nível do Roblox não foram criados corretamente")
-homeList:FindFirstChild("Opcao_4").Activated:Fire()
-check(handle.state.homeFocus == 4 and homeList:FindFirstChild("Opcao_4").TextTransparency == 0,
-	"A seleção de Clubes não foi destacada visualmente")
-check(handle.state.screen == "HomeInterior",
-	"O menu de apresentação abriu uma seção que ainda não possui conteúdo")
-homeList:FindFirstChild("Opcao_3").Activated:Fire()
-check(handle.state.homeFocus == 3, "Kick Off deixou de ser a seleção inicial")
+local clubOption = homeList:FindFirstChild("Opcao_4")
+local kickOff = homeList:FindFirstChild("Opcao_3")
+local clubMist = homeList:FindFirstChild("FumacaVerde_4")
+check(clubMist ~= nil and clubMist:IsA("CanvasGroup"), "Névoa animável de Clubes não foi criada")
+check(clubMist.GroupTransparency == 1, "Efeito de opção inativa deve iniciar invisível")
+clubOption.Activated:Fire()
+check(handle.state.homeFocus == 4 and handle.state.screen == "HomeInterior",
+	"Seleção de Clubes abriu conteúdo inexistente")
+check(clubOption.TextTransparency > 0,
+	"Transição de destaque deve começar a partir do estado anterior, sem salto")
+advance(0.16)
+check(clubOption.TextTransparency > 0 and clubOption.TextTransparency < 0.32
+	and clubMist.GroupTransparency > 0.18 and clubMist.GroupTransparency < 1,
+	"Aos 160 ms, texto e fumaça devem estar no meio da transição")
+advance(0.36)
+check(clubOption.TextTransparency == 0 and clubMist.GroupTransparency == 0.18,
+	"Opção selecionada não terminou o destaque suave")
+local mistCloud = clubMist:FindFirstChild("Nuvem1")
+check(mistCloud ~= nil, "Névoa selecionada não possui a primeira camada")
+local cloudBefore = mistCloud.Position
+services.RunService.Heartbeat:Fire(0.05)
+check(mistCloud.Position ~= cloudBefore,
+	"A névoa não recebeu movimento contínuo do loop leve")
+kickOff.Activated:Fire()
+advance(0.51)
+check(handle.state.homeFocus == 3 and kickOff.TextTransparency == 0
+	and clubMist.GroupTransparency == 1,
+	"Transição de Clubes para Kick Off não dissipou a névoa anterior")
+local news = homeList:FindFirstChild("Opcao_1")
+news.MouseEnter:Fire()
+advance(0.32)
+check(news.TextTransparency == 0 and handle.state.homeFocus == 3,
+	"Hover deve acender o texto sem alterar a seleção atual")
+news.MouseLeave:Fire()
+advance(0.32)
+check(news.TextTransparency == 0.32,
+	"MouseLeave deve escurecer suavemente a opção não selecionada")
+local manager = homeList:FindFirstChild("Opcao_2")
+manager.InputBegan:Fire({UserInputType = Enum.UserInputType.Touch})
+advance(0.32)
+check(manager.TextTransparency == 0 and handle.state.homeFocus == 3,
+	"Toque deve revelar destaque transitório sem acionar navegação")
+manager.InputEnded:Fire({UserInputType = Enum.UserInputType.Touch})
+advance(0.32)
+check(manager.TextTransparency == 0.32,
+	"Soltar toque deve dissipar o destaque sem alteração de seleção")
 -- Soundtrack compartilha o ciclo de vida do App, não o das páginas.
 local overlay = gui:FindFirstChild("SoundtrackOverlay")
 local sound = services.SoundService:FindFirstChild("CL27SoundtrackLocal")
