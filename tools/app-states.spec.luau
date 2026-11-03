@@ -211,4 +211,36 @@ check(originalCamera.CameraType == Enum.CameraType.Custom and originalCamera.Fie
 	"Scene must restore its original camera during disposal")
 services.RunService.RenderStepped:Fire(1 / 60)
 check(replacement.CameraType == Enum.CameraType.Custom, "Disposed Scene retained its render callback")
+-- Verifica a alternância programática do avatar (sem simular aparência física).
+do
+	local MenuAvatar = require(moduleNodes["src/client/MenuAvatar.luau"])
+	local presentation = Instance.new("Model")
+	local root = Instance.new("Part")
+	root.CFrame = CFrame.new(5, 3, 0)
+	root.Parent = presentation
+	local ball = Instance.new("Model")
+	local motor = Instance.new("Motor6D")
+	local constraint = Instance.new("AnimationConstraint")
+	local fake = {
+		alive = true, model = presentation, root = root, ball = ball,
+		ballGround = Vector3.new(5.6, 0.5, 1), radius = 0.5, hand = nil,
+		elapsed = 0, pose = 0, blend = 0, fromBlend = 0, changeElapsed = 0.85,
+		joints = {RightShoulder = motor, RightHip = constraint},
+		settings = {reducedMotion = false},
+	}
+	MenuAvatar._step(fake, 9.99)
+	check(fake.pose == 0 and fake.blend == 0, "First ten seconds must hold the ball")
+	MenuAvatar._step(fake, 0.02)
+	check(fake.pose == 1 and fake.blend > 0 and fake.blend < 1, "Ten-second pose change must animate smoothly")
+	MenuAvatar._step(fake, 0.85)
+	check(fake.blend == 1 and motor.Transform ~= nil and constraint.Transform ~= nil, "New pose must animate legacy and upgraded joints")
+	MenuAvatar._step(fake, 9.15)
+	check(fake.pose == 0 and fake.blend < 1, "Twenty-second pose cycle must return to holding the ball")
+	fake.settings.reducedMotion = true
+	MenuAvatar._step(fake, 0.1)
+	check(fake.blend == 0, "Reduced motion should show the resting pose without a tween")
+	ball:Destroy()
+	presentation:Destroy()
+end
+
 print(string.format("PASS App phases: %d assertions; virtual-clock stubs only, no Roblox capture/easing certification.", assertions))
