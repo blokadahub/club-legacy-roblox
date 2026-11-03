@@ -1,9 +1,8 @@
 --!strict
--- CL 27 / Soundtrack: player local e independente das rotas.
--- Assets privados ou indisponíveis não podem ser liberados por código.
+-- Player musical em segundo plano. Nenhum dock ocupa o campo de visão.
+-- Apenas a notificação animada de 5 segundos é exibida.
 local SoundService = game:GetService("SoundService")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 local UI = require(script.Parent.UI)
 local Scope = require(script.Parent.Scope)
@@ -18,114 +17,124 @@ local GAP_SECONDS = 2
 local FADE_SECONDS = 0.55
 local NOTIFICATION_SECONDS = 5
 local LOAD_TIMEOUT = 18
+local MUSIC_VOLUME = 0.4
 
-local function makeLabel(parent: Instance, text: string, x: number, y: number, w: number, h: number, size: number, color: Color3, z: number)
+local function makeLabel(parent: Instance, name: string, text: string, x: number, y: number, w: number, h: number, size: number, color: Color3, font)
 	return UI.new("TextLabel", {
-		BackgroundTransparency = 1, Position = UDim2.fromOffset(x, y),
-		Size = UDim2.fromOffset(w, h), Font = Enum.Font.GothamMedium,
-		Text = text, TextColor3 = color, TextSize = size, TextTruncate = Enum.TextTruncate.AtEnd,
-		TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Center,
-		ZIndex = z,
+		Name = name,
+		Text = text,
+		TextColor3 = color,
+		Font = font or Enum.Font.GothamMedium,
+		TextSize = size,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Center,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(x, y),
+		Size = UDim2.fromOffset(w, h),
+		ZIndex = 302,
 	}, parent)
-end
-
-local function corner(parent: Instance, radius: number)
-	return UI.new("UICorner", {CornerRadius = UDim.new(0, radius)}, parent)
-end
-
-local function button(parent: Instance, name: string, text: string, x: number, y: number, w: number, h: number, z: number, scope, callback: () -> ())
-	local control = UI.new("TextButton", {
-		Name = name, BackgroundColor3 = Color3.fromRGB(36, 67, 98),
-		BackgroundTransparency = 0.57, BorderSizePixel = 0,
-		Position = UDim2.fromOffset(x, y), Size = UDim2.fromOffset(w, h),
-		Text = text, Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(232, 242, 252),
-		TextSize = 12, AutoButtonColor = true, Selectable = true, ZIndex = z,
-	}, parent)
-	corner(control, 5)
-	scope:Connect(control.Activated, callback)
-	return control
 end
 
 function Soundtrack.start(screenGui: ScreenGui)
 	local scope = Scope.new()
 	local trackSound = UI.new("Sound", {
-		Name = "CL27SoundtrackLocal", Looped = false, Volume = 0,
+		Name = "CL27SoundtrackLocal",
+		Looped = false, Volume = 0,
 	}, SoundService)
 	scope:Add(trackSound)
 
-	-- UI independente do canvas 1600x900 e dos rerenders de navegação.
+	-- O overlay é transparente e não captura toques do menu.
 	local overlay = UI.new("Frame", {
 		Name = "SoundtrackOverlay", BackgroundTransparency = 1,
-		Size = UDim2.fromScale(1, 1), ZIndex = 240,
+		Size = UDim2.fromScale(1, 1), Active = false, ZIndex = 240,
 	}, screenGui)
 	scope:Add(overlay)
 
-	local toast = UI.new("Frame", {
-		Name = "NowPlayingNotification", AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -17, 0, 72), Size = UDim2.fromOffset(390, 83),
-		BackgroundColor3 = Color3.fromRGB(8, 26, 50), BackgroundTransparency = 0.58,
-		BorderSizePixel = 0, Visible = false, ZIndex = 300,
+	local toast = UI.new("CanvasGroup", {
+		Name = "NowPlayingNotification",
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, 12, 0, 72),
+		Size = UDim2.fromOffset(345, 84),
+		BackgroundColor3 = Color3.fromRGB(8, 27, 42),
+		BackgroundTransparency = 0.32,
+		BorderSizePixel = 0,
+		GroupTransparency = 1,
+		Visible = false,
+		Active = false,
+		ClipsDescendants = true,
+		ZIndex = 300,
 	}, overlay)
-	corner(toast, 8)
-	UI.new("UIStroke", {Color = Color3.fromRGB(89, 144, 190), Transparency = 0.73, Thickness = 1}, toast)
-	UI.new("Frame", {Name = "AccentRule", BackgroundColor3 = Color3.fromRGB(115, 178, 219),
-		BackgroundTransparency = 0.28, BorderSizePixel = 0, Position = UDim2.fromOffset(15, 16),
-		Size = UDim2.fromOffset(3, 49), ZIndex = 301}, toast)
-	makeLabel(toast, "CL 27   /   AGORA TOCANDO", 30, 12, 341, 19, 11, Color3.fromRGB(169, 200, 227), 301)
-	local toastTrack = makeLabel(toast, "", 30, 34, 341, 33, 19, Color3.fromRGB(243, 248, 255), 301)
-	toastTrack.Font = Enum.Font.GothamBold
+	UI.new("UICorner", {CornerRadius = UDim.new(0, 10)}, toast)
+	UI.new("UIStroke", {
+		Color = Color3.fromRGB(79, 145, 133),
+		Transparency = 0.79, Thickness = 1,
+	}, toast)
+	local backdrop = UI.new("Frame", {
+		Name = "FaixaCor", BackgroundTransparency = 0,
+		BackgroundColor3 = Color3.fromRGB(22, 68, 68),
+		Size = UDim2.fromScale(1, 1), ZIndex = 300,
+	}, toast)
+	UI.new("UIGradient", {
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(13, 57, 61)),
+			ColorSequenceKeypoint.new(0.64, Color3.fromRGB(9, 30, 47)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(6, 18, 32)),
+		}),
+		Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.19),
+			NumberSequenceKeypoint.new(1, 0.55),
+		}),
+	}, backdrop)
+	UI.new("Frame", {
+		Name = "AcentoVertical", BackgroundColor3 = Color3.fromRGB(64, 203, 151),
+		BackgroundTransparency = 0.13, BorderSizePixel = 0,
+		Position = UDim2.fromOffset(14, 18),
+		Size = UDim2.fromOffset(3, 45), ZIndex = 301,
+	}, toast)
+	makeLabel(toast, "NotificacaoCabecalho", "CL 27   /   AGORA TOCANDO", 28, 10, 294, 22, 10, Color3.fromRGB(144, 203, 188), Enum.Font.GothamBold)
+	local toastTitle = makeLabel(toast, "NomeFaixa", "", 28, 32, 295, 29, 19, Color3.fromRGB(249, 253, 253), Enum.Font.GothamBold)
+	local toastArtist = makeLabel(toast, "ArtistaFaixa", "", 28, 59, 295, 17, 12, Color3.fromRGB(189, 215, 221), Enum.Font.GothamMedium)
+	local progress = UI.new("Frame", {
+		Name = "ProgressoNotificacao",
+		Position = UDim2.new(0, 0, 1, -2),
+		Size = UDim2.new(1, 0, 0, 2),
+		BackgroundColor3 = Color3.fromRGB(66, 215, 164),
+		BackgroundTransparency = 0.19,
+		BorderSizePixel = 0, ZIndex = 302,
+	}, toast)
 
-	local dock = UI.new("Frame", {
-		Name = "SoundtrackControls", AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -17, 1, -18), Size = UDim2.fromOffset(390, 105),
-		BackgroundColor3 = Color3.fromRGB(10, 29, 51), BackgroundTransparency = 0.44,
-		BorderSizePixel = 0, ZIndex = 250,
-	}, overlay)
-	corner(dock, 7)
-	UI.new("UIStroke", {Color = Color3.fromRGB(100, 159, 205), Transparency = 0.78, Thickness = 1}, dock)
-	makeLabel(dock, "CL 27   /   SOUNDTRACK", 13, 8, 362, 17, 10, Color3.fromRGB(168, 193, 213), 251)
-	local nowPlaying = makeLabel(dock, "Iniciando trilha sonora…", 13, 28, 360, 26, 15, Color3.fromRGB(237, 245, 252), 251)
-	nowPlaying.Font = Enum.Font.GothamBold
-
-	local previousButton
-	local pauseButton
-	local nextButton
-	local volumeLabel
-	local trackButtons = {}
-	local currentIndex = 0
-	local generation = 0
+	local notificationScale = UI.new("UIScale", {Scale = 1}, toast)
 	local toastGeneration = 0
-	local volume = 0.4
-	local paused = false
+	local generation = 0
+	local currentIndex = 0
 	local waiting = false
-	local pendingIndex: number? = nil
-	local transitioning = false
 	local failed: {[number]: boolean} = {}
-	local history: {number} = {}
-
-	local function nameFor(index: number): string
-		local track = Soundtrack.tracks[index]
-		return track.artist .. " — " .. track.title
-	end
-
-	local function updateControls()
-		if not scope.alive then return end
-		nowPlaying.Text = if currentIndex > 0 then nameFor(currentIndex) else "Aguardando faixa"
-		pauseButton.Text = if paused then "TOCAR" else "PAUSAR"
-		volumeLabel.Text = tostring(math.floor(volume * 100 + 0.5)) .. "%"
-		for index, control in ipairs(trackButtons) do
-			control.TextColor3 = if index == currentIndex then Color3.fromRGB(151, 214, 255) else Color3.fromRGB(230, 240, 251)
-			control.BackgroundTransparency = if index == currentIndex then 0.53 else 0.81
-		end
-	end
 
 	local function showNotification(index: number)
 		toastGeneration += 1
 		local token = toastGeneration
-		toastTrack.Text = nameFor(index)
+		local track = Soundtrack.tracks[index]
+		toastTitle.Text = track.title
+		toastArtist.Text = track.artist
 		toast.Visible = true
+		toast.Position = UDim2.new(1, 12, 0, 72)
+		toast.GroupTransparency = 1
+		progress.Size = UDim2.new(1, 0, 0, 2)
+		scope:Tween(toast, {
+			Position = UDim2.new(1, -17, 0, 72),
+			GroupTransparency = 0,
+		}, 0.44)
+		scope:Tween(progress, {Size = UDim2.new(0, 0, 0, 2)}, NOTIFICATION_SECONDS)
 		scope:Delay(NOTIFICATION_SECONDS, function()
-			if toastGeneration == token then toast.Visible = false end
+			if toastGeneration ~= token then return end
+			scope:Tween(toast, {
+				GroupTransparency = 1,
+				Position = UDim2.new(1, -2, 0, 72),
+			}, 0.39)
+			scope:Delay(0.4, function()
+				if toastGeneration == token then toast.Visible = false end
+			end)
 		end)
 	end
 
@@ -138,193 +147,75 @@ function Soundtrack.start(screenGui: ScreenGui)
 		return available[math.random(1, #available)]
 	end
 
-	local startIndex: (number, boolean) -> ()
-	local switchTo: (number, boolean) -> ()
-	local function unavailable(index: number, token: number)
-		if token ~= generation or paused or waiting or currentIndex ~= index or trackSound.IsLoaded then return end
-		failed[index] = true
-		local replacement = randomIndex()
-		if not replacement then
-			trackSound:Stop()
-			transitioning = false
-			nowPlaying.Text = "Áudios indisponíveis ou sem permissão"
-			toast.Visible = false
-			return
-		end
-		-- Falha de asset não trava a playlist; respeita o mesmo silêncio de 2 segundos.
-		generation += 1
-		local nextToken = generation
-		waiting = true
-		transitioning = false
-		trackSound:Stop()
-		scope:Delay(GAP_SECONDS, function()
-			if generation == nextToken then
-				waiting = false
-				if paused then pendingIndex = replacement else startIndex(replacement, true) end
-			end
-		end)
-	end
-
-	startIndex = function(index: number, record: boolean)
-		if not scope.alive then return end
-		generation += 1
-		local token = generation
-		currentIndex = index
-		pendingIndex = nil
-		waiting = false
-		transitioning = false
-		paused = false
-		if record then table.insert(history, index) end
-		trackSound:Stop()
-		trackSound.SoundId = "rbxassetid://" .. tostring(Soundtrack.tracks[index].id)
-		trackSound.TimePosition = 0
-		trackSound.Volume = 0
-		trackSound:Play()
-		scope:Tween(trackSound, {Volume = volume}, FADE_SECONDS)
-		showNotification(index)
-		updateControls()
-		scope:Delay(LOAD_TIMEOUT, function() unavailable(index, token) end)
-	end
-
-	switchTo = function(index: number, record: boolean)
-		generation += 1 -- invalida qualquer timer/fim anterior
-		local token = generation
-		waiting = false
-		pendingIndex = nil
-		if transitioning then
-			trackSound:Stop()
-			startIndex(index, record)
-			return
-		end
-		transitioning = true
-		if currentIndex == 0 or paused or not trackSound.IsPlaying then
-			startIndex(index, record)
-			return
-		end
-		scope:Tween(trackSound, {Volume = 0}, FADE_SECONDS)
-		scope:Delay(FADE_SECONDS, function()
-			if token ~= generation then return end
-			startIndex(index, record)
-		end)
-	end
-
-	-- Tracklist recolhível: mantém o menu limpo e todas as faixas acessíveis.
-	local tracklist = UI.new("Frame", {
-		Name = "TracklistPanel", AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -17, 1, -132), Size = UDim2.fromOffset(390, 202),
-		BackgroundColor3 = Color3.fromRGB(9, 27, 49), BackgroundTransparency = 0.32,
-		BorderSizePixel = 0, Visible = false, ZIndex = 260,
-	}, overlay)
-	corner(tracklist, 8)
-	UI.new("UIStroke", {Color = Color3.fromRGB(101, 158, 205), Transparency = 0.7, Thickness = 1}, tracklist)
-	makeLabel(tracklist, "TRACKLIST  /  03 FAIXAS", 15, 11, 335, 25, 12, Color3.fromRGB(169, 205, 230), 261)
-	local listButton = button(dock, "ToggleTracklist", "LISTA", 306, 7, 69, 22, 251, scope, function()
-		tracklist.Visible = not tracklist.Visible
-	end)
-	listButton.TextSize = 11
-	for index, track in ipairs(Soundtrack.tracks) do
-		local control = button(tracklist, "Track" .. tostring(index),
-			string.format("  %02d    %s — %s", index, track.artist, track.title),
-			13, 42 + (index - 1) * 49, 364, 42, 261, scope, function()
-				switchTo(index, true)
-			end)
-		control.TextSize = 14
-		control.TextXAlignment = Enum.TextXAlignment.Left
-		table.insert(trackButtons, control)
-	end
-
-	previousButton = button(dock, "PreviousTrack", "ANT.", 13, 63, 60, 30, 251, scope, function()
-		if #history > 1 then
-			table.remove(history)
-			switchTo(history[#history], false)
-		elseif currentIndex > 0 then
-			switchTo(currentIndex, false)
-		end
-	end)
-	pauseButton = button(dock, "PauseOrResume", "PAUSAR", 79, 63, 84, 30, 251, scope, function()
-		if paused then
-			paused = false
-			if pendingIndex then
-				local nextTrack = pendingIndex
-				pendingIndex = nil
-				startIndex(nextTrack, true)
-			elseif currentIndex > 0 then
-				trackSound:Resume()
-				scope:Tween(trackSound, {Volume = volume}, FADE_SECONDS)
-			else
-				local nextTrack = randomIndex()
-				if nextTrack then startIndex(nextTrack, true) end
-			end
-		else
-			paused = true
-			-- Pause preserva a posição da faixa e cancela uma troca já agendada.
-			if waiting then
-				pendingIndex = pendingIndex or randomIndex()
-				waiting = false
-			end
-			transitioning = false
-			generation += 1
-			trackSound:Pause()
-		end
-		updateControls()
-	end)
-	nextButton = button(dock, "NextTrack", "PRÓX.", 169, 63, 61, 30, 251, scope, function()
-		local nextTrack = randomIndex()
-		if nextTrack then switchTo(nextTrack, true) end
-	end)
-	button(dock, "DecreaseVolume", "−", 240, 63, 29, 30, 251, scope, function()
-		volume = math.max(0, math.round(volume * 10 - 1) / 10)
-		if not paused and not waiting then scope:Tween(trackSound, {Volume = volume}, 0.16) end
-		updateControls()
-	end)
-	volumeLabel = makeLabel(dock, "40%", 273, 64, 52, 29, 12, Color3.fromRGB(219, 230, 245), 251)
-	volumeLabel.TextXAlignment = Enum.TextXAlignment.Center
-	button(dock, "IncreaseVolume", "+", 335, 63, 40, 30, 251, scope, function()
-		volume = math.min(1, math.round(volume * 10 + 1) / 10)
-		if not paused and not waiting then scope:Tween(trackSound, {Volume = volume}, 0.16) end
-		updateControls()
-	end)
-
-	scope:Connect(trackSound.Ended, function()
-		if paused or waiting or transitioning or currentIndex == 0 then return end
+	local startIndex: (number) -> ()
+	local function queueNext()
+		if waiting or currentIndex == 0 then return end
 		generation += 1
 		local token = generation
 		waiting = true
 		local nextTrack = randomIndex()
 		if not nextTrack then return end
 		scope:Delay(GAP_SECONDS, function()
-			if token ~= generation then return end
+			if token ~= generation or not scope.alive then return end
 			waiting = false
-			if paused then pendingIndex = nextTrack else startIndex(nextTrack, true) end
+			startIndex(nextTrack)
 		end)
-	end)
+	end
 
-	-- Fade-out no fim natural da música, antes do evento Ended.
+	startIndex = function(index: number)
+		if not scope.alive then return end
+		generation += 1
+		local token = generation
+		currentIndex = index
+		waiting = false
+		trackSound:Stop()
+		trackSound.SoundId = "rbxassetid://" .. tostring(Soundtrack.tracks[index].id)
+		trackSound.TimePosition = 0
+		trackSound.Volume = 0
+		trackSound:Play()
+		scope:Tween(trackSound, {Volume = MUSIC_VOLUME}, FADE_SECONDS)
+		showNotification(index)
+		scope:Delay(LOAD_TIMEOUT, function()
+			if token ~= generation or trackSound.IsLoaded or waiting then return end
+			failed[index] = true
+			trackSound:Stop()
+			local replacement = randomIndex()
+			if not replacement then
+				toastGeneration += 1
+				scope:Tween(toast, {GroupTransparency = 1}, 0.3)
+				scope:Delay(0.32, function() toast.Visible = false end)
+			else
+				generation += 1
+				local nextToken = generation
+				waiting = true
+				scope:Delay(GAP_SECONDS, function()
+					if nextToken ~= generation or not scope.alive then return end
+					waiting = false
+					startIndex(replacement)
+				end)
+			end
+		end)
+	end
+
+	scope:Connect(trackSound.Ended, queueNext)
+	-- Atenuação só no final de cada faixa; sem loops de interface por frame.
 	scope:Connect(RunService.Heartbeat, function()
-		if paused or waiting or transitioning or not trackSound.IsPlaying or not trackSound.IsLoaded then return end
+		if waiting or not trackSound.IsLoaded or not trackSound.IsPlaying then return end
 		local duration = trackSound.TimeLength
 		if duration <= 0 then return end
 		local remaining = duration - trackSound.TimePosition
 		if remaining > 0 and remaining <= FADE_SECONDS then
-			trackSound.Volume = volume * math.clamp(remaining / FADE_SECONDS, 0, 1)
+			trackSound.Volume = MUSIC_VOLUME * math.clamp(remaining / FADE_SECONDS, 0, 1)
 		end
 	end)
 
-	-- Um aviso de carregamento tardio não é um erro definitivo; a checagem após 18s
-	-- apenas evita que uma faixa bloqueada impeça a playlist inteira de avançar.
-	local notificationScale = UI.new("UIScale", {Scale = 1}, toast)
-	local playerScale = UI.new("UIScale", {Scale = 1}, dock)
-	local listScale = UI.new("UIScale", {Scale = 1}, tracklist)
+	local cameraConnection: RBXScriptConnection? = nil
 	local function resize()
 		local camera = Workspace.CurrentCamera
 		if not camera then return end
 		local size = camera.ViewportSize
-		local factor = math.clamp(math.min(size.X / 690, size.Y / 480), 0.65, 1)
-		notificationScale.Scale = factor
-		playerScale.Scale = factor
-		listScale.Scale = factor
+		notificationScale.Scale = math.clamp(math.min(size.X / 710, size.Y / 460), 0.72, 1)
 	end
-	local cameraConnection: RBXScriptConnection? = nil
 	local function watchCamera()
 		if cameraConnection then cameraConnection:Disconnect() end
 		local camera = Workspace.CurrentCamera
@@ -336,10 +227,10 @@ function Soundtrack.start(screenGui: ScreenGui)
 	scope:Add(function()
 		if cameraConnection then cameraConnection:Disconnect() end
 	end)
-
 	scope:Connect(screenGui.Destroying, function() scope:Destroy() end)
+
 	local firstTrack = randomIndex()
-	if firstTrack then startIndex(firstTrack, true) end
+	if firstTrack then startIndex(firstTrack) end
 	return {
 		destroy = function() scope:Destroy() end,
 	}
