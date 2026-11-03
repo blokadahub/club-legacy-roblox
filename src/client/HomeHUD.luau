@@ -5,6 +5,7 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local HomeHUD = {}
 local ITEMS = {"CL News", "Modo Manager", "Kick Off", "Clubes", "Sessões"}
@@ -430,6 +431,61 @@ function HomeHUD.start(playerGui: Instance, state)
 			end
 		end
 	end))
+
+	-- Diagnóstico temporário do primeiro teste em celular. Sem Studio
+	-- nem console: informa se o Roblox aceitou o modelo de terceiros.
+	-- Oculto enquanto a versão estável não contém um carregador.
+	local stadiumStatus = element("TextLabel", root, {
+		Name = "DiagnosticoEstadio",
+		Text = "",
+		Visible = false,
+		Font = Enum.Font.GothamMedium,
+		TextSize = 14,
+		TextColor3 = Color3.fromRGB(188, 224, 210),
+		TextXAlignment = Enum.TextXAlignment.Right,
+		TextYAlignment = Enum.TextYAlignment.Center,
+		BackgroundTransparency = 1,
+		Position = UDim2.fromScale(0.52, 0.917),
+		Size = UDim2.fromScale(0.455, 0.052),
+		TextWrapped = true,
+		ZIndex = 8,
+	})
+	local boundStadium = nil
+	local function bindStadiumStatus()
+		local registry = ReplicatedStorage:FindFirstChild("CL27Stadium")
+		if not registry or registry == boundStadium then return end
+		boundStadium = registry
+		local function updateStatus()
+			if not alive then return end
+			local status = registry:GetAttribute("Status")
+			stadiumStatus.Visible = true
+			if status == "Ready" then
+				local actualBench = registry:GetAttribute("BenchDetected") == true
+				local actualTunnel = registry:GetAttribute("TunnelDetected") == true
+				stadiumStatus.TextColor3 = Color3.fromRGB(130, 236, 167)
+				stadiumStatus.Text = "ESTÁDIO CARREGADO  •  10 CENAS"
+				if not actualBench or not actualTunnel then
+					stadiumStatus.Text ..= "  •  ÁREAS PARCIAIS"
+				end
+			elseif status == "Unavailable" then
+				stadiumStatus.TextColor3 = Color3.fromRGB(235, 191, 146)
+				if registry:GetAttribute("Reason") == "PERMISSION_OR_ASSET_ERROR" then
+					stadiumStatus.Text = "ESTÁDIO INDISPONÍVEL: ACESSO AO MODELO NÃO CONFIRMADO"
+				else
+					stadiumStatus.Text = "ESTÁDIO INDISPONÍVEL: GEOMETRIA NÃO IDENTIFICADA"
+				end
+			else
+				stadiumStatus.TextColor3 = Color3.fromRGB(188, 224, 210)
+				stadiumStatus.Text = "PREPARANDO CENAS DO ESTÁDIO..."
+			end
+		end
+		table.insert(connections, registry:GetAttributeChangedSignal("Status"):Connect(updateStatus))
+		updateStatus()
+	end
+	table.insert(connections, ReplicatedStorage.ChildAdded:Connect(function(item)
+		if item.Name == "CL27Stadium" then bindStadiumStatus() end
+	end))
+	bindStadiumStatus()
 
 	local username = element("TextLabel", root, {
 		Name = "NomeRealJogador",

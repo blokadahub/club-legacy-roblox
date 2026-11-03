@@ -84,3 +84,8 @@ task.spawn(function()
 	template.Parent = templates
 	print("[CL27] Bola Academy preparada via " .. method .. ": " .. tostring(count) .. " partes visuais.")
 end)
+
+-- Bayern Stadium é carregado em segundo plano e isolado do lobby anterior.
+-- Uma falha na permissão de modelos terceiros NÃO altera a experiência.
+local StadiumLoader = require(script.Parent.StadiumLoader)
+StadiumLoader.start()

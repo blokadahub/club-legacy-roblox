@@ -243,6 +243,62 @@ check(handle.state.screen == "HomeInterior" and not settingsGui.Enabled
 	and homeHud.Enabled and not wipe.Visible and not UI.inputLocked,
 	"Após o erro, voltar deve recuperar o lobby sem ficar travado")
 
+-- Chegada tardia do estádio (replicação servidor -> cliente):
+-- o menu original é preservado até modelo + dez marcadores válidos.
+local stadiumRegistry = Instance.new("Folder")
+stadiumRegistry.Name = "CL27Stadium"
+stadiumRegistry:SetAttribute("Status", "Loading")
+stadiumRegistry:SetAttribute("AssetId", 18593817379)
+stadiumRegistry.Parent = services.ReplicatedStorage
+services.ReplicatedStorage.ChildAdded:Fire(stadiumRegistry)
+local stadiumShots = Instance.new("Folder")
+stadiumShots.Name = "CameraShots"
+stadiumShots.Parent = stadiumRegistry
+for index = 1, 10 do
+	local marker = Instance.new("Folder")
+	marker.Name = string.format("Camera_%02d", index)
+	marker:SetAttribute("Index", index)
+	marker:SetAttribute("ClockTime", 16 + (index % 5))
+	marker:SetAttribute("Fov", 50)
+	local start = Instance.new("CFrameValue")
+	start.Name = "Inicio"
+	start.Value = CFrame.new(index, 4, -2500)
+	start.Parent = marker
+	local finish = Instance.new("CFrameValue")
+	finish.Name = "Fim"
+	finish.Value = CFrame.new(index + 1, 4, -2500)
+	finish.Parent = marker
+	marker.Parent = stadiumShots
+end
+stadiumRegistry:SetAttribute("Status", "Ready")
+stadiumRegistry:GetAttributeChangedSignal("Status"):Fire()
+check(services.lastScene.mode == "Interior" and not wipe.Visible,
+	"O lobby original deve permanecer até o modelo aparecer no Workspace")
+local stadiumModel = Instance.new("Model")
+stadiumModel.Name = "CL27_BayernStadium"
+stadiumModel.Parent = workspace
+workspace.ChildAdded:Fire(stadiumModel)
+check(wipe.Visible and UI.inputLocked,
+	"Troca automática para o estádio precisa usar transição fullscreen")
+advance(0.44)
+check(services.lastScene.mode == "Stadium" and handle.state.screen == "HomeInterior"
+	and homeHud.Enabled and wipe.Visible,
+	"Estádio deve aparecer apenas como fundo, sem mudar menu ou rota")
+advance(0.64)
+check(not wipe.Visible and not UI.inputLocked,
+	"Transição de ativação do estádio ficou bloqueada")
+local controller = require(moduleNodes["src/client/StadiumCinematics.luau"]).new(stadiumRegistry,{reducedMotion=false})
+check(controller ~= nil and controller.gui.DisplayOrder < homeHud.DisplayOrder,
+	"Controlador de câmera precisa ficar abaixo da interface principal")
+local firstFrame = controller:Step(0.01)
+check(firstFrame ~= nil and controller.shotIndex == 1 and controller.fade.BackgroundTransparency < 0.1,
+	"A primeira tomada deve começar encoberta pelo fade, não piscar")
+for _ = 1, 67 do controller:Step(0.12) end
+check(controller.shotIndex == 2,
+	"As tomadas precisam mudar automaticamente após oito segundos")
+controller:Destroy()
+check(controller.gui.Destroyed, "Controlador cinematográfico vazou a interface ao encerrar")
+
 check(handle.state.screen == "HomeInterior" and not wipe.Visible, "Initial state must be visible and idle")
 handle.go("Clubs")
 check(handle.state.screen == "HomeInterior" and wipe.Visible and UI.inputLocked, "Wipe must lock source before swapping")

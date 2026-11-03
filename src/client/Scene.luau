@@ -2,6 +2,8 @@
 -- The menus are filmed inside local Workspace architecture; no full-screen ViewportFrame.
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StadiumCinematics = require(script.Parent.StadiumCinematics)
 local Workspace = game:GetService("Workspace")
 local TweenService = game:GetService("TweenService")
 local Rig = require(script.Parent.Rig)
@@ -131,6 +133,7 @@ function Scene.new(settings)
 	self.settings, self.actors, self.effects, self.lightTweens = settings or {}, {}, {}, {}
 	self.settingsNeon = nil
 	self.settingsRings = {}
+	self.stadium = nil
 	self.folder = Instance.new("Folder")
 	self.folder.Name = "CL27_CenarioLocal"
 	self.folder.Parent = Workspace
@@ -185,14 +188,23 @@ function Scene.new(settings)
 		camera.CameraType = Enum.CameraType.Scriptable
 		-- Preserve the scene's framing inside the same fitted 16:9 canvas as the UI.
 		-- A 4:3 viewport adds vertical space rather than cropping the side actors.
-		local referenceFov = self.fov or 36
+		local frame, focus, cinematicFov
+		if self.mode == "Stadium" and self.stadium then
+			frame, focus, cinematicFov = self.stadium:Step(dt)
+		end
+		local referenceFov = cinematicFov or self.fov or 36
 		local fittedHeight = self.canvasHeight or camera.ViewportSize.Y
 		local viewportHeight = math.max(1, camera.ViewportSize.Y)
 		camera.FieldOfView = math.clamp(math.deg(2 * math.atan(math.tan(math.rad(referenceFov / 2)) * viewportHeight / math.max(1, fittedHeight))), 1, 120)
-		local strength = self.settings.reducedMotion and 0 or 1
-		local drift = Vector3.new(math.sin(self.elapsed * 0.16) * 0.065, math.sin(self.elapsed * 0.2) * 0.027, 0) * strength
-		camera.CFrame = CFrame.lookAt(self.cameraPosition + drift, self.cameraTarget + drift * 0.3)
-		camera.Focus = CFrame.new(self.cameraTarget)
+		if frame then
+			camera.CFrame = frame
+			camera.Focus = CFrame.new(focus)
+		else
+			local strength = self.settings.reducedMotion and 0 or 1
+			local drift = Vector3.new(math.sin(self.elapsed * 0.16) * 0.065, math.sin(self.elapsed * 0.2) * 0.027, 0) * strength
+			camera.CFrame = CFrame.lookAt(self.cameraPosition + drift, self.cameraTarget + drift * 0.3)
+			camera.Focus = CFrame.new(self.cameraTarget)
+		end
 		for _, actor in ipairs(self.actors) do Rig.animate(actor, self.elapsed, self.settings.reducedMotion) end
 		-- Apenas na tela Configurações: círculos de luz integrados ao
 		-- cenário preexistente. Não alteram o lobby de entrada.
@@ -210,6 +222,22 @@ function Scene:_light(mode)
 	for _, tween in ipairs(self.lightTweens) do tween:Cancel() end
 	table.clear(self.lightTweens)
 	Lighting.GlobalShadows, Lighting.ShadowSoftness = true, 0.35
+	if mode == "Stadium" then
+		-- No lobby cinematográfico o controlador regula hora e exposição
+		-- diretamente. Sem tween concorrente sobre ClockTime/Brightness.
+		Lighting.Ambient = Color3.fromRGB(79, 92, 97)
+		Lighting.OutdoorAmbient = Color3.fromRGB(95, 116, 122)
+		Lighting.Brightness = 2.25
+		Lighting.ClockTime = 16.3
+		Lighting.ExposureCompensation = -0.05
+		Lighting.EnvironmentDiffuseScale = 0.78
+		Lighting.EnvironmentSpecularScale = 0.72
+		self.rays.Enabled = false
+		self.atmosphere.Density = 0.035
+		self.atmosphere.Haze = 0
+		self.grade.TintColor = Color3.fromRGB(238, 250, 247)
+		return
+	end
 	local training = mode == "Training"
 	local interior = mode == "Interior"
 	local target = {
@@ -372,12 +400,34 @@ function Scene:Show(mode, homeClub, awayClub, homeKitIndex, awayKitIndex)
 		return
 	end
 	if self.menuAvatar then self.menuAvatar:Destroy(); self.menuAvatar = nil end
+	if self.stadium then self.stadium:Destroy(); self.stadium = nil end
 	self.mode, self.clubText = mode, nil
 	table.clear(self.actors)
 	self.settingsNeon = nil
 	table.clear(self.settingsRings)
 	self.folder:ClearAllChildren()
-	if mode == "Training" then self:_training(homeClub, homeKitIndex)
+	if mode == "Stadium" then
+		local registry = ReplicatedStorage:FindFirstChild("CL27Stadium")
+		if registry then
+			local ok, controller = pcall(StadiumCinematics.new, registry, self.settings)
+			if ok then
+				self.stadium = controller
+			else
+				warn("[CL27 Stadium] Câmera não inicializou: "..tostring(controller))
+			end
+		end
+		if self.stadium then
+			-- Referência inicial segura; o controlador assume a câmera no
+			-- primeiro RenderStepped, sem recriar personagem ou cenário falso.
+			local first = registry:FindFirstChild("CameraShots") and registry.CameraShots:FindFirstChild("Camera_01")
+			local anchor = first and first:FindFirstChild("Inicio")
+			local frame = if anchor and anchor:IsA("CFrameValue") then anchor.Value else CFrame.new(0,8,-2500)
+			self.cameraPosition, self.cameraTarget, self.fov = frame.Position, frame.Position + frame.LookVector*25, 51
+		else
+			self.mode = "Interior"
+			self:_interior(homeClub, homeKitIndex)
+		end
+	elseif mode == "Training" then self:_training(homeClub, homeKitIndex)
 	elseif mode == "Arena" or mode == "Kits" then self:_arena(homeClub, awayClub, homeKitIndex, awayKitIndex, mode == "Kits")
 	else self:_interior(homeClub, homeKitIndex) end
 	self:_light(mode)
@@ -443,6 +493,7 @@ end
 
 function Scene:ApplySettings(settings)
 	if settings then self.settings = settings end
+	if self.stadium then self.stadium:SetSettings(self.settings) end
 	if self.menuAvatar then self.menuAvatar:SetSettings(self.settings) end
 	local quality = self.settings.quality or "Alta"
 	local low, high = quality == "Baixa", quality == "Alta"
@@ -473,6 +524,7 @@ function Scene:UpdateClubs(homeClub, awayClub, homeKitIndex, awayKitIndex)
 end
 
 function Scene:Destroy()
+	if self.stadium then self.stadium:Destroy(); self.stadium = nil end
 	self:SetSettingsAtmosphere(false)
 	if self.menuAvatar then self.menuAvatar:Destroy(); self.menuAvatar = nil end
 	if self.connection then self.connection:Disconnect() end
