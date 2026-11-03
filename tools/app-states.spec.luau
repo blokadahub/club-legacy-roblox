@@ -9,7 +9,16 @@ local function key(code) services.UserInputService.InputBegan:Fire({KeyCode = co
 local handle = App.start()
 local gui = playerGui.CL27
 local canvas = gui.Canvas
-local wipe = canvas.Transicao
+local transitionGui = playerGui:FindFirstChild("CL27_TransitionHUD")
+local wipe = transitionGui and transitionGui:FindFirstChild("Transicao")
+check(transitionGui ~= nil and wipe ~= nil and not wipe.Visible,
+	"Transição independente não foi criada antes do menu")
+check(wipe.Size.X.Scale == 1 and wipe.Size.Y.Scale == 1
+	and wipe.Size.X.Offset == 0 and wipe.Size.Y.Offset == 0
+	and wipe.Position.X.Scale == 0 and wipe.Position.Y.Scale == 0,
+	"Transição precisa cobrir TODO o viewport, sem Canvas 16:9 ou retângulo interno")
+check(transitionGui.IgnoreGuiInset and transitionGui.DisplayOrder > 85,
+	"Transição precisa sobrepor os dois menus e ignorar margens da tela")
 -- O menu inicial deve existir em seu PRÓPRIO ScreenGui, antes de
 -- qualquer montagem de cenário; não pode depender de telas legadas.
 local homeHud = playerGui:FindFirstChild("CL27_HomeHUD")
@@ -138,17 +147,33 @@ check(settingsIcon:FindFirstChild("EscalaIcone").Scale < 1
 	and accessIcon:FindFirstChild("EscalaIcone").Scale < 1,
 	"Ícones superiores precisam ser visualmente menores")
 accessIcon.Activated:Fire()
-check(handle.state.screen == "HomeInterior" and wipe.Visible,
-	"Ícone de acessibilidade deve iniciar abertura")
+check(handle.state.screen == "HomeInterior" and wipe.Visible
+	and wipe.GroupTransparency == 1,
+	"Entrada deve começar transparente, sem flash de tela sólida")
 advance(0.22)
-check(handle.state.screen == "Settings" and not homeHud.Enabled,
-	"Acessibilidade não abriu o menu de personalização")
+check(handle.state.screen == "HomeInterior" and wipe.Visible
+	and wipe.GroupTransparency > 0 and wipe.GroupTransparency < 1,
+	"Durante a entrada, a cobertura deve avançar gradualmente")
+advance(0.22)
+check(handle.state.screen == "Settings" and not homeHud.Enabled
+	and wipe.Visible and wipe.GroupTransparency == 0,
+	"A página só pode trocar depois de a tela estar completamente coberta")
+advance(0.08)
+check(wipe.Visible and wipe.GroupTransparency == 0,
+	"Manter a tela coberta durante a breve estabilização do cenário")
+advance(0.28)
+check(wipe.Visible and wipe.GroupTransparency > 0 and wipe.GroupTransparency < 1,
+	"Durante a saída, a transição deve revelar suavemente o menu")
+advance(0.28)
+check(not wipe.Visible and wipe.GroupTransparency == 1 and not UI.inputLocked,
+	"Transição fullscreen não terminou ou manteve os controles bloqueados")
 local settingsGui = playerGui:FindFirstChild("CL27_SettingsHUD")
 check(settingsGui ~= nil and settingsGui.DisplayOrder > gui.DisplayOrder and settingsGui.Enabled,
 	"Settings não está em um ScreenGui independente acima do wipe")
 local settingsPage = settingsGui:FindFirstChild("SettingsCanvas"):FindFirstChild("Settings")
 local settingsGrid = settingsPage:FindFirstChild("GradeConfiguracoes")
-check(settingsGrid ~= nil and settingsGrid.Size.X.Offset == 1018,
+check(settingsGrid ~= nil and settingsGrid.Size.X.Offset == 1115
+	and settingsGrid.Size.Y.Offset == 493,
 	"Grade de configurações não apareceu na tela central")
 local settingsScene = services.lastScene
 check(settingsScene.settingsNeonVisible == true, "A arena precisa exibir os neons somente em Settings")
@@ -158,9 +183,13 @@ for i = 1, 8 do
 		"Falta cartão ou título na posição " .. tostring(i))
 	check(card:FindFirstChild("Icone_" .. ({"settings","profile","online","playtime","edit","sheets","create","music"})[i]) ~= nil,
 		"Falta ícone exclusivo no cartão " .. tostring(i))
-	check(card.Position.X.Offset == ((i - 1) % 4) * 256
-		and card.Position.Y.Offset == math.floor((i - 1) / 4) * 229,
-		"Cartões devem manter grade 4 colunas por 2 linhas")
+	check(card.Position.X.Offset == ((i - 1) % 4) * 281
+		and card.Position.Y.Offset == math.floor((i - 1) / 4) * 251
+		and card.Size.X.Offset == 272 and card.Size.Y.Offset == 242,
+		"Cartões ampliados devem manter grade 4 colunas por 2 linhas")
+	check(card:FindFirstChild("TituloCartao").TextSize >= 24
+		and card:FindFirstChild("Icone_" .. ({"settings","profile","online","playtime","edit","sheets","create","music"})[i]):FindFirstChildOfClass("UIScale").Scale > 1,
+		"Títulos e ícones também precisam ser maiores, não apenas os cartões")
 end
 check(settingsGrid:FindFirstChild("Cartao_2").BackgroundColor3.R > 0.95,
 	"Perfil deve começar com cartão branco")
@@ -179,19 +208,19 @@ check(settingsGrid:FindFirstChild("Cartao_6").BackgroundColor3.R > 0.95
 	and settingsGrid:FindFirstChild("Cartao_2").BackgroundColor3.R < 0.1,
 	"Somente um cartão pode estar selecionado em branco")
 settingsPage:FindFirstChild("FecharConfiguracoes").Activated:Fire()
-advance(0.58)
+advance(1.1)
 check(handle.state.screen == "HomeInterior" and homeHud.Enabled
 	and not settingsGui.Enabled and services.lastScene.settingsNeonVisible == false,
 	"Voltar precisa restaurar lobby original sem neons de Settings")
 settingsIcon.Activated:Fire()
 check(wipe.Visible, "Engrenagem deve iniciar abertura de Configurações")
-advance(0.58)
+advance(1.1)
 check(handle.state.screen == "Settings" and services.lastScene.settingsNeonVisible and settingsGui.Enabled,
 	"Engrenagem não exibiu menu e neons")
 check(settingsGrid:FindFirstChild("Cartao_6").BackgroundColor3.R > 0.95,
 	"Seleção visual deve persistir ao reabrir Configurações")
 settingsPage:FindFirstChild("FecharConfiguracoes").Activated:Fire()
-advance(0.58)
+advance(1.1)
 check(handle.state.screen == "HomeInterior" and homeHud.Enabled and not settingsGui.Enabled,
 	"Fechar Configurações não retornou ao lobby original")
 
@@ -199,14 +228,17 @@ check(handle.state.screen == "HomeInterior" and homeHud.Enabled and not settings
 -- A interface continua visível e o jogador consegue voltar.
 services.failNextSceneShow = true
 settingsIcon.Activated:Fire()
-advance(0.22)
+advance(0.44)
 check(handle.state.screen == "Settings" and settingsGui.Enabled
-	and not wipe.Visible and not UI.inputLocked,
-	"Um erro de render deixou a transição opaca cobrindo o menu de configurações")
+	and wipe.Visible and wipe.GroupTransparency == 0,
+	"Um erro na cena não pode revelar o cenário antes de concluir a troca")
+advance(0.64)
+check(not wipe.Visible and not UI.inputLocked,
+	"Um erro de render deixou a transição sobre o menu de configurações")
 check(settingsGrid.Parent == settingsPage and settingsGrid:FindFirstChild("Cartao_2") ~= nil,
 	"Um erro na cena removeu os cartões do HUD independente")
 settingsPage:FindFirstChild("FecharConfiguracoes").Activated:Fire()
-advance(0.58)
+advance(1.1)
 check(handle.state.screen == "HomeInterior" and not settingsGui.Enabled
 	and homeHud.Enabled and not wipe.Visible and not UI.inputLocked,
 	"Após o erro, voltar deve recuperar o lobby sem ficar travado")
@@ -214,15 +246,16 @@ check(handle.state.screen == "HomeInterior" and not settingsGui.Enabled
 check(handle.state.screen == "HomeInterior" and not wipe.Visible, "Initial state must be visible and idle")
 handle.go("Clubs")
 check(handle.state.screen == "HomeInterior" and wipe.Visible and UI.inputLocked, "Wipe must lock source before swapping")
-advance(0.11)
+advance(0.22)
 check(handle.state.screen == "HomeInterior" and wipe.GroupTransparency > 0 and wipe.GroupTransparency < 1, "Mid-entry must preserve source")
-advance(0.11)
-check(handle.state.screen == "Clubs" and UI.inputLocked and wipe.Visible, "Swap must happen under opaque wipe")
+advance(0.22)
+check(handle.state.screen == "Clubs" and UI.inputLocked and wipe.Visible
+	and wipe.GroupTransparency == 0, "Swap must happen under opaque full-screen wipe")
 check(not homeHud.Enabled, "HUD inicial deve ocultar ao acessar outra seção")
 check(services.GuiService.SelectedObject == nil, "Controller focus must wait until page input resumes")
-advance(0.18)
+advance(0.36)
 check(wipe.GroupTransparency > 0 and wipe.GroupTransparency < 1 and UI.inputLocked, "Mid-exit must retain input lock")
-advance(0.18)
+advance(0.28)
 check(not wipe.Visible and not UI.inputLocked, "Transition must finish visible and unlocked")
 check(services.GuiService.SelectedObject ~= nil, "Controller focus must activate after transition")
 
@@ -248,16 +281,18 @@ check(handle.state.homeClub ~= clubBefore, "Closing central menu must resume pag
 
 -- Latest queued route wins; no geometry swap is performed by a stale delay.
 handle.go("Squad")
-advance(0.1)
+advance(0.2)
 handle.go("Overview")
 handle.go("Kits")
-advance(0.12)
+advance(0.24)
 check(handle.state.screen == "Squad", "Current transition must finish its intended handoff")
-advance(0.36)
-check(handle.state.screen == "Squad" and UI.inputLocked, "Queued transition must begin after first completes")
-advance(0.22)
-check(handle.state.screen == "Kits", "Latest queued route must replace earlier pending route")
-advance(0.36)
+advance(0.64)
+check(handle.state.screen == "Squad" and UI.inputLocked and wipe.Visible,
+	"Queued transition must begin only after first exit completes")
+advance(0.44)
+check(handle.state.screen == "Kits" and wipe.GroupTransparency == 0,
+	"Latest queued route must replace earlier pending route under full coverage")
+advance(0.64)
 check(not wipe.Visible and not UI.inputLocked, "Queued navigation must release lock")
 local kitBefore = handle.state.homeKit
 key(Enum.KeyCode.DPadRight)
@@ -265,7 +300,7 @@ check(handle.state.homeKit == kitBefore, "Controller focus movement must not cyc
 key(Enum.KeyCode.Right)
 check(handle.state.homeKit ~= kitBefore, "Keyboard arrows must continue cycling kits")
 key(Enum.KeyCode.ButtonB)
-advance(0.58)
+advance(1.1)
 check(handle.state.screen == "Squad", "History must preserve actual visited routes")
 key(Enum.KeyCode.M)
 for _, button in ipairs(canvas.Squad:GetDescendants()) do
@@ -277,11 +312,11 @@ check(not UI.inputLocked, "Closing central menu must release header lock")
 
 handle.state.settings.reducedMotion = true
 handle.go("HomeTraining")
-advance(0.03)
+advance(0.05)
 check(handle.state.screen == "Squad" and UI.inputLocked, "Reduced motion still needs covered handoff")
-advance(0.03)
+advance(0.05)
 check(handle.state.screen == "HomeTraining", "Reduced motion uses short entry phase")
-advance(0.08)
+advance(0.16)
 check(not wipe.Visible and not UI.inputLocked, "Reduced motion must finish without lingering lock")
 
 -- Completed jobs must not accumulate cleanup closures throughout a long session.
@@ -297,7 +332,7 @@ check(callbacks == 100 and not scope.alive, "Destroyed scope executed delayed wo
 
 -- A same-page update keeps the selected controller row and its scroll position.
 handle.go("Development")
-advance(0.14)
+advance(0.28)
 local development = canvas.Development
 local athleteList = development:FindFirstChild("AtletasEmDesenvolvimento", true)
 local lastAthlete
@@ -317,8 +352,8 @@ advance(0.02)
 local scene = services.lastScene
 handle.destroy()
 advance(2)
-check(scene.destroyed and gui.Destroyed and settingsGui.Destroyed,
-	"Disposal must destroy scene, principal UI and Settings HUD")
+check(scene.destroyed and gui.Destroyed and settingsGui.Destroyed and transitionGui.Destroyed,
+	"Disposal must destroy scene, principal UI, Settings HUD and transition overlay")
 check(homeHud.Destroyed, "HUD independente não foi destruído com o App")
 check(not UI.inputLocked, "Disposal must release shared input lock")
 handle.go("Finance")
