@@ -588,6 +588,7 @@ for i = 1, 3 do
 end
 -- A Scene real utiliza os módulos copiados do PR #7 sem câmera própria:
 -- o App é o único controlador da câmera e da iluminação.
+presentation:ApplySettings({quality="Alta", reducedMotion=false})
 presentation:Show("Tunnel", Data.clubs[1], Data.clubs[2], 1, 1)
 check(presentation.tunnel ~= nil
 	and presentation.folder:FindFirstChild("CinematicTunnel", true) ~= nil,
