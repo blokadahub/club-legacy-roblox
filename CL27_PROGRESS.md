@@ -95,3 +95,11 @@ Não restou falha reproduzível nas verificações executadas após as correçõ
 - Arquivo local `club-legacy.rbxlx`, SHA256 `260b3754c65208402df8d0aad2cc4827ef0c3bd7746747337596ec9aa1fbab02`, gerado e validado após as auditorias. O arquivo compilado é distribuído como artefato; as fontes permanecem versionadas.
 - O registro posterior deste resultado altera somente este documento, com `[skip ci]`, preservando exatamente o código aprovado na execução indicada.
 - **Nenhuma experiência Roblox foi publicada ou modificada nesta sessão.** O fluxo manual Open Cloud está preparado e sem IDs antigos; o destino ainda precisa ser confirmado/configurado.
+
+## Atualização da trilha sonora — 03/11/2026
+
+- Fonte alterada: `src/client/Soundtrack.luau`. Removidas `Crab Rave` e `CloudNone`.
+- Adicionados os 11 IDs de áudio recebidos; mantida `Shiawase`. Total: **12 faixas com IDs distintos**.
+- Na lista de novas faixas, a música originalmente na posição 7 (`DESERT STAR — Empty Sky`) passou à posição 1, e `DESERT STAR — Carissa` passou à posição 7.
+- Reprodução agora utiliza uma lista embaralhada por rodada, sem repetição enquanto houver faixas disponíveis e sem repetir a última entre rodadas. Áudios indisponíveis continuam sendo marcados como falhos e ignorados até reinicializar o player.
+- Conferência estática local durante a alteração: 12 IDs únicos e ausência dos IDs removidos; sintaxe Luau e audição dentro do Roblox ainda dependem de CI e execução real. A reprodução também depende das permissões dos assets na experiência publicada.
