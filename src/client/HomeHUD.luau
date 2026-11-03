@@ -109,6 +109,8 @@ function HomeHUD.start(playerGui: Instance, state)
 	local hovered: number? = nil
 	local navigateSettings: ((number) -> ())? = nil
 	local navigatePrimary: ((number, number?) -> ())? = nil
+	local notifySelection: ((number) -> ())? = nil
+	local function locked(): boolean return state.menuInputLocked == true end
 
 	local gui = element("ScreenGui", playerGui, {
 		Name = "CL27_HomeHUD",
@@ -152,6 +154,7 @@ function HomeHUD.start(playerGui: Instance, state)
 		{button = accessibilityButton, glow = accessibilityGleam, tab = 2},
 	}) do
 		table.insert(connections, entry.button.Activated:Connect(function()
+			if locked() then return end
 			if navigateSettings then navigateSettings(entry.tab) end
 		end))
 		table.insert(connections, entry.button.MouseEnter:Connect(function()
@@ -225,6 +228,7 @@ function HomeHUD.start(playerGui: Instance, state)
 	end
 
 	local showcase = HomeShowcase.new(root, function(index, lesson)
+		if locked() then return end
 		if navigatePrimary then navigatePrimary(index, lesson) end
 	end, reducedMotion)
 	local function glowWidth(index: number): number
@@ -368,7 +372,7 @@ function HomeHUD.start(playerGui: Instance, state)
 	end
 	for i, button in ipairs(lessonButtons) do
 		table.insert(connections, button.Activated:Connect(function()
-			if current ~= 4 then return end
+			if locked() or current ~= 4 then return end
 			selectedLesson = i
 			state.homeLesson = i
 			for n, entry in ipairs(lessonButtons) do
@@ -397,22 +401,27 @@ function HomeHUD.start(playerGui: Instance, state)
 
 	for index, row in ipairs(rows) do
 		table.insert(connections, row.button.MouseEnter:Connect(function()
+			if locked() then return end
 			hovered = index
 			repaint()
 		end))
 		table.insert(connections, row.button.MouseLeave:Connect(function()
+			if locked() then return end
 			if hovered == index then hovered = nil end
 			repaint()
 		end))
 		table.insert(connections, row.button.SelectionGained:Connect(function()
+			if locked() then return end
 			hovered = index
 			repaint()
 		end))
 		table.insert(connections, row.button.SelectionLost:Connect(function()
+			if locked() then return end
 			if hovered == index then hovered = nil end
 			repaint()
 		end))
 		table.insert(connections, row.button.InputBegan:Connect(function(input)
+			if locked() then return end
 			if input.UserInputType == Enum.UserInputType.Touch
 				or input.UserInputType == Enum.UserInputType.MouseButton1 then
 				hovered = index
@@ -420,6 +429,7 @@ function HomeHUD.start(playerGui: Instance, state)
 			end
 		end))
 		table.insert(connections, row.button.InputEnded:Connect(function(input)
+			if locked() then return end
 			if (input.UserInputType == Enum.UserInputType.Touch
 				or input.UserInputType == Enum.UserInputType.MouseButton1) and hovered == index then
 				hovered = nil
@@ -427,12 +437,14 @@ function HomeHUD.start(playerGui: Instance, state)
 			end
 		end))
 		table.insert(connections, row.button.Activated:Connect(function()
+			if locked() then return end
 			current = index
 			hovered = nil
 			state.homeFocus = index
 			repaint()
 			pulse(row)
 			strike()
+			if notifySelection then notifySelection(index) end
 			-- O botão principal abre as rotas existentes, sem inventar sistemas.
 		end))
 	end
@@ -518,6 +530,9 @@ function HomeHUD.start(playerGui: Instance, state)
 		end,
 		SetPrimaryNavigation = function(_, callback: (number, number?) -> ())
 			navigatePrimary = callback
+		end,
+		SetSelectionLoading = function(_, callback: (number) -> ())
+			notifySelection = callback
 		end,
 		SetVisible = function(_, visible: boolean)
 			if alive then
