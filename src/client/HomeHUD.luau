@@ -5,9 +5,10 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
+local HomeShowcase = require(script.Parent.HomeShowcase)
 
 local HomeHUD = {}
-local ITEMS = {"CL News", "Modo Manager", "Kick Off", "Clubes", "Sessões"}
+local ITEMS = {"Notícias do CL", "Clubs", "Jogo Rápido", "Aprenda a Jogar", "Upgrade"}
 local WHITE = Color3.fromRGB(252, 255, 253)
 local GRAY = Color3.fromRGB(184, 195, 196)
 local SMOKE = "rbxasset://textures/particles/smoke_main.dds"
@@ -176,6 +177,7 @@ function HomeHUD.start(playerGui: Instance, state)
 	local current = math.clamp(state.homeFocus or 3, 1, #ITEMS)
 	local hovered: number? = nil
 	local navigateSettings: ((number) -> ())? = nil
+	local navigatePrimary: ((number, number?) -> ())? = nil
 
 	local gui = element("ScreenGui", playerGui, {
 		Name = "CL27_HomeHUD",
@@ -232,7 +234,7 @@ function HomeHUD.start(playerGui: Instance, state)
 		Name = "MarcaCL27",
 		Text = "CL 27",
 		Font = Enum.Font.GothamBlack,
-		TextSize = 37,
+		TextSize = 34,
 		TextColor3 = WHITE,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		BackgroundTransparency = 1,
@@ -251,7 +253,7 @@ function HomeHUD.start(playerGui: Instance, state)
 		BorderSizePixel = 0,
 		ScrollingDirection = Enum.ScrollingDirection.Y,
 		ScrollBarThickness = 0,
-		CanvasSize = UDim2.new(0, 0, 0, 405),
+		CanvasSize = UDim2.new(0, 0, 0, 540),
 		ClipsDescendants = false,
 		Active = true,
 		ZIndex = 3,
@@ -286,15 +288,18 @@ function HomeHUD.start(playerGui: Instance, state)
 		return tween
 	end
 
+	local showcase = HomeShowcase.new(root, function(index, lesson)
+		if navigatePrimary then navigatePrimary(index, lesson) end
+	end, reducedMotion)
 	for index, caption in ipairs(ITEMS) do
-		local y = 8 + (index - 1) * 77
+		local y = 8 + (index - 1) * 72 + (if current == 4 and index > 4 then 144 else 0)
 		local fog, clouds, impulse = smoke(list, y)
 		fog.Name = "FumacaVerde_" .. tostring(index)
 		local button = element("TextButton", list, {
 			Name = "Opcao_" .. tostring(index),
 			Text = caption,
 			Font = Enum.Font.GothamMedium,
-			TextSize = 26,
+			TextSize = 23,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextColor3 = GRAY,
 			TextTransparency = 0.32,
@@ -309,6 +314,43 @@ function HomeHUD.start(playerGui: Instance, state)
 		local pressScale = element("UIScale", button, {Name = "RespostaToque", Scale = 1})
 		rows[index] = {button = button, fog = fog, clouds = clouds, impulse = impulse, scale = pressScale, y = y, visual = -1}
 	end
+
+	-- Submenu recuado para os quatro destinos de Aprenda a Jogar.
+	local lessons = {"Centro de Treinamento", "Rush", "Jogos de Habilidade", "Arena de Treino"}
+	local selectedLesson = math.clamp(state.homeLesson or 1, 1, #lessons)
+	local learnGroup = element("CanvasGroup", list, {
+		Name = "SubmenuAprenda", Position = UDim2.fromOffset(25, 8 + 3 * 72 + 56),
+		Size = UDim2.fromOffset(350, 138),
+		BackgroundTransparency = 1,
+		GroupTransparency = if current == 4 then 0 else 1,
+		Visible = current == 4, ZIndex = 7,
+	})
+	local lessonButtons = {}
+	for i, name in ipairs(lessons) do
+		local button = element("TextButton", learnGroup, {
+			Name = "SubOpcao_" .. tostring(i), Text = name,
+			TextColor3 = if i == selectedLesson then WHITE else GRAY,
+			TextTransparency = if i == selectedLesson then 0 else 0.3,
+			Font = if i == selectedLesson then Enum.Font.GothamBold else Enum.Font.GothamMedium,
+			TextSize = 17, TextXAlignment = Enum.TextXAlignment.Left,
+			Position = UDim2.fromOffset(20, (i - 1) * 34),
+			Size = UDim2.fromOffset(316, 32),
+			BackgroundTransparency = 1, AutoButtonColor = false,
+			Selectable = true, ZIndex = 8,
+		})
+		lessonButtons[i] = button
+	end
+	element("Frame", learnGroup, {
+		Name = "LinhaSubmenu", Position = UDim2.fromOffset(5, 3),
+		Size = UDim2.fromOffset(2, 126), BackgroundColor3 = Color3.fromRGB(75, 121, 102),
+		BackgroundTransparency = 0.3, BorderSizePixel = 0, ZIndex = 7,
+	})
+	local learnAccent = element("Frame", learnGroup, {
+		Name = "IndicadorSubmenu", Position = UDim2.fromOffset(3, 5 + (selectedLesson - 1) * 34),
+		Size = UDim2.fromOffset(6, 25), BackgroundColor3 = Color3.fromRGB(129, 223, 135),
+		BorderSizePixel = 0, ZIndex = 8,
+	})
+	element("UICorner", learnAccent, {CornerRadius = UDim.new(1, 0)})
 
 	-- A névoa recebe um impulso de luz rápido e desce à intensidade habitual.
 	-- Não é um retângulo neon nem uma escala elástica.
@@ -326,29 +368,57 @@ function HomeHUD.start(playerGui: Instance, state)
 
 	local function repaint(instant: boolean?)
 		if not alive then return end
+		local expanded = current == 4
+		learnGroup.Visible = expanded
+		animate(learnGroup, {
+			GroupTransparency = if expanded then 0 else 1,
+		}, if instant then 0 else 0.26, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+		list.CanvasSize = UDim2.new(0, 0, 0, if expanded then 540 else 420)
 		for index, row in ipairs(rows) do
-			-- O hover transfere o foco visual: NUNCA dois textos brancos.
 			local focused = hovered or current
 			local mode = if index == focused then (if index == current then 2 else 1) else 0
-			if instant or row.visual ~= mode then
+			local nextY = 8 + (index - 1) * 72 + (if expanded and index > 4 then 144 else 0)
+			local moved = nextY ~= row.y
+			row.y = nextY
+			if moved then
+				animate(row.fog, {
+					Position = UDim2.new(0, -24, 0, nextY - 21),
+				}, if instant then 0 else 0.27, Enum.EasingStyle.Quart)
+			end
+			if instant or row.visual ~= mode or moved then
 				row.visual = mode
 				local active = mode > 0
-				-- Prioriza leitura, não transforma cada item em uma caixa.
 				row.button.Font = if active then Enum.Font.GothamBold else Enum.Font.GothamMedium
 				animate(row.button, {
 					TextColor3 = if active then WHITE else GRAY,
 					TextTransparency = if active then 0 else 0.32,
-					TextSize = if mode == 2 then 30 elseif mode == 1 then 29 else 26,
+					TextSize = if mode == 2 then 27 elseif mode == 1 then 26 else 23,
 					Position = UDim2.new(0, if active then 14 else 6, 0, row.y),
-				}, if instant then 0 else 0.3, Enum.EasingStyle.Quart)
-				-- Dissolve a névoa ao mudar a seleção; sem trocar Visible
-				-- instantaneamente. O brilho selecionado é um pouco mais presente.
+				}, if instant then 0 else 0.28, Enum.EasingStyle.Quart)
 				animate(row.fog, {
 					GroupTransparency = if mode == 2 then 0.035 elseif mode == 1 then 0.07 else 1,
-				}, if instant then 0 else 0.44, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+				}, if instant then 0 else 0.42, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
 				if active and not instant then strike(row) end
 			end
 		end
+		local focused = hovered or current
+		showcase:Show(focused, instant, if focused == 4 then selectedLesson else nil)
+	end
+	for i, button in ipairs(lessonButtons) do
+		table.insert(connections, button.Activated:Connect(function()
+			if current ~= 4 then return end
+			selectedLesson = i
+			state.homeLesson = i
+			for n, entry in ipairs(lessonButtons) do
+				entry.Font = if n == i then Enum.Font.GothamBold else Enum.Font.GothamMedium
+				animate(entry, {
+					TextColor3 = if n == i then WHITE else GRAY,
+					TextTransparency = if n == i then 0 else 0.3,
+				}, 0.19)
+			end
+			animate(learnAccent, {Position = UDim2.fromOffset(3, 5 + (i - 1) * 34)}, 0.22)
+			showcase:Show(4, false, selectedLesson)
+		end))
 	end
 
 	local function pulse(row)
@@ -401,7 +471,7 @@ function HomeHUD.start(playerGui: Instance, state)
 			repaint()
 			pulse(row)
 			strike(row)
-			-- Nenhuma seção é aberta. Só altera o foco da apresentação.
+			-- O botão principal abre as rotas existentes, sem inventar sistemas.
 		end))
 	end
 
@@ -415,6 +485,7 @@ function HomeHUD.start(playerGui: Instance, state)
 		if accumulator < (1 / 30) then return end
 		elapsed += accumulator
 		accumulator = 0
+		showcase:Step(elapsed)
 		for _, row in ipairs(rows) do
 			if row.fog.GroupTransparency < 0.96 then
 				for index, cloud in ipairs(row.clouds) do
@@ -431,6 +502,15 @@ function HomeHUD.start(playerGui: Instance, state)
 		end
 	end))
 
+	element("TextLabel", root, {
+		Name = "AjudaInferior", Text = "A   SELECIONAR        B   VOLTAR",
+		Font = Enum.Font.GothamMedium, TextSize = 12,
+		TextColor3 = Color3.fromRGB(180, 196, 192),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		BackgroundTransparency = 1,
+		Position = UDim2.fromScale(0.087, 0.933),
+		Size = UDim2.fromScale(0.35, 0.033), ZIndex = 7,
+	})
 	local username = element("TextLabel", root, {
 		Name = "NomeRealJogador",
 		Text = player.Name,
@@ -488,10 +568,14 @@ function HomeHUD.start(playerGui: Instance, state)
 		SetNavigation = function(_, callback: (number) -> ())
 			navigateSettings = callback
 		end,
+		SetPrimaryNavigation = function(_, callback: (number, number?) -> ())
+			navigatePrimary = callback
+		end,
 		SetVisible = function(_, visible: boolean)
 			if alive then
 				gui.Enabled = visible
 				reducedMotion = state.settings and state.settings.reducedMotion == true
+				showcase:SetReducedMotion(reducedMotion)
 				if visible then
 					hovered = nil
 					repaint(true)
@@ -504,6 +588,7 @@ function HomeHUD.start(playerGui: Instance, state)
 			for _, connection in ipairs(connections) do connection:Disconnect() end
 			for _, tween in pairs(tweens) do tween:Cancel() end
 			table.clear(tweens)
+			showcase:Destroy()
 			gui:Destroy()
 		end,
 	}
