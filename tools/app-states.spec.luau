@@ -195,6 +195,22 @@ advance(0.58)
 check(handle.state.screen == "HomeInterior" and homeHud.Enabled and not settingsGui.Enabled,
 	"Fechar Configurações não retornou ao lobby original")
 
+-- Reproduzir a condição da captura: um erro no cenário no meio do wipe.
+-- A interface continua visível e o jogador consegue voltar.
+services.failNextSceneShow = true
+settingsIcon.Activated:Fire()
+advance(0.22)
+check(handle.state.screen == "Settings" and settingsGui.Enabled
+	and not wipe.Visible and not UI.inputLocked,
+	"Um erro de render deixou a transição opaca cobrindo o menu de configurações")
+check(settingsGrid.Parent == settingsPage and settingsGrid:FindFirstChild("Cartao_2") ~= nil,
+	"Um erro na cena removeu os cartões do HUD independente")
+settingsPage:FindFirstChild("FecharConfiguracoes").Activated:Fire()
+advance(0.58)
+check(handle.state.screen == "HomeInterior" and not settingsGui.Enabled
+	and homeHud.Enabled and not wipe.Visible and not UI.inputLocked,
+	"Após o erro, voltar deve recuperar o lobby sem ficar travado")
+
 check(handle.state.screen == "HomeInterior" and not wipe.Visible, "Initial state must be visible and idle")
 handle.go("Clubs")
 check(handle.state.screen == "HomeInterior" and wipe.Visible and UI.inputLocked, "Wipe must lock source before swapping")
