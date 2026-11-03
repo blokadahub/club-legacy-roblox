@@ -3,6 +3,7 @@ local App = require(moduleNodes["src/client/App.luau"])
 local Data = require(moduleNodes["src/shared/Data.luau"])
 local UI = require(moduleNodes["src/client/UI.luau"])
 local Scope = require(moduleNodes["src/client/Scope.luau"])
+local Soundtrack = require(moduleNodes["src/client/Soundtrack.luau"])
 local assertions = 0
 local function check(condition, message) assert(condition, message); assertions += 1 end
 local function key(code) services.UserInputService.InputBegan:Fire({KeyCode = code}, false) end
@@ -254,9 +255,19 @@ check(sound ~= nil and sound.IsPlaying, "Musica ambiente deve continuar tocando"
 check(gui:FindFirstChild("SoundtrackOverlay")==nil
 	and gui:FindFirstChild("NowPlayingNotification",true)==nil,
 	"Remover totalmente banner e notificacao musical sem mutar a trilha")
+local allowedSoundIds = {}
+check(#Soundtrack.tracks == 12, "A playlist deve manter as 11 novas faixas e Shiawase")
+check(Soundtrack.tracks[1].id == 5410084938 and Soundtrack.tracks[7].id == 5410085602,
+	"As faixas 1 e 7 devem estar trocadas")
+for _, track in ipairs(Soundtrack.tracks) do
+	check(track.id ~= 5410086218 and track.id ~= 702367070,
+		"Crab Rave e CloudNone nao devem permanecer na playlist")
+	local key = "rbxassetid://" .. tostring(track.id)
+	check(not allowedSoundIds[key], "ID de musica duplicado")
+	allowedSoundIds[key] = true
+end
 local initialSound = sound.SoundId
-check(initialSound == "rbxassetid://5409360995" or initialSound == "rbxassetid://5410086218"
-	or initialSound == "rbxassetid://702367070", "Trilha tocou identificador nao esperado")
+check(allowedSoundIds[initialSound] == true, "Trilha tocou identificador nao esperado")
 sound.IsPlaying = false
 sound.Ended:Fire()
 advance(1.99)
@@ -264,6 +275,8 @@ check(not sound.IsPlaying, "Proxima musica nao pode tocar antes do intervalo")
 advance(0.01)
 check(sound.IsPlaying and gui:FindFirstChild("NowPlayingNotification",true)==nil,
 	"Musica deve trocar em 2 segundos SEM reaparecer notificacao")
+check(allowedSoundIds[sound.SoundId] == true and sound.SoundId ~= initialSound,
+	"Playlist embaralhada deve tocar uma segunda faixa valida, sem repetir a primeira")
 -- O conteúdo central precisa continuar legível no Android em paisagem.
 local uiCamera = workspace.CurrentCamera
 uiCamera.ViewportSize = Vector2.new(854, 393)
