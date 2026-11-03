@@ -175,7 +175,10 @@ function App.start()
 		if wanted~=mode then scene:Show(wanted,Data.clubs[state.homeClub],Data.clubs[state.awayClub],state.homeKit,state.awayKit);mode=wanted
 		else scene:UpdateClubs(Data.clubs[state.homeClub],Data.clubs[state.awayClub],state.homeKit,state.awayKit) end
 		scene:ApplySettings(state.settings)
-		if wanted=="Arena" then
+		scene:SetSettingsAtmosphere(state.screen=="Settings")
+		-- A galeria de Settings usa a arena 3D existente; sem as fitas
+		-- e sem o véu de UI de outras rotas.
+		if wanted=="Arena" and state.screen~="Settings" then
 			local backdrop=UI.frame(page,0,0,1600,900,Color3.new(1,1,1),if state.screen=="Clubs" then .72 else .15)
 			UI.gradient(backdrop,{Theme.blue,Color3.fromRGB(6,62,65),Theme.background},26)
 			for i=1,3 do
@@ -192,7 +195,7 @@ function App.start()
 		end
 		-- A tela inicial da referência possui só cinco opções e os ícones decorativos.
 		-- O rodapé de navegação continua disponível nas outras páginas.
-		if wanted~="Interior" and wanted~="Training" then
+		if wanted~="Interior" and wanted~="Training" and state.screen~="Settings" then
 			local footer=UI.frame(page,0,839,1600,61,Theme.background,.3)
 			UI.line(footer,44,0,1556,0,Theme.muted,1).BackgroundTransparency=.8
 			UI.button(footer,"≡  CENTRAL",44,10,165,40,toggleTray,pageScope,{quiet=true,textSize=14})
