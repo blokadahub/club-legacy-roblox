@@ -254,7 +254,6 @@ function HomeHUD.start(playerGui: Instance, state)
 
 	-- Submenu recuado para os quatro destinos de Aprenda a Jogar.
 	local lessons = {"Centro de Treinamento", "Rush", "Jogos de Habilidade", "Arena de Treino"}
-	local selectedLesson = math.clamp(state.homeLesson or 1, 1, #lessons)
 	local learnGroup = element("CanvasGroup", list, {
 		Name = "SubmenuAprenda", Position = UDim2.fromOffset(25, 8 + 3 * rowGap + 56),
 		Size = UDim2.new(1, -25, 0, 138),
@@ -262,32 +261,25 @@ function HomeHUD.start(playerGui: Instance, state)
 		GroupTransparency = if current == 4 then 0 else 1,
 		Visible = current == 4, ZIndex = 7,
 	})
-	local lessonButtons = {}
 	for i, name in ipairs(lessons) do
 		local button = element("TextButton", learnGroup, {
 			Name = "SubOpcao_" .. tostring(i), Text = name,
-			TextColor3 = if i == selectedLesson then WHITE else GRAY,
-			TextTransparency = if i == selectedLesson then 0 else 0.3,
-			Font = if i == selectedLesson then Enum.Font.GothamBold else Enum.Font.GothamMedium,
+			TextColor3 = GRAY,
+			TextTransparency = 0.43,
+			Font = Enum.Font.GothamMedium,
 			TextSize = 17, TextXAlignment = Enum.TextXAlignment.Left,
 			Position = UDim2.fromOffset(20, (i - 1) * 34),
 			Size = UDim2.new(1, -24, 0, 32),
 			BackgroundTransparency = 1, AutoButtonColor = false,
-			Selectable = true, ZIndex = 8,
+			Selectable = false, Active = false, ZIndex = 8,
 		})
-		lessonButtons[i] = button
 	end
 	element("Frame", learnGroup, {
 		Name = "LinhaSubmenu", Position = UDim2.fromOffset(5, 3),
 		Size = UDim2.fromOffset(2, 126), BackgroundColor3 = Color3.fromRGB(75, 121, 102),
 		BackgroundTransparency = 0.3, BorderSizePixel = 0, ZIndex = 7,
 	})
-	local learnAccent = element("Frame", learnGroup, {
-		Name = "IndicadorSubmenu", Position = UDim2.fromOffset(3, 5 + (selectedLesson - 1) * 34),
-		Size = UDim2.fromOffset(6, 25), BackgroundColor3 = Color3.fromRGB(129, 223, 135),
-		BorderSizePixel = 0, ZIndex = 8,
-	})
-	element("UICorner", learnAccent, {CornerRadius = UDim.new(1, 0)})
+	-- Sem indicador de selecao para opcoes inativas.
 
 	-- Impacto único: ao clicar, a opção branca ganha luz intensa,
 	-- depois a aura some totalmente em 0,62 s. Sem glow permanente.
@@ -360,25 +352,9 @@ function HomeHUD.start(playerGui: Instance, state)
 			end
 		end
 		local focused = hovered or current
-		showcase:Show(focused, instant, if focused == 4 then selectedLesson else nil)
+		showcase:Show(focused, instant)
 	end
-	for i, button in ipairs(lessonButtons) do
-		table.insert(connections, button.Activated:Connect(function()
-			if locked() or current ~= 4 then return end
-			selectedLesson = i
-			state.homeLesson = i
-			for n, entry in ipairs(lessonButtons) do
-				entry.Font = if n == i then Enum.Font.GothamBold else Enum.Font.GothamMedium
-				animate(entry, {
-					TextColor3 = if n == i then WHITE else GRAY,
-					TextTransparency = if n == i then 0 else 0.3,
-				}, 0.19)
-			end
-			animate(learnAccent, {Position = UDim2.fromOffset(3, 5 + (i - 1) * 34)}, 0.22)
-			showcase:Show(4, false, selectedLesson)
-			strike(4)
-		end))
-	end
+	-- Entradas meramente informativas: sem callbacks.
 
 	local function pulse(row)
 		if reducedMotion then return end
