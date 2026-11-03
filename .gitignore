@@ -1,7 +1,10 @@
-# Arquivos compilados e temporarios (os scripts Luau devem permanecer versionados).
+# Os arquivos de fonte Luau permanecem versionados.
 *.rbxl
 *.rbxlx
 *.rbxm
 *.rbxmx
-.DS_Store
 *.log
+.DS_Store
+__pycache__/
+.tools/
+artifacts/

@@ -1,18 +1,33 @@
 {
-  "name": "CL - Club Legacy",
+  "name": "CL 27 — Club Legacy 27",
   "tree": {
     "$className": "DataModel",
     "ReplicatedStorage": {
-      "$className": "ReplicatedStorage"
+      "$className": "ReplicatedStorage",
+      "CL27": { "$path": "src/shared" }
     },
     "ServerScriptService": {
-      "$className": "ServerScriptService"
+      "$className": "ServerScriptService",
+      "CL27": { "$path": "src/server" }
     },
     "StarterPlayer": {
       "$className": "StarterPlayer",
       "StarterPlayerScripts": {
-        "$className": "StarterPlayerScripts"
+        "$className": "StarterPlayerScripts",
+        "CL27": { "$path": "src/client" }
       }
+    },
+    "Workspace": {
+      "$className": "Workspace",
+      "$properties": { "StreamingEnabled": false, "Gravity": 196.2 }
+    },
+    "Lighting": {
+      "$className": "Lighting",
+      "$properties": { "GlobalShadows": true, "Brightness": 2, "LightingStyle": "Realistic", "PrioritizeLightingQuality": true }
+    },
+    "SoundService": {
+      "$className": "SoundService",
+      "$properties": { "RespectFilteringEnabled": true }
     }
   }
 }

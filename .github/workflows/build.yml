@@ -1,0 +1,68 @@
+name: CL 27 | Validar e compilar
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Luau + Rojo 7.7.1
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Obter fontes
+        uses: actions/checkout@v4
+
+      - name: Instalar compilador Luau oficial 0.745
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .tools/luau
+          curl --fail --location --silent --show-error \
+            https://github.com/luau-lang/luau/releases/download/0.745/luau-ubuntu.zip \
+            --output .tools/luau.zip
+          echo '186e5ddaa2b048ebc7390c11ed1b00c04e7d3beaffed429250329e3575d2ece2  .tools/luau.zip' | sha256sum --check
+          unzip -q .tools/luau.zip -d .tools/luau
+          chmod +x .tools/luau/luau-compile .tools/luau/luau
+
+      - name: Validar fontes e compilar sintaxe Luau
+        run: python3 tools/validate.py --compiler .tools/luau/luau-compile
+
+      - name: Executar testes de dados e formações no runtime Luau
+        run: python3 tools/run-data.py --runtime .tools/luau/luau
+
+      - name: Exercitar interfaces e estados de navegação
+        run: |
+          python3 tools/run-runtime-smoke.py --runtime .tools/luau/luau
+          python3 tools/run-app-states.py --runtime .tools/luau/luau
+
+      - name: Instalar Rojo 7.7.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .tools/rojo
+          curl --fail --location --silent --show-error \
+            https://github.com/rojo-rbx/rojo/releases/download/v7.7.1/rojo-7.7.1-linux-x86_64.zip \
+            --output .tools/rojo.zip
+          echo '00feb4fa0829a1dd72b49df2639da519a352bfe13cadcd83969e2ba2bb5693c4  .tools/rojo.zip' | sha256sum --check
+          unzip -q .tools/rojo.zip -d .tools/rojo
+          chmod +x .tools/rojo/rojo
+
+      - name: Construir experiência nativa Roblox
+        run: .tools/rojo/rojo build default.project.json --output club-legacy.rbxlx
+
+      - name: Conferir scripts e serviços no XML compilado
+        run: python3 tools/validate.py --place club-legacy.rbxlx
+
+      - name: Disponibilizar experiência para Roblox Studio
+        uses: actions/upload-artifact@v4
+        with:
+          name: club-legacy-rbxlx
+          path: club-legacy.rbxlx
+          if-no-files-found: error
+          retention-days: 14
