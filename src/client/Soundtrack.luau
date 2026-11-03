@@ -7,9 +7,18 @@ local Scope = require(script.Parent.Scope)
 
 local Soundtrack = {}
 Soundtrack.tracks = table.freeze({
+	table.freeze({artist = "DESERT STAR", title = "Empty Sky", id = 5410084938}),
+	table.freeze({artist = "Rome in Silver", title = "Beach Season Skin", id = 7028570258}),
+	table.freeze({artist = "Pixel Terror & EMELINE", title = "Chroma", id = 5410084802}),
+	table.freeze({artist = "Grant feat. Juneau", title = "Are We Still Young", id = 5410086445}),
+	table.freeze({artist = "Protostar feat. Emma McGann", title = "Where I Belong", id = 7028527348}),
+	table.freeze({artist = "Dion Timmer feat. Micah Martin", title = "Internet Boy", id = 5410084870}),
+	table.freeze({artist = "DESERT STAR", title = "Carissa", id = 5410085602}),
+	table.freeze({artist = "Dexter King feat. Aviella", title = "Get to Know You", id = 7024035759}),
+	table.freeze({artist = "Conro", title = "All I Want", id = 7023680426}),
+	table.freeze({artist = "WRLD feat. Savoi", title = "Hang Up", id = 5410084188}),
+	table.freeze({artist = "APMOfficial", title = "One Way Street", id = 1836744721}),
 	table.freeze({artist = "Dion Timmer", title = "Shiawase", id = 5409360995}),
-	table.freeze({artist = "Noisestorm", title = "Crab Rave", id = 5410086218}),
-	table.freeze({artist = "CloudNone", title = "Faixa 03", id = 702367070}),
 })
 local GAP_SECONDS = 2
 local FADE_SECONDS = 0.55
@@ -28,13 +37,23 @@ function Soundtrack.start(screenGui: ScreenGui)
 	local currentIndex = 0
 	local waiting = false
 	local failed: {[number]: boolean} = {}
+	local remaining: {number} = {}
 	local function randomIndex(): number?
-		local available = {}
-		for index = 1, #Soundtrack.tracks do
-			if not failed[index] then table.insert(available, index) end
+		-- Embaralha a lista inteira. Cada faixa toca uma vez por rodada.
+		if #remaining == 0 then
+			for index = 1, #Soundtrack.tracks do
+				if not failed[index] then table.insert(remaining, index) end
+			end
+			for index = #remaining, 2, -1 do
+				local random = math.random(1, index)
+				remaining[index], remaining[random] = remaining[random], remaining[index]
+			end
+			-- Nao repete a ultima musica ao comecar outra rodada.
+			if #remaining > 1 and currentIndex ~= 0 and remaining[#remaining] == currentIndex then
+				remaining[#remaining], remaining[1] = remaining[1], remaining[#remaining]
+			end
 		end
-		if #available == 0 then return nil end
-		return available[math.random(1, #available)]
+		return table.remove(remaining)
 	end
 
 	local playTrack: (number) -> ()
