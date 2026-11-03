@@ -18,7 +18,23 @@ check(wipe.Size.X.Scale == 1 and wipe.Size.Y.Scale == 1
 	and wipe.Position.X.Scale == 0 and wipe.Position.Y.Scale == 0,
 	"Transição precisa cobrir TODO o viewport, sem Canvas 16:9 ou retângulo interno")
 check(transitionGui.IgnoreGuiInset and transitionGui.DisplayOrder > 85,
-	"Transição precisa sobrepor os dois menus e ignorar margens da tela")
+	"Carregamento precisa sobrepor os dois menus sem margens")
+check(wipe.BackgroundTransparency >= 0.50 and wipe.BackgroundTransparency <= 0.70 and wipe.Active,
+	"Fundo do loading deve permanecer visivel e bloquear cliques")
+local emblem = wipe:FindFirstChild("IndicadorCL")
+check(emblem ~= nil and emblem.Size.X.Offset == 32 and emblem.Size.Y.Offset == 32
+	and emblem.AnchorPoint.X == 0.5 and emblem.AnchorPoint.Y == 1
+	and emblem.Position.X.Scale == 0.5 and emblem.Position.Y.Scale == 1,
+	"CL deve medir 32 px e permanecer no rodape central da tela")
+for i=1,4 do
+	local segment=emblem:FindFirstChild(string.format("SegmentoCL_%02d",i))
+	check(segment and segment:IsA("CanvasGroup") and segment:FindFirstChild("AuraDifusa")
+		and segment:FindFirstChild("LuzVerde") and segment:FindFirstChild("NucleoClaro"),
+		"Monograma segmentado deve ter brilho, neon e nucleo claro")
+end
+check(transitionGui:FindFirstChild("MarcaCentral",true)==nil
+	and transitionGui:FindFirstChild("FaixaDeLuz_1",true)==nil,
+	"O velho wipe cinematografico nao pode permanecer no carregamento")
 -- O menu inicial deve existir em seu PRÓPRIO ScreenGui, antes de
 -- qualquer montagem de cenário; não pode depender de telas legadas.
 local homeHud = playerGui:FindFirstChild("CL27_HomeHUD")
@@ -89,6 +105,13 @@ local yBefore = glow.Position.Y.Offset
 clubOption.Activated:Fire()
 check(pulse.GroupTransparency < 0.5,
 	"Seleção deve produzir pulso discreto no halo radial")
+check(wipe.Visible and UI.inputLocked and handle.state.menuInputLocked
+	and handle.state.screen=="HomeInterior",
+	"Selecao simples precisa iniciar 2,5 segundos de loading sem abrir outra tela")
+local initialSelection=handle.state.homeFocus
+kickOff.Activated:Fire()
+check(handle.state.homeFocus==initialSelection,
+	"Outra selecao deve ser bloqueada enquanto o CL luminoso carrega")
 check(handle.state.homeFocus == 4 and handle.state.screen == "HomeInterior",
 	"Seleção lateral não pode navegar sem usar o botão principal")
 local lessons = homeList:FindFirstChild("SubmenuAprenda")
@@ -104,7 +127,14 @@ check(clubOption.TextTransparency > 0 and clubOption.TextTransparency < 0.32
 advance(0.36)
 check(clubOption.TextTransparency == 0 and glow.Position.Y.Offset == 203
 	and glow.GroupTransparency == 0.09 and pulse.GroupTransparency == 1,
-	"Brilho radial não chegou suavemente à nova linha ou manteve o pulso")
+	"Brilho radial nao chegou suavemente a nova linha")
+check(wipe.Visible and UI.inputLocked, "Loading nao pode terminar antes de 2,5 segundos")
+advance(1.97)
+check(wipe.Visible and UI.inputLocked and handle.state.menuInputLocked,
+	"Loading deve continuar ativo antes de completar 2,5 segundos")
+advance(0.02)
+check(not wipe.Visible and not UI.inputLocked and not handle.state.menuInputLocked,
+	"Selecao lateral nao liberou cliques apos os 2,5 segundos")
 check(homeList:FindFirstChild("Opcao_5").Position.Y.Offset > 400,
 	"Upgrade deve terminar o deslocamento suave quando o submenu expande")
 local core = glow:FindFirstChild("CamadaRadial_14")
@@ -116,7 +146,10 @@ kickOff.Activated:Fire()
 advance(0.51)
 check(handle.state.homeFocus == 3 and kickOff.TextTransparency == 0
 	and glow.Position.Y.Offset == yBefore and not lessons.Visible,
-	"Troca de Aprenda para Jogo Rápido não moveu o brilho ou recolheu submenu")
+	"Troca de Aprenda para Jogo Rápido nao moveu o brilho ou recolheu submenu")
+advance(2.0)
+check(not wipe.Visible and not UI.inputLocked,
+	"Selecionar Jogo Rapido precisa liberar o controle ao concluir o loading")
 local news = homeList:FindFirstChild("Opcao_1")
 news.MouseEnter:Fire()
 advance(0.32)
@@ -139,16 +172,18 @@ check(manager.TextTransparency == 0.32 and kickOff.TextTransparency == 0,
 	"Soltar toque deve devolver foco branco somente ao botão selecionado")
 -- Testa a seleção interna sem fingir que os modos de jogo estão prontos.
 clubOption.Activated:Fire()
-advance(0.55)
+advance(2.51)
 lessons:FindFirstChild("SubOpcao_2").Activated:Fire()
+check(wipe.Visible and UI.inputLocked,
+	"Subopcao do Aprenda a Jogar deve exibir carregamento silencioso")
 check(handle.state.homeLesson == 2 and handle.state.screen == "HomeInterior",
 	"Selecionar Rush deve alterar somente a apresentação, sem abrir rota")
-advance(0.55)
+advance(2.51)
 check(showcase:FindFirstChild("TituloCentral").Text == "RUSH"
 	and primary:FindFirstChild("TextoAcao").Text == "Conhecer Rush",
-	"Submenu deve atualizar título e botão central com transição")
+	"Submenu deve atualizar titulo e botao central com transicao")
 kickOff.Activated:Fire()
-advance(0.55)
+advance(2.51)
 check(showcase:FindFirstChild("TituloCentral").Text == "JOGO RÁPIDO"
 	and not lessons.Visible,
 	"Trocar de seção precisa restaurar título e recolher submenu")
