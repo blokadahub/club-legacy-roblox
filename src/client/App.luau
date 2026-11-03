@@ -80,6 +80,19 @@ function App.start()
 	local pending=nil
 	local mode=nil
 	local render,go
+	local function stadiumReady(): boolean
+		local registry=ReplicatedStorage:FindFirstChild("CL27Stadium")
+		local stadium=workspace:FindFirstChild("CL27_BayernStadium")
+		if not registry or not stadium or registry:GetAttribute("Status")~="Ready"
+			or registry:GetAttribute("AssetId")~=18593817379 then return false end
+		local shots=registry:FindFirstChild("CameraShots")
+		if not shots or #shots:GetChildren()<10 then return false end
+		for i=1,10 do
+			local marker=shots:FindFirstChild(string.format("Camera_%02d",i))
+			if not marker or not marker:FindFirstChild("Inicio") or not marker:FindFirstChild("Fim") then return false end
+		end
+		return true
+	end
 	-- Transição global ocupa o viewport inteiro e fica ACIMA dos dois HUDs.
 	-- A antiga camada no Canvas 16:9 provocava retângulo e flashes.
 	local transitionFx=TransitionFX.start(playerGui)
@@ -173,9 +186,12 @@ function App.start()
 		page=UI.new("CanvasGroup",{Name=state.screen,BackgroundTransparency=1,Size=UDim2.fromScale(1,1),GroupTransparency=0},canvas)
 		-- A UI de Settings fica em outro ScreenGui, nunca sob Transicao.
 		settingsHud:SetVisible(state.screen=="Settings")
-		local wanted=if state.screen=="HomeInterior" then "Interior" elseif state.screen=="HomeTraining" then "Training" elseif state.screen=="Kits" then "Kits" else "Arena"
-		homeHud:SetVisible(wanted=="Interior" or wanted=="Training")
-		if wanted~=mode then scene:Show(wanted,Data.clubs[state.homeClub],Data.clubs[state.awayClub],state.homeKit,state.awayKit);mode=wanted
+		local isHome=state.screen=="HomeInterior" or state.screen=="HomeTraining"
+		local wanted=if state.screen=="HomeInterior" then (if stadiumReady() then "Stadium" else "Interior") elseif state.screen=="HomeTraining" then "Training" elseif state.screen=="Kits" then "Kits" else "Arena"
+		homeHud:SetVisible(isHome)
+		if wanted~=mode then
+			scene:Show(wanted,Data.clubs[state.homeClub],Data.clubs[state.awayClub],state.homeKit,state.awayKit)
+			mode=scene.mode or wanted
 		else scene:UpdateClubs(Data.clubs[state.homeClub],Data.clubs[state.awayClub],state.homeKit,state.awayKit) end
 		scene:ApplySettings(state.settings)
 		-- Neons são decorativos; falhas de geometria não podem prender o
@@ -198,12 +214,12 @@ function App.start()
 		local ctx={state=state,scope=pageScope,go=go,rerender=rerender,notify=notify,scene=scene}
 		-- A HOME é desenhada no ScreenGui independente CL27_HomeHUD, não aqui.
 		-- O ScreenGui do menu não depende da cena 3D para inicializar.
-		if wanted~="Interior" and wanted~="Training" and state.screen~="Settings" then
+		if not isHome and state.screen~="Settings" then
 			screens[state.screen](page,ctx)
 		end
 		-- A tela inicial da referência possui só cinco opções e os ícones decorativos.
 		-- O rodapé de navegação continua disponível nas outras páginas.
-		if wanted~="Interior" and wanted~="Training" and state.screen~="Settings" then
+		if not isHome and state.screen~="Settings" then
 			local footer=UI.frame(page,0,839,1600,61,Theme.background,.3)
 			UI.line(footer,44,0,1556,0,Theme.muted,1).BackgroundTransparency=.8
 			UI.button(footer,"≡  CENTRAL",44,10,165,40,toggleTray,pageScope,{quiet=true,textSize=14})
@@ -281,6 +297,57 @@ function App.start()
 	settingsHud:SetNavigation(function(target)
 		go(target)
 	end)
+
+	-- O modelo é importado pelo servidor depois do bootstrap. Quando o
+	-- asset é de fato replicado e os DEZ marcadores existem, trocamos
+	-- silenciosamente o fundo, sob a transição fullscreen já existente.
+	local upgrading=false
+	local function activateStadium()
+		if upgrading or not lifetime.alive or busy
+			or state.screen~="HomeInterior" or mode=="Stadium" or not stadiumReady() then return end
+		upgrading=true
+		busy=true
+		UI.inputLocked=true
+		local enter=transitionFx:Cover(false)
+		lifetime:Delay(enter,function()
+			if not lifetime.alive then return end
+			local ok,reason=pcall(render)
+			if not ok then
+				warn("[CL27 Stadium] Não foi possível trocar o cenário: "..tostring(reason))
+			end
+			lifetime:Delay(0.08,function()
+				if not lifetime.alive then return end
+				local exit=transitionFx:Reveal(false)
+				lifetime:Delay(exit,function()
+					if not lifetime.alive then return end
+					transitionFx:Finish()
+					busy=false
+					UI.inputLocked=false
+					if pageScope then pageScope.inputsPaused=false end
+					upgrading=false
+					if pending then
+						local nextRoute=pending;pending=nil;go(nextRoute[1],nextRoute[2])
+					end
+				end)
+			end)
+		end)
+	end
+	local boundRegistry=nil
+	local function watchRegistry()
+		local registry=ReplicatedStorage:FindFirstChild("CL27Stadium")
+		if not registry or registry==boundRegistry then return end
+		boundRegistry=registry
+		lifetime:Connect(registry:GetAttributeChangedSignal("Status"),activateStadium)
+		lifetime:Connect(registry.DescendantAdded,activateStadium)
+		activateStadium()
+	end
+	lifetime:Connect(ReplicatedStorage.ChildAdded,function(item)
+		if item.Name=="CL27Stadium" then watchRegistry() end
+	end)
+	lifetime:Connect(workspace.ChildAdded,function(item)
+		if item.Name=="CL27_BayernStadium" then activateStadium() end
+	end)
+
 	lifetime:Connect(UserInputService.InputBegan,function(input,processed)
 		if processed or UserInputService:GetFocusedTextBox() then return end
 		if input.KeyCode==Enum.KeyCode.M or input.KeyCode==Enum.KeyCode.ButtonY then toggleTray()
@@ -297,6 +364,7 @@ function App.start()
 		UI.inputLocked=false
 	end)
 	render()
+	watchRegistry()
 	return {state=state,go=go,destroy=function() gui:Destroy() end}
 end
 return App
