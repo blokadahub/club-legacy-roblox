@@ -121,3 +121,9 @@ Não restou falha reproduzível nas verificações executadas após as correçõ
 - Geometria, dimensões, paleta, neons, câmera, interface, controles e música preservados. Low/Medium/High mantêm 238/334/366 peças; usam 28/32/40 luzes, 0/0/2 sombras locais e 4/6/6 emissores de névoa, com limite conservador de 20/42/48 partículas vivas.
 - Verificação: sintaxe das 38 fontes; 653 testes de dados; 519 montagens/381 callbacks/240 asserções do harness de interfaces; **5.847 asserções** de estados/iluminação/qualidade/descarte; Rojo 7.7.1 e XML com fontes idênticas; catálogo API com 390 referências sem erros. Detalhes e roteiro de inspeção em [CLUBS_TUNNEL.md](docs/CLUBS_TUNNEL.md).
 - **Sem Studio/Player: a aparência corrigida, a igualdade com a imagem 2 e o desempenho no Android ainda não foram comprovados.** A captura enviada pelo usuário foi analisada; não foi produzida uma captura Roblox nova. Nenhuma publicação ou merge automático foi executado.
+
+## Iluminação um pouco mais escura e névoa em movimento — 03/11/2026
+
+- Ajuste solicitado após a avaliação do PR #9: exposição de 0,16 para 0,02, Brightness de 1,15 para 1,0, ambiente ligeiramente reduzido e preenchimento neutro de 1,6 para 1,3. Neons, geometria, câmera, interface e controles preservados.
+- Névoa com correntes laterais opostas de 0,65–1,05 studs/s, rotação de 2–4°/s, leve ascensão, fade e renovação em 14–18 segundos. A camada estática ficou mais discreta para expor a animação. Simulação nativa, sem novos loops por frame, sem emissão de luz e com os mesmos limites de partículas/luzes/sombras.
+- Base main `498da656c0d0083d0c31388ac2b8c1e43ce4edcd` preservada em `backup/pre-tunnel-dimmer-motion-20261103-498da65`; trabalho em `fix/tunnel-dimmer-moving-fog`. Testes de estados ampliados: **5.907 asserções** aprovadas nos três perfis. A animação configurada ainda requer inspeção visual no Roblox; Studio/Player indisponíveis.

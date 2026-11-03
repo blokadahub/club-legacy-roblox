@@ -7,10 +7,10 @@ local activeOwner = nil
 -- Shared by the integrated Scene and optional standalone takeover. No service
 -- writes on require: the caller still owns the camera and global environment.
 TunnelLighting.Environment = {
-	Ambient=Color3.fromRGB(38,40,45), OutdoorAmbient=Color3.fromRGB(26,28,32),
-	Brightness=1.15, ClockTime=0, ExposureCompensation=0.16, GlobalShadows=true,
+	Ambient=Color3.fromRGB(34,36,40), OutdoorAmbient=Color3.fromRGB(23,25,29),
+	Brightness=1.0, ClockTime=0, ExposureCompensation=0.02, GlobalShadows=true,
 	EnvironmentDiffuseScale=0.38, EnvironmentSpecularScale=0.48, ShadowSoftness=0.35,
-	FogColor=Color3.fromRGB(58,60,63), FogStart=68, FogEnd=142,
+	FogColor=Color3.fromRGB(52,54,57), FogStart=68, FogEnd=156,
 }
 TunnelLighting.Post = {
 	BloomIntensity=0.09, BloomSize=18, BloomThreshold=1.2,
@@ -18,9 +18,9 @@ TunnelLighting.Post = {
 }
 local properties = TunnelLighting.Environment
 local profiles = {
-	Low={fogRate=0.08, fogPeak=0.94, reflection=0.96},
-	Medium={fogRate=0.16, fogPeak=0.92, reflection=0.94},
-	High={fogRate=0.22, fogPeak=0.90, reflection=0.92},
+	Low={fogRate=0.12, fogPeak=0.94, reflection=0.96},
+	Medium={fogRate=0.24, fogPeak=0.92, reflection=0.94},
+	High={fogRate=0.32, fogPeak=0.90, reflection=0.92},
 }
 
 local function lightOn(part, kind, color, brightness, range, face, shadow, offset)
@@ -87,14 +87,20 @@ local function distantFog(part, quality)
 				fog.Texture = "rbxasset://textures/particles/smoke_main.dds"
 				fog.Color = ColorSequence.new(Color3.fromRGB(124,126,129))
 				fog.LightEmission,fog.LightInfluence = 0,1
-				fog.Lifetime,fog.Rate = NumberRange.new(22,26),profile.fogRate
-				fog.Speed,fog.SpreadAngle = NumberRange.new(0.08,0.16),Vector2.new(180,180)
-				fog.Rotation,fog.RotSpeed = NumberRange.new(0,360),NumberRange.new(-0.3,0.3)
+				-- Opposing lateral currents expose texture movement within a few seconds.
+				-- Shorter lives renew the silhouettes without raising the live-particle cap.
+				fog.Lifetime,fog.Rate = NumberRange.new(14,18),profile.fogRate
+				fog.Speed,fog.SpreadAngle = NumberRange.new(0.65,1.05),Vector2.new(18,10)
+				fog.EmissionDirection = if x<0 then Enum.NormalId.Right else Enum.NormalId.Left
+				fog.Drag,fog.Acceleration = 0.1,Vector3.new(0,0.035,0)
+				fog.Rotation = NumberRange.new(0,360)
+				fog.RotSpeed = if x<0 then NumberRange.new(2,4) else NumberRange.new(-4,-2)
+				fog.TimeScale = 1
 				fog.Orientation = Enum.ParticleOrientation.FacingCameraWorldUp
 				fog.LockedToPart = true
 				fog.Size = NumberSequence.new({
-					NumberSequenceKeypoint.new(0,14,2),NumberSequenceKeypoint.new(0.5,18,3),
-					NumberSequenceKeypoint.new(1,20,2),
+					NumberSequenceKeypoint.new(0,12,2),NumberSequenceKeypoint.new(0.5,16,3),
+					NumberSequenceKeypoint.new(1,18,2),
 				})
 				local peak = profile.fogPeak-(layer-1)*0.015
 				fog.Transparency = NumberSequence.new({
@@ -120,10 +126,10 @@ function TunnelLighting.attach(part, spec, quality, data)
 	elseif name == "CeilingCrossRib" and data then
 		local bay = math.floor((-data.frame[3]-3.85)/12+0.5)
 		if bay%2 == 0 then
-			lightOn(part,"PointLight",Color3.fromRGB(186,194,202),1.6,28,nil,false,Vector3.new(0,-5.5,0))
+			lightOn(part,"PointLight",Color3.fromRGB(186,194,202),1.3,28,nil,false,Vector3.new(0,-5.5,0))
 		end
 	elseif name == "ExitCeiling" then
-		lightOn(part,"SurfaceLight",Color3.fromRGB(186,189,194),0.9,26,"Bottom")
+		lightOn(part,"SurfaceLight",Color3.fromRGB(186,189,194),0.75,26,"Bottom")
 	elseif spec and name ~= "DistantHorizon" then
 		local color = Color3.fromRGB(table.unpack(spec.color))
 		local brightness,range = spec.brightness,spec.range

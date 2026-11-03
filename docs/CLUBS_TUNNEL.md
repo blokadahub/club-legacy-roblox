@@ -55,9 +55,9 @@ Problemas encontrados no código:
 
 ### Iluminação e resposta das superfícies
 
-`TunnelLighting.Environment` centraliza os parâmetros tanto da integração quanto da posse opcional de iluminação: Ambient `(38,40,45)`, OutdoorAmbient `(26,28,32)`, Brightness `1.15`, ExposureCompensation `0.16`, EnvironmentDiffuseScale `0.38` e EnvironmentSpecularScale `0.48`. O ajuste é exclusivo do modo Tunnel; a iluminação dos demais ambientes mantém seus parâmetros anteriores.
+`TunnelLighting.Environment` centraliza os parâmetros tanto da integração quanto da posse opcional de iluminação. Após o retorno visual de que o PR #9 estava claro demais, a calibração passou a Ambient `(34,36,40)`, OutdoorAmbient `(23,25,29)`, Brightness `1.0` e ExposureCompensation `0.02`, mantendo EnvironmentDiffuseScale `0.38` e EnvironmentSpecularScale `0.48`. O ajuste é exclusivo do modo Tunnel; a iluminação dos demais ambientes mantém seus parâmetros anteriores.
 
-Todos os 16 segmentos verdes passam a ter luz real de curto alcance (10 studs), inclusive em Baixa. Azul superior: Brightness 1,65 / Range 17; luminárias âmbar: 2,1 / 26; marcadores distantes: 0,65 / 9. Quatro fontes de preenchimento neutro, sem sombras, usam Attachments nos travessões existentes, deslocadas 5,5 studs abaixo deles para representar luz rebatida sobre o piso e as estruturas. Uma fonte neutra sob o teto da câmara distante ilumina as superfícies e a névoa; a lavagem turquesa foi reduzida. O emissor antigo do horizonte, orientado em direção à entrada, foi retirado; sua peça e o núcleo Neon original permanecem intactos.
+Todos os 16 segmentos verdes passam a ter luz real de curto alcance (10 studs), inclusive em Baixa. Azul superior: Brightness 1,65 / Range 17; luminárias âmbar: 2,1 / 26; marcadores distantes: 0,65 / 9. Quatro fontes de preenchimento neutro, sem sombras, usam Attachments nos travessões existentes, deslocadas 5,5 studs abaixo deles para representar luz rebatida sobre o piso e as estruturas; sua intensidade foi reduzida de 1,6 para 1,3. A fonte neutra sob o teto da câmara distante passou de 0,9 para 0,75. As cores e luzes dos neons permanecem como na correção anterior. O emissor antigo do horizonte, orientado em direção à entrada, foi retirado; sua peça e o núcleo Neon original permanecem intactos.
 
 Os emissores têm o atributo `CL27TunnelLight`; o passe genérico do jogo os preserva. Somente duas luminárias âmbar usam sombras locais em Alta. Nenhuma fonte é animada e nenhum loop de atualização foi acrescentado.
 
@@ -67,9 +67,11 @@ Bloom: intensidade 0,09, Size 18 e Threshold 1,2, desativado em Baixa. Contraste
 
 ### Névoa cinzenta localizada e não emissiva
 
-O `Atmosphere` criado pelo controlador principal é temporariamente retirado de Lighting durante o túnel e recolocado ao sair. A névoa por distância usa cinza `(58,60,63)`, FogStart 68 e FogEnd 142 para preservar o primeiro plano e manter profundidade mesmo se o dispositivo reduzir partículas.
+O `Atmosphere` criado pelo controlador principal é temporariamente retirado de Lighting durante o túnel e recolocado ao sair. A névoa por distância usa cinza `(52,54,57)`, FogStart 68 e FogEnd 156. Essa base estática ficou mais discreta para não encobrir a animação localizada, preservando profundidade mesmo se o dispositivo reduzir partículas.
 
-Além desse apoio por distância, quatro/seis ParticleEmitter ficam em Attachments da peça de fundo já existente, em z=-78, -92 e -106 (Baixa usa somente a primeira e a última camada). Usam a textura nativa `rbxasset://textures/particles/smoke_main.dds`, bordas transparentes, cor cinzenta, LightEmission=0 e LightInfluence=1. A névoa não tem luzes próprias, painéis sólidos ou material Neon. As partículas têm movimento nativo muito lento, rotação suave e fade de nascimento/morte; duas partículas iniciais por emissor iniciam o preenchimento sob a transição existente de 2,5 segundos. Nenhum script acompanha a câmera ou atualiza partículas por frame.
+Além desse apoio por distância, quatro/seis ParticleEmitter ficam em Attachments da peça de fundo já existente, em z=-78, -92 e -106 (Baixa usa somente a primeira e a última camada). Usam a textura nativa `rbxasset://textures/particles/smoke_main.dds`, bordas transparentes, cor cinzenta, LightEmission=0 e LightInfluence=1. A névoa não tem luzes próprias, painéis sólidos ou material Neon.
+
+A animação foi reforçada após o relato de aparência parada: Speed passou de 0,08–0,16 para **0,65–1,05 studs/s**, com correntes da esquerda e da direita dirigidas para o centro, pequena dispersão, Drag 0,1 e leve ascensão. A rotação tem sentidos opostos e magnitude de **2–4°/s**, em lugar de ±0,3°/s. TimeScale=1 mantém a simulação ativa. Lifetime passou de 22–26 para **14–18 segundos**, com billboards de 12–18 studs e fade suave. As taxas Low/Medium/High foram ajustadas para 0,12/0,24/0,32 por segundo; a renovação é mais frequente, mantendo o mesmo limite conservador de partículas vivas. Duas partículas iniciais por emissor iniciam o preenchimento sob a transição de 2,5 segundos. Nenhum script acompanha a câmera ou atualiza partículas por frame.
 
 | Qualidade | Peças, inalteradas | Luzes locais | Luzes com sombras | Emissores de névoa | Limite conservador de partículas vivas* |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -97,3 +99,9 @@ Inspeção necessária no Studio:
 4. Conferir se a névoa continua cinza, sem brilho próprio, retângulos ou popping. Para inspecionar paralaxe, usar navegação de câmera do Studio em uma sessão de teste local; a câmera do produto não foi alterada.
 5. Se o piso estiver claro demais, reduzir primeiro o pico da resposta complementar em `profiles.reflection` (aproximar de 1) ou desativá-la para comparar; se estiver preto, conferir que os emissores marcados continuam Enabled antes de ajustar exposição. Se a névoa estiver opaca, aproximar `profiles.fogPeak` de 1 e diminuir fogRate. Se não aparecer, verificar Output, o parent do Atmosphere e a textura nativa antes de aumentar densidade.
 6. Sair de Clubs, conferir iluminação normal e ausência de emissores residuais; voltar ao túnel e verificar que a contagem não aumenta. Recompilar depois dos ajustes nas fontes.
+
+### Ajuste após o retorno visual do PR #9
+
+Base `498da656c0d0083d0c31388ac2b8c1e43ce4edcd`, backup `backup/pre-tunnel-dimmer-motion-20261103-498da65`; branch `fix/tunnel-dimmer-moving-fog`. A atualização reduz a exposição, o ambiente e o preenchimento neutro, mantém os neons e reforça somente a animação da névoa. Geometria, câmera e demais sistemas permanecem idênticos à base.
+
+Os testes de estados agora verificam correntes dirigidas para dentro, TimeScale positivo, velocidade/rotação suficientes para evitar a calibração quase parada, renovação limitada e preservação dos tetos de 20/42/48 partículas nos três perfis. São **5.907 asserções** aprovadas com doubles de API; isso não prova a aparência do movimento no motor. Na próxima inspeção real, observar de 3 a 10 segundos após o carregamento e comparar o deslocamento dos detalhes da fumaça com a câmera fixa. Studio/Player e medições em Android continuam indisponíveis neste ambiente.
