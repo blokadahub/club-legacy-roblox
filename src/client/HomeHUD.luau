@@ -213,6 +213,7 @@ function HomeHUD.start(playerGui: Instance, state)
 	for index, caption in ipairs(ITEMS) do
 		local y = 8 + (index - 1) * 77
 		local fog, clouds = smoke(list, y)
+		fog.Name = "FumacaVerde_" .. tostring(index)
 		local button = element("TextButton", list, {
 			Name = "Opcao_" .. tostring(index),
 			Text = caption,
