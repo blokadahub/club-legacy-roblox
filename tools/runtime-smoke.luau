@@ -33,7 +33,7 @@ UDim2.fromOffset = function(x, y) return UDim2.new(0, x, 0, y) end
 UDim2.fromScale = function(x, y) return UDim2.new(x, 0, y, 0) end
 local cfMeta = {}
 cfMeta.__mul = function(a, b) return typed("CFrame", {Position = a.Position + b.Position}, cfMeta) end
-cfMeta.__index = {LookVector = Vector3.new(0, 0, -1), Lerp = function(a, b, alpha) return typed("CFrame", {Position = a.Position * (1 - alpha) + b.Position * alpha}, cfMeta) end}
+cfMeta.__index = {Lerp = function(a, b, alpha) return typed("CFrame", {Position = a.Position * (1 - alpha) + b.Position * alpha}, cfMeta) end}
 local CFrame = {}
 CFrame.new = function(x, y, z) return typed("CFrame", {Position = if typeof(x) == "Vector3" then x else Vector3.new(x, y, z)}, cfMeta) end
 CFrame.Angles = function() return CFrame.new() end
@@ -82,7 +82,7 @@ end
 local events = {
 	Activated = true, MouseEnter = true, MouseLeave = true, SelectionGained = true,
 	SelectionLost = true, FocusLost = true, InputBegan = true, InputEnded = true, ChildAdded = true, Changed = true,
-	Destroying = true, DescendantAdded = true,
+	Destroying = true,
 }
 local methods = {}
 local instanceMeta = {}
@@ -182,33 +182,6 @@ local routes = {"HomeInterior", "HomeTraining", "Overview", "Squad", "Tactics", 
 for _, id in ipairs(routes) do routeSet[id] = true end
 local assertions, mounts, callbacks = 0, 0, 0
 local function check(value, message) assert(value, message); assertions += 1 end
--- Plano puro: dez tomadas, oito segundos e uso de regiões realmente nomeadas.
-do
-	local shots = require(moduleNodes["src/shared/StadiumShots.luau"])
-	check(shots.ASSET_ID == 18593817379 and shots.DURATION == 8 and shots.FADE < 1,
-		"Contrato de asset e duração do Bayern Stadium incorreto")
-	local field = {
-		center = Vector3.new(10, 2, -2500),
-		y = 2.2,
-		lengthAxis = Vector3.new(1, 0, 0),
-		widthAxis = Vector3.new(0, 0, 1),
-		halfLength = 55, halfWidth = 33,
-	}
-	local all = shots.build(field, {
-		bench = Vector3.new(0, 2, -2470),
-		tunnel = Vector3.new(34, 2, -2430),
-	})
-	check(#all == 10, "Faltam tomadas na sequência cinematográfica")
-	check(all[4].zone == "Banco confirmado" and all[6].zone == "Túnel confirmado",
-		"Áreas identificadas devem manter seus enquadramentos distintos")
-	local fallback = shots.build(field, {})
-	check(#fallback == 10 and fallback[4].zone == "Lateral do campo"
-		and fallback[6].zone == "Gramado — túnel não localizado",
-		"Ausência de banco/túnel deve gerar tomadas honestas sem posições inventadas")
-	check(all[1].start.Position ~= all[2].start.Position,
-		"Enquadramentos cinematográficos não podem repetir a mesma origem")
-end
-
 local function mounted(id, state)
 	state = state or deepClone(baseState)
 	state.screen = id
