@@ -522,4 +522,30 @@ do
 	presentation:Destroy()
 end
 
+-- Tela móvel horizontal: as cinco opções devem caber e o submenu deve
+-- ficar acessível por rolagem sem reduzir o texto a tamanho ilegível.
+replacement.ViewportSize = Vector2.new(854, 393)
+local mobile = App.start()
+local mobileHud = playerGui:FindFirstChild("CL27_HomeHUD")
+local mobileList = mobileHud:FindFirstChild("HomeOverlay"):FindFirstChild("MenuPrincipalFC")
+check(mobileList:FindFirstChild("Opcao_5").Position.Y.Offset <= 225,
+	"No celular o último item fica escondido; diminuir distância entre linhas")
+check(mobileList:FindFirstChild("Opcao_1").TextSize >= 22,
+	"Correção de espaçamento não pode encolher a tipografia excessivamente")
+mobileList:FindFirstChild("Opcao_4").Activated:Fire()
+advance(0.54)
+local mobileLessons = mobileList:FindFirstChild("SubmenuAprenda")
+check(mobileLessons.Visible and mobileLessons.Size.X.Scale == 1
+	and mobileList.CanvasPosition.Y > 0,
+	"Submenu deve caber na largura do celular e posicionar a rolagem corretamente")
+mobileLessons:FindFirstChild("SubOpcao_4").Activated:Fire()
+check(mobile.state.homeLesson == 4,
+	"Submenu móvel precisa aceitar toque no quarto item")
+mobileList:FindFirstChild("Opcao_5").Activated:Fire()
+advance(0.54)
+check(mobile.state.homeFocus == 5 and mobileList.CanvasPosition.Y == 0,
+	"Fechar submenu no celular deve restaurar posição inicial da rolagem")
+mobile.destroy()
+replacement.ViewportSize = Vector2.new(1600, 900)
+
 print(string.format("PASS App phases: %d assertions; virtual-clock stubs only, no Roblox capture/easing certification.", assertions))
