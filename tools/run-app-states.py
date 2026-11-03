@@ -88,6 +88,9 @@ local function advance(seconds)
     now = target
     interpolate(now)
 end
+function methods:ClearAllChildren()
+    for _, child in ipairs(self:GetChildren()) do child:Destroy() end
+end
 function methods:GetAttributeChangedSignal(key)
     if not self._events['Attribute_' .. key] then self._events['Attribute_' .. key] = signal() end
     return self._events['Attribute_' .. key]
