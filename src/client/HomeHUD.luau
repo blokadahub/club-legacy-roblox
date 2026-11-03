@@ -384,6 +384,7 @@ function HomeHUD.start(playerGui: Instance, state)
 			end
 			animate(learnAccent, {Position = UDim2.fromOffset(3, 5 + (i - 1) * 34)}, 0.22)
 			showcase:Show(4, false, selectedLesson)
+			if notifySelection then notifySelection(4) end
 		end))
 	end
 
