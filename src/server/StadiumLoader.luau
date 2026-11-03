@@ -191,26 +191,27 @@ function Loader.start()
 		end
 		local owned = method ~= "Workspace"
 		local ok, message = pcall(function()
-			local count = sanitized(model :: Model)
+			local stadium = model :: Model
+			local count = sanitized(stadium)
 			if count < 10 or count > MAX_PARTS then
 				error("Número de peças incompatível: " .. tostring(count))
 			end
 			if owned then
-				local bounds = (model :: Model):GetBoundingBox()
+				local bounds = stadium:GetBoundingBox()
 				local move = TARGET_CENTER - bounds.Position
-				(model :: Model):PivotTo(CFrame.new(move) * (model :: Model):GetPivot())
+				stadium:PivotTo(CFrame.new(move) * stadium:GetPivot())
 			end
-			local pitch = findPitch(model :: Model)
+			local pitch = findPitch(stadium)
 			if not pitch then
 				error("Gramado não identificável: requer calibragem no Roblox Studio.")
 			end
-			local hints = findLandmarks(model :: Model)
+			local hints = findLandmarks(stadium)
 			local shots = StadiumShots.build(pitch, hints)
 			markers(info,shots)
-			(model :: Model).Name = "CL27_BayernStadium"
-			(model :: Model):SetAttribute("SourceAssetId",ASSET_ID)
-			(model :: Model):SetAttribute("SafeVisualOnly",true)
-			if not (model :: Model).Parent then (model :: Model).Parent = Workspace end
+			stadium.Name = "CL27_BayernStadium"
+			stadium:SetAttribute("SourceAssetId",ASSET_ID)
+			stadium:SetAttribute("SafeVisualOnly",true)
+			if not stadium.Parent then stadium.Parent = Workspace end
 			info:SetAttribute("PartCount",count)
 			info:SetAttribute("PitchDetected",true)
 			info:SetAttribute("BenchDetected",hints.bench~=nil)
