@@ -85,11 +85,30 @@ function App.start()
 		local stadium=workspace:FindFirstChild("CL27_BayernStadium")
 		if not registry or not stadium or registry:GetAttribute("Status")~="Ready"
 			or registry:GetAttribute("AssetId")~=18593817379 then return false end
+		-- Modelos grandes replicam os marcadores antes de todas as peças.
+		-- Nunca filmar um estádio ainda vazio no celular.
+		local expected=registry:GetAttribute("PartCount")
+		if typeof(expected)=="number" and expected>0 then
+			local received=0
+			local minimum=math.min(expected,math.max(10,math.floor(expected*0.16)))
+			for _,part in ipairs(stadium:GetDescendants()) do
+				if part:IsA("BasePart") then
+					received+=1
+					if received>=minimum then break end
+				end
+			end
+			if received<minimum then return false end
+		end
 		local shots=registry:FindFirstChild("CameraShots")
 		if not shots or #shots:GetChildren()<10 then return false end
 		for i=1,10 do
 			local marker=shots:FindFirstChild(string.format("Camera_%02d",i))
-			if not marker or not marker:FindFirstChild("Inicio") or not marker:FindFirstChild("Fim") then return false end
+			local begin=marker and marker:FindFirstChild("Inicio")
+			local finish=marker and marker:FindFirstChild("Fim")
+			if not begin or not finish or not begin:IsA("CFrameValue") or not finish:IsA("CFrameValue") then return false end
+			-- A arena importada é posicionada longe do cenário original.
+			-- Posição zero significa marcador ainda não replicado.
+			if begin.Value.Position.Magnitude<100 or finish.Value.Position.Magnitude<100 then return false end
 		end
 		return true
 	end
@@ -302,9 +321,25 @@ function App.start()
 	-- asset é de fato replicado e os DEZ marcadores existem, trocamos
 	-- silenciosamente o fundo, sob a transição fullscreen já existente.
 	local upgrading=false
-	local function activateStadium()
+	local retryScheduled=false
+	local retryAttempts=0
+	local activateStadium
+	activateStadium=function()
 		if upgrading or not lifetime.alive or busy
-			or state.screen~="HomeInterior" or mode=="Stadium" or not stadiumReady() then return end
+			or state.screen~="HomeInterior" or mode=="Stadium" then return end
+		if not stadiumReady() then
+			local reg=ReplicatedStorage:FindFirstChild("CL27Stadium")
+			if reg and reg:GetAttribute("Status")=="Ready"
+				and not retryScheduled and retryAttempts<40 then
+				retryScheduled=true
+				retryAttempts+=1
+				lifetime:Delay(0.75,function()
+					retryScheduled=false
+					activateStadium()
+				end)
+			end
+			return
+		end
 		upgrading=true
 		busy=true
 		UI.inputLocked=true
@@ -327,6 +362,8 @@ function App.start()
 					upgrading=false
 					if pending then
 						local nextRoute=pending;pending=nil;go(nextRoute[1],nextRoute[2])
+					else
+						focusPage()
 					end
 				end)
 			end)
