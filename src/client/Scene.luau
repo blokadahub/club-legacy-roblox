@@ -129,6 +129,8 @@ end
 function Scene.new(settings)
 	local self = setmetatable({}, Scene)
 	self.settings, self.actors, self.effects, self.lightTweens = settings or {}, {}, {}, {}
+	self.settingsNeon = nil
+	self.settingsRings = {}
 	self.folder = Instance.new("Folder")
 	self.folder.Name = "CL27_CenarioLocal"
 	self.folder.Parent = Workspace
@@ -192,6 +194,14 @@ function Scene.new(settings)
 		camera.CFrame = CFrame.lookAt(self.cameraPosition + drift, self.cameraTarget + drift * 0.3)
 		camera.Focus = CFrame.new(self.cameraTarget)
 		for _, actor in ipairs(self.actors) do Rig.animate(actor, self.elapsed, self.settings.reducedMotion) end
+		-- Apenas na tela Configurações: círculos de luz integrados ao
+		-- cenário preexistente. Não alteram o lobby de entrada.
+		if self.settingsNeon and not self.settings.reducedMotion then
+			for _, ring in ipairs(self.settingsRings) do
+				ring.model:PivotTo(ring.center * CFrame.Angles(0, 0, self.elapsed * ring.speed))
+				ring.light.Brightness = 0.38 + math.sin(self.elapsed * ring.frequency) * 0.12
+			end
+		end
 	end)
 	return self
 end
@@ -364,12 +374,69 @@ function Scene:Show(mode, homeClub, awayClub, homeKitIndex, awayKitIndex)
 	if self.menuAvatar then self.menuAvatar:Destroy(); self.menuAvatar = nil end
 	self.mode, self.clubText = mode, nil
 	table.clear(self.actors)
+	self.settingsNeon = nil
+	table.clear(self.settingsRings)
 	self.folder:ClearAllChildren()
 	if mode == "Training" then self:_training(homeClub, homeKitIndex)
 	elseif mode == "Arena" or mode == "Kits" then self:_arena(homeClub, awayClub, homeKitIndex, awayKitIndex, mode == "Kits")
 	else self:_interior(homeClub, homeKitIndex) end
 	self:_light(mode)
 	self:ApplySettings()
+end
+
+-- Camada decorativa exclusiva da tela Settings. Não muda a arena
+-- anterior, não cria outra cena e destrói tudo quando a página fecha.
+function Scene:SetSettingsAtmosphere(visible)
+	if not visible then
+		if self.settingsNeon then self.settingsNeon:Destroy(); self.settingsNeon = nil end
+		table.clear(self.settingsRings)
+		return
+	end
+	if self.settingsNeon then return end
+	if self.mode ~= "Arena" then return end
+
+	local folder = Instance.new("Folder")
+	folder.Name = "CL27_SettingsNeon"
+	folder.Parent = self.folder
+	self.settingsNeon = folder
+	local tones = {
+		Color3.fromRGB(25, 203, 120),
+		Color3.fromRGB(42, 239, 147),
+		Color3.fromRGB(21, 168, 105),
+	}
+	for index, setting in ipairs({
+		{center = Vector3.new(-11.3, 5.2, -5.5), radius = 2.4, speed = 0.24},
+		{center = Vector3.new(11.3, 5.2, -5.5), radius = 2.65, speed = -0.2},
+		{center = Vector3.new(0, 9.2, -6.1), radius = 2.45, speed = 0.16},
+	}) do
+		local ring = Instance.new("Model")
+		ring.Name = "AnelNeon_" .. tostring(index)
+		ring.Parent = folder
+		local segments = 22
+		for segment = 1, segments do
+			local a = (segment - 1) / segments * math.pi * 2
+			local b = segment / segments * math.pi * 2
+			local center = setting.center
+			local p1 = center + Vector3.new(math.cos(a) * setting.radius, math.sin(a) * setting.radius, 0)
+			local p2 = center + Vector3.new(math.cos(b) * setting.radius, math.sin(b) * setting.radius, 0)
+			local line = beam(ring, "Arco_" .. tostring(segment), p1, p2, 0.046, tones[index], Enum.Material.Neon)
+			line.Transparency = if segment % 4 == 0 then 0.38 else 0.22
+		end
+		local heart = block(ring, "NucleoLuz", Vector3.new(0.05, 0.05, 0.05), CFrame.new(setting.center), tones[index], Enum.Material.Neon, 1)
+		local lamp = Instance.new("PointLight")
+		lamp.Name = "BrilhoVerde"
+		lamp.Color = tones[index]
+		lamp.Brightness = 0.38
+		lamp.Range = 9
+		lamp.Shadows = false
+		lamp:SetAttribute("CL27Range", 9)
+		lamp.Parent = heart
+		ring:PivotTo(CFrame.new(setting.center))
+		table.insert(self.settingsRings, {
+			model = ring, center = CFrame.new(setting.center),
+			speed = setting.speed, frequency = 0.7 + index * 0.21, light = lamp,
+		})
+	end
 end
 
 function Scene:ApplySettings(settings)
@@ -404,6 +471,7 @@ function Scene:UpdateClubs(homeClub, awayClub, homeKitIndex, awayKitIndex)
 end
 
 function Scene:Destroy()
+	self:SetSettingsAtmosphere(false)
 	if self.menuAvatar then self.menuAvatar:Destroy(); self.menuAvatar = nil end
 	if self.connection then self.connection:Disconnect() end
 	for _, tween in ipairs(self.lightTweens) do tween:Cancel() end
