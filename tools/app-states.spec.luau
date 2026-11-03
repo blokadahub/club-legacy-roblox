@@ -158,10 +158,10 @@ advance(0.22)
 check(handle.state.screen == "Settings" and not homeHud.Enabled
 	and wipe.Visible and wipe.GroupTransparency == 0,
 	"A página só pode trocar depois de a tela estar completamente coberta")
-advance(0.08)
+advance(0.06)
 check(wipe.Visible and wipe.GroupTransparency == 0,
 	"Manter a tela coberta durante a breve estabilização do cenário")
-advance(0.28)
+advance(0.30)
 check(wipe.Visible and wipe.GroupTransparency > 0 and wipe.GroupTransparency < 1,
 	"Durante a saída, a transição deve revelar suavemente o menu")
 advance(0.28)
