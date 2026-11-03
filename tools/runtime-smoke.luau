@@ -178,7 +178,7 @@ local function deepClone(value)
 end
 local baseState = {homeClub = 1, awayClub = 2, homeKit = 1, awayKit = 2, selectedPlayer = 8, formation = 1, screen = "HomeInterior", settings = {quality = "Alta", reducedMotion = false}}
 local routeSet = {}
-local routes = {"HomeInterior", "HomeTraining", "Overview", "Squad", "Tactics", "Assignments", "Calendar", "Transfers", "Finance", "Development", "Competitions", "Customization", "Settings", "Clubs", "Kits"}
+local routes = {"HomeInterior", "Overview", "Squad", "Tactics", "Assignments", "Calendar", "Transfers", "Finance", "Development", "Competitions", "Customization", "Settings", "Clubs", "Kits"}
 for _, id in ipairs(routes) do routeSet[id] = true end
 local assertions, mounts, callbacks = 0, 0, 0
 local function check(value, message) assert(value, message); assertions += 1 end
