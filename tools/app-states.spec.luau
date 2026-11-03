@@ -72,53 +72,77 @@ manager.InputEnded:Fire({UserInputType = Enum.UserInputType.Touch})
 advance(0.32)
 check(manager.TextTransparency == 0.32,
 	"Soltar toque deve dissipar o destaque sem alteração de seleção")
--- Soundtrack compartilha o ciclo de vida do App, não o das páginas.
+-- A trilha toca automaticamente SEM painel fixo ou lista intrusiva.
 local overlay = gui:FindFirstChild("SoundtrackOverlay")
 local sound = services.SoundService:FindFirstChild("CL27SoundtrackLocal")
 check(overlay ~= nil and sound ~= nil and sound.IsPlaying, "Soundtrack must autoplay on entering CL 27")
 local notification = overlay:FindFirstChild("NowPlayingNotification")
-local controls = overlay:FindFirstChild("SoundtrackControls")
-check(notification ~= nil and notification.Visible and controls ~= nil, "Now-playing toast/transport must be visible")
-check(notification.Position.X.Scale == 1 and notification.Position.Y.Scale == 0, "Notification must be top-right anchored")
+check(notification ~= nil and notification.Visible, "Notificação de música precisa abrir automaticamente")
+check(notification:IsA("CanvasGroup"), "Notificação deve suportar transição de opacidade em grupo")
+check(notification.Position.X.Scale == 1 and notification.Position.Y.Scale == 0,
+	"Notificação deve ficar ancorada no canto superior direito")
+check(overlay:FindFirstChild("SoundtrackControls") == nil
+	and overlay:FindFirstChild("TracklistPanel") == nil,
+	"Painel ou lista musical ainda está visível no layout")
+check(notification:FindFirstChild("NomeFaixa") ~= nil and notification:FindFirstChild("ArtistaFaixa") ~= nil
+	and notification:FindFirstChild("ProgressoNotificacao") ~= nil,
+	"Novo design musical deve mostrar título, artista e progresso")
+check(notification.GroupTransparency == 1, "Notificação deve iniciar transparente para animar")
+advance(0.22)
+check(notification.GroupTransparency > 0 and notification.GroupTransparency < 1,
+	"Notificação travou durante a entrada")
+advance(0.22)
+check(notification.GroupTransparency == 0, "Notificação não finalizou a entrada suave")
 local initialSound = sound.SoundId
-check(initialSound == "rbxassetid://5409360995" or initialSound == "rbxassetid://5410086218" or initialSound == "rbxassetid://702367070", "Soundtrack played unknown audio ID")
+check(initialSound == "rbxassetid://5409360995" or initialSound == "rbxassetid://5410086218"
+	or initialSound == "rbxassetid://702367070", "Soundtrack played unknown audio ID")
 sound.IsPlaying = false
 sound.Ended:Fire()
 advance(1.99)
 check(not sound.IsPlaying, "Next song started before the exact 2-second gap")
 advance(0.01)
 check(sound.IsPlaying and notification.Visible, "Next song did not start after 2 seconds")
-local pauseControl = controls:FindFirstChild("PauseOrResume")
-pauseControl.Activated:Fire()
-check(not sound.IsPlaying and pauseControl.Text == "TOCAR", "Pause did not preserve player controls")
-advance(0.1)
-pauseControl.Activated:Fire()
-check(sound.IsPlaying and pauseControl.Text == "PAUSAR", "Resume did not restart the track")
-local volumeUp = controls:FindFirstChild("IncreaseVolume")
-volumeUp.Activated:Fire()
+check(notification.GroupTransparency == 1, "Próxima música não reiniciou animação da notificação")
+advance(0.44)
+check(notification.GroupTransparency == 0, "Próxima notificação não apareceu suavemente")
+advance(4.55)
+check(notification.Visible and notification.GroupTransparency == 0,
+	"Notificação encerrou antes dos cinco segundos completos")
 advance(0.2)
-check(sound.Volume >= 0.49 and sound.Volume <= 0.51, "Volume did not increase from 40 to 50 percent")
-controls:FindFirstChild("NextTrack").Activated:Fire()
-advance(0.56)
-check(sound.IsPlaying, "Next track action failed")
-advance(5.1)
-check(not notification.Visible, "Now-playing notification exceeded five seconds")
-check(gui:FindFirstChild("SoundtrackOverlay") == overlay and sound.Parent == services.SoundService, "Music UI lost across state changes")
-local tracklist = overlay:FindFirstChild("TracklistPanel")
-check(tracklist ~= nil and not tracklist.Visible, "Tracklist should start collapsed")
-controls:FindFirstChild("ToggleTracklist").Activated:Fire()
-check(tracklist.Visible and tracklist:FindFirstChild("Track3") ~= nil, "Tracklist does not expose three songs")
-tracklist:FindFirstChild("Track2").Activated:Fire()
-advance(0.56)
-check(sound.SoundId == "rbxassetid://5410086218" and sound.IsPlaying, "Manual track selection did not play Crab Rave")
-sound.IsPlaying = false
-sound.Ended:Fire()
-advance(0.4)
-pauseControl.Activated:Fire()
-advance(2)
-check(not sound.IsPlaying and pauseControl.Text == "TOCAR", "Pause during the song gap incorrectly started playback")
-pauseControl.Activated:Fire()
-check(sound.IsPlaying, "Resume during the song gap did not start the queued track")
+check(notification.Visible and notification.GroupTransparency > 0 and notification.GroupTransparency < 1,
+	"Notificação deve desaparecer com fade, sem corte seco")
+advance(0.2)
+check(not notification.Visible and notification.GroupTransparency == 1,
+	"Notificação permaneceu visível após a saída animada")
+check(gui:FindFirstChild("SoundtrackOverlay") == overlay and sound.Parent == services.SoundService,
+	"Trilha sonora não deve se perder em navegação")
+
+-- Os dois ícones não usam emojis e acessam a tela real de preferências.
+local settingsIcon = homeRoot:FindFirstChild("Configuracoes")
+local accessIcon = homeRoot:FindFirstChild("Acessibilidade")
+check(settingsIcon ~= nil and accessIcon ~= nil and settingsIcon.Text == "" and accessIcon.Text == "",
+	"Botões de configurações/acessibilidade ainda usam emoji")
+check(settingsIcon.Position.Y.Scale == homeList.Position.Y.Scale
+	and accessIcon.Position.Y.Scale == homeList.Position.Y.Scale,
+	"Ícones devem estar alinhados verticalmente com CL News")
+accessIcon.Activated:Fire()
+check(handle.state.settingsTab == 2 and handle.state.screen == "HomeInterior" and wipe.Visible,
+	"Ícone de acessibilidade não abre diretamente a aba existente")
+advance(0.22)
+check(handle.state.screen == "Settings" and not homeHud.Enabled,
+	"Acessibilidade não navegou para a tela de configurações")
+advance(0.36)
+handle.go("HomeInterior")
+advance(0.58)
+check(handle.state.screen == "HomeInterior" and homeHud.Enabled,
+	"Voltar ao menu não restaurou os ícones acessíveis")
+settingsIcon.Activated:Fire()
+check(handle.state.settingsTab == 1 and wipe.Visible, "Engrenagem não abre as configurações")
+advance(0.58)
+check(handle.state.screen == "Settings", "Engrenagem não navegou até Configurações")
+handle.go("HomeInterior")
+advance(0.58)
+check(handle.state.screen == "HomeInterior", "Voltar da engrenagem não reabriu a Home")
 
 check(handle.state.screen == "HomeInterior" and not wipe.Visible, "Initial state must be visible and idle")
 handle.go("Clubs")
