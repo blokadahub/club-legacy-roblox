@@ -36,7 +36,7 @@ for i=1,8 do
 	check(segment:FindFirstChild("AuraDifusa").Size.Y.Offset == 9,
 		"Cada linha deve ter uma aura translucida separada")
 end
-check(emblem:FindFirstChild("SegmentoDL_01")==nil,
+check(emblem:FindFirstChild("SegmentoCL_01")==nil,
 	"Traços anteriores nao devem permanecer no indicador")
 local outer = emblem:FindFirstChild("OrbitaExterna")
 local inner = emblem:FindFirstChild("OrbitaInterna")
