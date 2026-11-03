@@ -38,10 +38,20 @@ for i = 1, 5 do
 	check(line:FindFirstChild("NucleoCL").Size.Y.Offset == 2.8,
 		"Traco CL deve ser um pouco grosso, mas sem blocos pesados")
 end
-local snake = mark:FindFirstChild("CobraLuz_1")
-check(snake ~= nil and snake:FindFirstChild("AuraVerde")
-	and snake:FindFirstChild("NucleoBranco"),
-	"Foco de luz deve percorrer o CL sem trocar para DL")
+local clSweep = mark:FindFirstChild("VarreduraOuterGlowCL")
+local clPiece = clSweep and clSweep:FindFirstChild("SweepCL_01_01")
+check(clSweep and clPiece and clPiece:IsA("CanvasGroup")
+	and clPiece:FindFirstChild("HaloExternoSuave")
+	and clPiece:FindFirstChild("GlowMedio")
+	and clPiece:FindFirstChild("LinhaBranca"),
+	"CL deve ter varredura branca em faixas, com halo difuso e linha definida")
+check(clPiece:FindFirstChild("LinhaBranca").Size.Y.Offset == 1.65
+	and clPiece:FindFirstChild("HaloExternoSuave").Size.Y.Offset == 15,
+	"Camadas do Outer Glow precisam ter espessuras distintas e um núcleo fino")
+check(clPiece:FindFirstChild("HaloExternoSuave"):FindFirstChildOfClass("UIGradient") ~= nil,
+	"Halo precisa suavizar as bordas, não exibir retângulos opacos")
+check(mark:FindFirstChild("CobraLuz_1") == nil,
+	"Antiga animacao cobra deve ser completamente substituida")
 check(emblem:FindFirstChild("OrbitaExterna") == nil
 	and emblem:FindFirstChild("OrbitaInterna") == nil,
 	"Efeitos orbitais antigos nao pertencem a esta referencia")
@@ -91,9 +101,21 @@ check(brand and brand.Text == "CL 27"
 	"Texto CL 27 precisa estar precisamente centralizado na tela")
 check(homeRoot:FindFirstChild("AjudaInferior")==nil,
 	"Instrucoes A Selecionar B Voltar foram solicitadas para remocao")
-local ctaSnake = primary:FindFirstChild("CobraNeonCapsula")
-check(ctaSnake ~= nil and ctaSnake:FindFirstChild("CobraLuz_1"),
-	"Botao de X deve ter luz verde percorrendo a borda em looping")
+local ctaSweep = primary:FindFirstChild("OuterGlowSweepCapsula")
+local ctaPiece = ctaSweep and ctaSweep:FindFirstChild("SweepBorda_01")
+check(ctaSweep and ctaPiece and ctaPiece:IsA("CanvasGroup")
+	and ctaPiece:FindFirstChild("HaloExternoSuave")
+	and ctaPiece:FindFirstChild("GlowMedio")
+	and ctaPiece:FindFirstChild("LinhaBranca"),
+	"Botao X deve ter Outer Glow Sweep branco, sem pontos em fila")
+check(primary:FindFirstChild("CobraNeonCapsula") == nil
+	and primary:FindFirstChild("ReflexoAnimado") == nil,
+	"Reflexo atravessando o botao e luz cobra devem permanecer removidos")
+local sweepSamples = 0
+for _, node in ipairs(ctaSweep:GetChildren()) do
+	if node.Name:match("^SweepBorda_") then sweepSamples += 1 end
+end
+check(sweepSamples == 78, "Contorno deve ser amostrado para formar faixa continua, nao seis pontos")
 local clubOption = homeList:FindFirstChild("Opcao_4")
 local kickOff = homeList:FindFirstChild("Opcao_3")
 local glow = homeList:FindFirstChild("BrilhoRadialSelecao")
@@ -255,10 +277,10 @@ check(handle.state.screen == "HomeInterior" and wipe.Visible
 	and wipe.GroupTransparency == 1 and UI.inputLocked,
 	"Entrar em Configuracoes deve iniciar loading sem esconder o fundo abruptamente")
 services.RunService.Heartbeat:Fire(0.09)
-local snakeBefore = snake.Position
+local beforeSweep = clPiece.GroupTransparency
 services.RunService.Heartbeat:Fire(0.05)
-check(snake.Position ~= snakeBefore,
-	"Luz itinerante precisa percorrer a borda das letras CL")
+check(clPiece.GroupTransparency ~= beforeSweep,
+	"Foco branco precisa percorrer as arestas CL continuamente")
 advance(0.18)
 check(handle.state.screen == "HomeInterior" and wipe.Visible
 	and wipe.GroupTransparency > 0 and wipe.GroupTransparency < 1,
@@ -430,8 +452,8 @@ handle.go("HomeTraining")
 advance(0.15)
 check(handle.state.screen == "Squad" and UI.inputLocked and wipe.Visible,
 	"Movimento reduzido mantem 2,5 s, apenas elimina a animacao segmentada")
-check(not snake.Visible,
-	"Movimento reduzido deve deixar CL estatico sem cobra luminosa")
+check(not clSweep.Visible,
+	"Movimento reduzido deve deixar CL estatico sem efeitos luminosos móveis")
 advance(2.0)
 check(handle.state.screen == "HomeTraining" and wipe.Visible and UI.inputLocked,
 	"Movimento reduzido nao deve eliminar o tempo minimo de carregamento")
