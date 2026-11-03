@@ -34,7 +34,7 @@ function App.start()
 	lifetime:Add(function() soundtrack.destroy() end)
 	local state={screen="HomeInterior",homeFocus=3,homeClub=1,awayClub=2,homeKit=1,awayKit=2,activeSide="home",
 		homeReady=false,awayReady=false,selectedPlayer=10,formation=1,assignments={},month=11,year=2026,
-		shortlist={},training={},accent="Turquesa",settings={reducedMotion=false,quality="Alta",highContrast=false,showHints=true}}
+		shortlist={},training={},accent="Turquesa",menuInputLocked=false,settings={reducedMotion=false,quality="Alta",highContrast=false,showHints=true}}
 	-- HUD nasce ANTES do cenário e do render das páginas: uma falha no 3D
 	-- nunca pode deixar o jogador diante de uma tela sem menu.
 	local homeHud=HomeHUD.start(playerGui,state)
@@ -80,11 +80,24 @@ function App.start()
 	local pending=nil
 	local mode=nil
 	local render,go
-	-- Transição global ocupa o viewport inteiro e fica ACIMA dos dois HUDs.
-	-- A antiga camada no Canvas 16:9 provocava retângulo e flashes.
+	-- Carregamento CL neon: sobreposicao leve independente do cenario,
+	-- respeita toque, gamepad e visualizacao em celular horizontal.
 	local transitionFx=TransitionFX.start(playerGui)
 	lifetime:Add(function() transitionFx:Destroy() end)
 	local transition=transitionFx.layer
+	local MINIMUM_LOAD_SECONDS=TransitionFX.MINIMUM_SECONDS
+	local function lockNavigation()
+		busy=true
+		UI.inputLocked=true
+		state.menuInputLocked=true
+		if pageScope then pageScope.inputsPaused=true end
+	end
+	local function unlockNavigation()
+		busy=false
+		UI.inputLocked=false
+		state.menuInputLocked=false
+		if pageScope then pageScope.inputsPaused=false end
+	end
 	local toast=UI.panel(canvas,490,786,620,48,Theme.background,.05)
 	toast.ZIndex=120
 	toast.Visible=false
@@ -221,25 +234,44 @@ function App.start()
 			pageScope:Tween(page,{GroupTransparency=0},0.18)
 		end
 	end
+	-- 2,5 s completos em qualquer mudanca do lobby, Configuracoes ou modo
+	-- de jogo. Navegacao entre paineis internos que nao sao esses modos nao
+	-- apresenta carregamento artificial.
+	local function shouldLoad(from: string, to: string): boolean
+		local critical = {
+			HomeInterior=true, HomeTraining=true, Settings=true, Clubs=true, Kits=true,
+		}
+		return critical[from] == true or critical[to] == true
+	end
+
+	local function finishLoading()
+		if not lifetime.alive then return end
+		transitionFx:Finish()
+		unlockNavigation()
+		if pending then
+			local nextRoute=pending
+			pending=nil
+			go(nextRoute[1],nextRoute[2])
+		else
+			focusPage()
+		end
+	end
+
 	go=function(id,back)
 		if not lifetime.alive then return end
 		if not screens[id] then notify("Esta seção não está disponível.");return end
 		if busy then pending={id,back};return end
 		if id==state.screen then closeTray();return end
+		local original=state.screen
 		closeTray()
-		busy=true
-		UI.inputLocked=true
-		if pageScope then pageScope.inputsPaused=true end
+		lockNavigation()
 		pending=nil
-
-		-- Primeiro encobrir TUDO (cena 3D, Roblox HUD, Home e Settings).
-		-- Só trocar a cena quando a cobertura estiver totalmente opaca.
-		local enter=transitionFx:Cover(state.settings.reducedMotion)
-		lifetime:Delay(enter,function()
+		local needsLoader=shouldLoad(original,id)
+		local function handoff()
 			if not lifetime.alive then return end
-			if not back then table.insert(history,state.screen) end
+			if not back then table.insert(history,original) end
 			state.screen=id
-			-- HUD independente continua acessível caso a geometria falhe.
+			-- O indicador continua por cima mesmo se uma tela falhar.
 			local ok, errorMessage=xpcall(render,function(err)
 				return tostring(err)..(debug and debug.traceback and "\n"..debug.traceback() or "")
 			end)
@@ -248,30 +280,47 @@ function App.start()
 				settingsHud:SetVisible(id=="Settings")
 				homeHud:SetVisible(id=="HomeInterior" or id=="HomeTraining")
 			end
+			return ok
+		end
+		if not needsLoader then
+			local ok=handoff()
+			unlockNavigation()
+			if ok then focusPage() end
+			return
+		end
 
-			-- Pausa discreta com a tela coberta, evitando revelar partes de
-			-- cenários no meio da construção ou um flash retangular.
-			local hold=if state.settings.reducedMotion then 0.02 else 0.08
-			lifetime:Delay(hold,function()
+		local enter=transitionFx:Cover(state.settings.reducedMotion)
+		local exitDuration=if state.settings.reducedMotion then 0.15 else TransitionFX.EXIT_SECONDS
+		local revealStart=MINIMUM_LOAD_SECONDS-exitDuration
+		-- Trocar a rota perto do fim: durante a maior parte do carregamento
+		-- permanece visivel a tela de origem, como solicitado.
+		local handoffAt=math.max(enter,revealStart-0.20)
+		lifetime:Delay(handoffAt,function()
+			if not lifetime.alive then return end
+			handoff()
+			lifetime:Delay(revealStart-handoffAt,function()
 				if not lifetime.alive then return end
 				local exit=transitionFx:Reveal(state.settings.reducedMotion)
-				lifetime:Delay(exit,function()
-					if not lifetime.alive then return end
-					transitionFx:Finish()
-					busy=false
-					UI.inputLocked=false
-					if pageScope then pageScope.inputsPaused=false end
-					if pending then
-						local nextRoute=pending
-						pending=nil
-						go(nextRoute[1],nextRoute[2])
-					elseif ok then
-						focusPage()
-					end
-				end)
+				lifetime:Delay(exit,finishLoading)
 			end)
 		end)
 	end
+
+	-- Em selecoes apenas visuais o mesmo indicador permanece por 2,5 s.
+	-- Nenhuma mudanca de rota e fabricada: o conteudo ja selecionado fica
+	-- sob o vidro escurecido e os toques permanecem bloqueados.
+	homeHud:SetSelectionLoading(function(_index)
+		if busy or not lifetime.alive or (state.screen~="HomeInterior" and state.screen~="HomeTraining") then return end
+		lockNavigation()
+		local enter=transitionFx:Cover(state.settings.reducedMotion)
+		local exitDuration=if state.settings.reducedMotion then 0.15 else TransitionFX.EXIT_SECONDS
+		lifetime:Delay(math.max(enter,MINIMUM_LOAD_SECONDS-exitDuration),function()
+			if not lifetime.alive then return end
+			local exit=transitionFx:Reveal(state.settings.reducedMotion)
+			lifetime:Delay(exit,finishLoading)
+		end)
+	end)
+
 	-- A engrenagem abre Configurações; o símbolo de acessibilidade abre
 	-- diretamente a aba real de acessibilidade já existente.
 	homeHud:SetNavigation(function(tab)
@@ -299,7 +348,7 @@ function App.start()
 		go(target)
 	end)
 	lifetime:Connect(UserInputService.InputBegan,function(input,processed)
-		if processed or UserInputService:GetFocusedTextBox() then return end
+		if busy or processed or UserInputService:GetFocusedTextBox() then return end
 		if input.KeyCode==Enum.KeyCode.M or input.KeyCode==Enum.KeyCode.ButtonY then toggleTray()
 		elseif input.KeyCode==Enum.KeyCode.B or input.KeyCode==Enum.KeyCode.ButtonB then
 			if tray then closeTray() elseif not busy then go(table.remove(history) or "HomeInterior",true) end
@@ -312,6 +361,7 @@ function App.start()
 		pending=nil
 		busy=false
 		UI.inputLocked=false
+		state.menuInputLocked=false
 	end)
 	render()
 	return {state=state,go=go,destroy=function() gui:Destroy() end}
