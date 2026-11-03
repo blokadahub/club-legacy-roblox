@@ -586,6 +586,15 @@ for i = 1, 3 do
 	check(ring ~= nil and #ring:GetChildren() == 23,
 		"Cada anel precisa ter 22 segmentos e 1 ponto de luz")
 end
+presentation.cameraPosition = Vector3.new(0, 4, 17)
+presentation.cameraTarget = Vector3.new(0, 2, -1)
+services.RunService.RenderStepped:Fire(1 / 60)
+check(originalCamera.CameraType == Enum.CameraType.Scriptable, "Scene did not take camera control")
+check(presentation.settingsRings[1].light.Brightness ~= 0.38,
+	"Os neons devem pulsar enquanto o cenário está ativo")
+presentation:SetSettingsAtmosphere(false)
+check(presentation.settingsNeon == nil and #presentation.settingsRings == 0 and neon.Parent == nil,
+	"Neons continuam na arena depois de sair de Configurações")
 -- A Scene real utiliza os módulos copiados do PR #7 sem câmera própria:
 -- o App é o único controlador da câmera e da iluminação.
 presentation:ApplySettings({quality="Alta", reducedMotion=false})
@@ -613,15 +622,6 @@ presentation:Show("Arena", Data.clubs[1], Data.clubs[2], 1, 1)
 check(presentation.tunnel == nil and formerTunnel.destroyed
 	and services.Lighting.FogStart ~= 74,
 	"Sair do túnel deve liberar a geometria e restaurar a névoa")
-presentation.cameraPosition = Vector3.new(0, 4, 17)
-presentation.cameraTarget = Vector3.new(0, 2, -1)
-services.RunService.RenderStepped:Fire(1 / 60)
-check(originalCamera.CameraType == Enum.CameraType.Scriptable, "Scene did not take camera control")
-check(presentation.settingsRings[1].light.Brightness ~= 0.38,
-	"Os neons devem pulsar enquanto o cenário está ativo")
-presentation:SetSettingsAtmosphere(false)
-check(presentation.settingsNeon == nil and #presentation.settingsRings == 0 and neon.Parent == nil,
-	"Neons continuam na arena depois de sair de Configurações")
 local replacement = Instance.new("Camera")
 replacement.ViewportSize = Vector2.new(1600, 900)
 replacement.CameraType = Enum.CameraType.Custom
