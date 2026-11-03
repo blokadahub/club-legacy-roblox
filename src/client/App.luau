@@ -186,11 +186,12 @@ function App.start()
 		page=UI.new("CanvasGroup",{Name=state.screen,BackgroundTransparency=1,Size=UDim2.fromScale(1,1),GroupTransparency=0},canvas)
 		-- A UI de Settings fica em outro ScreenGui, nunca sob Transicao.
 		settingsHud:SetVisible(state.screen=="Settings")
-		local wanted=if state.screen=="HomeInterior" then "Interior" elseif state.screen=="HomeTraining" then "Training" elseif state.screen=="Kits" then "Kits" else "Arena"
+		local wanted=if state.screen=="HomeInterior" then "Interior" elseif state.screen=="HomeTraining" then "Training" elseif state.screen=="Kits" then "Kits" elseif state.screen=="Clubs" then "Tunnel" else "Arena"
 		homeHud:SetVisible(wanted=="Interior" or wanted=="Training")
 		if wanted~=mode then scene:Show(wanted,Data.clubs[state.homeClub],Data.clubs[state.awayClub],state.homeKit,state.awayKit);mode=wanted
 		else scene:UpdateClubs(Data.clubs[state.homeClub],Data.clubs[state.awayClub],state.homeKit,state.awayKit) end
-		scene:ApplySettings(state.settings)
+		 scene:ApplySettings(state.settings)
+		transitionFx:SetPersistentLoading(state.screen=="Clubs", state.settings.reducedMotion)
 		-- Neons são decorativos; falhas de geometria não podem prender o
 		-- jogador no wipe nem bloquear o menu de personalização.
 		local neonOK, neonError=pcall(function()
@@ -211,12 +212,21 @@ function App.start()
 		local ctx={state=state,scope=pageScope,go=go,rerender=rerender,notify=notify,scene=scene}
 		-- A HOME é desenhada no ScreenGui independente CL27_HomeHUD, não aqui.
 		-- O ScreenGui do menu não depende da cena 3D para inicializar.
-		if wanted~="Interior" and wanted~="Training" and state.screen~="Settings" then
+		if wanted~="Interior" and wanted~="Training" and state.screen~="Settings" and state.screen~="Clubs" then
 			screens[state.screen](page,ctx)
 		end
 		-- A tela inicial da referência possui só cinco opções e os ícones decorativos.
 		-- O rodapé de navegação continua disponível nas outras páginas.
-		if wanted~="Interior" and wanted~="Training" and state.screen~="Settings" then
+		if state.screen=="Clubs" then
+			-- O túnel é a apresentação inteira. Apenas um retorno discreto
+			-- permanece acessível em celular, teclado e controle.
+			local back=UI.button(page,"‹",27,26,58,58,function()
+				go(table.remove(history) or "HomeInterior",true)
+			end,pageScope,{quiet=true,textSize=34})
+			back.Name="VoltarDoTunel"
+			back.TextXAlignment=Enum.TextXAlignment.Center
+		end
+		if wanted~="Interior" and wanted~="Training" and state.screen~="Settings" and state.screen~="Clubs" then
 			local footer=UI.frame(page,0,839,1600,61,Theme.background,.3)
 			UI.line(footer,44,0,1556,0,Theme.muted,1).BackgroundTransparency=.8
 			UI.button(footer,"≡  CENTRAL",44,10,165,40,toggleTray,pageScope,{quiet=true,textSize=14})
@@ -333,7 +343,8 @@ function App.start()
 	end)
 	lifetime:Connect(UserInputService.InputBegan,function(input,processed)
 		if busy or processed or UserInputService:GetFocusedTextBox() then return end
-		if input.KeyCode==Enum.KeyCode.M or input.KeyCode==Enum.KeyCode.ButtonY then toggleTray()
+		if input.KeyCode==Enum.KeyCode.M or input.KeyCode==Enum.KeyCode.ButtonY then
+			if state.screen~="Clubs" then toggleTray() end
 		elseif input.KeyCode==Enum.KeyCode.B or input.KeyCode==Enum.KeyCode.ButtonB then
 			if tray then closeTray() elseif not busy then go(table.remove(history) or "HomeInterior",true) end
 		end
