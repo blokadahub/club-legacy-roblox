@@ -119,7 +119,7 @@ services.Lighting = Instance.new('Lighting')
 services.RunService = {RenderStepped = signal(), Heartbeat = signal()}
 '''
 paths = sorted((root / "src/shared").glob("*.luau"))
-paths += [root / f"src/client/{name}.luau" for name in ("Scope", "Rig", "UI", "SettingsIcons", "Soundtrack", "MenuAvatar", "HomeShowcase", "RadialGlow", "HomeHUD", "SettingsHUD", "TransitionFX", "App")]
+paths += [root / f"src/client/{name}.luau" for name in ("Scope", "Rig", "UI", "SettingsIcons", "Soundtrack", "MenuAvatar", "NeonSnake", "HomeShowcase", "RadialGlow", "HomeHUD", "SettingsHUD", "TransitionFX", "App")]
 paths += sorted((root / "src/client/Screens").glob("*.luau"))
 paths.append(root / "src/client/Scene.luau")
 parts = ["local factories, moduleNodes, cache = {}, {}, {}\nlocal require\n"]
