@@ -41,7 +41,7 @@ function Scene:CreateArchitecture(quality)
 			part.CanCollide, part.CanTouch, part.CanQuery = false,false,false
 			part.TopSurface, part.BottomSurface = Enum.SurfaceType.Smooth,Enum.SurfaceType.Smooth
 			part.Parent = architecture
-			Lighting.attach(part,data.light,quality)
+			Lighting.attach(part,data.light,quality,data)
 		end
 	end)
 	if not ok then architecture:Destroy(); error(err,2) end

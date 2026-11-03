@@ -8,6 +8,7 @@ local Rig = require(script.Parent.Rig)
 local MenuAvatar = require(script.Parent.MenuAvatar)
 local TunnelScene = require(script.Parent.Environments.TunnelScene)
 local TunnelGeometry = require(script.Parent.Environments.TunnelGeometry)
+local TunnelLighting = require(script.Parent.Environments.TunnelLighting)
 local Scene = {}
 Scene.__index = Scene
 
@@ -217,17 +218,18 @@ function Scene:_light(mode)
 	local tunnel = mode == "Tunnel"
 	-- O controlador principal continua sendo o unico dono da Camera/Lighting.
 	-- O tunel fornece apenas geometria e emissores locais.
-	Lighting.FogColor = if tunnel then Color3.fromRGB(27, 65, 68) else self.oldLighting.FogColor
-	Lighting.FogStart = if tunnel then 74 else self.oldLighting.FogStart
-	Lighting.FogEnd = if tunnel then 168 else self.oldLighting.FogEnd
+	local environment = TunnelLighting.Environment
+	Lighting.FogColor = if tunnel then environment.FogColor else self.oldLighting.FogColor
+	Lighting.FogStart = if tunnel then environment.FogStart else self.oldLighting.FogStart
+	Lighting.FogEnd = if tunnel then environment.FogEnd else self.oldLighting.FogEnd
 	local target = {
-		Ambient = if tunnel then Color3.fromRGB(8, 11, 20) else (interior and Color3.fromRGB(36, 45, 46) or Color3.fromRGB(27, 59, 64)),
-		OutdoorAmbient = if tunnel then Color3.fromRGB(3, 5, 10) else (interior and Color3.fromRGB(22, 29, 33) or Color3.fromRGB(35, 55, 60)),
-		Brightness = if tunnel then 0.45 else (interior and 1.15 or 1.6),
-		ClockTime = if tunnel then 0 else (interior and 16.4 or 21),
-		ExposureCompensation = if tunnel then -0.32 else (interior and -0.32 or -0.24),
-		EnvironmentDiffuseScale = if tunnel then 0.18 else (interior and 0.35 or 0.55),
-		EnvironmentSpecularScale = if tunnel then 0.3 else (interior and 0.3 or 0.85),
+		Ambient = if tunnel then environment.Ambient else (interior and Color3.fromRGB(36, 45, 46) or Color3.fromRGB(27, 59, 64)),
+		OutdoorAmbient = if tunnel then environment.OutdoorAmbient else (interior and Color3.fromRGB(22, 29, 33) or Color3.fromRGB(35, 55, 60)),
+		Brightness = if tunnel then environment.Brightness else (interior and 1.15 or 1.6),
+		ClockTime = if tunnel then environment.ClockTime else (interior and 16.4 or 21),
+		ExposureCompensation = if tunnel then environment.ExposureCompensation else (interior and -0.32 or -0.24),
+		EnvironmentDiffuseScale = if tunnel then environment.EnvironmentDiffuseScale else (interior and 0.35 or 0.55),
+		EnvironmentSpecularScale = if tunnel then environment.EnvironmentSpecularScale else (interior and 0.3 or 0.85),
 	}
 	-- The graphic wipe covers the geometry swap; lighting settles beneath it.
 	local tween = TweenService:Create(Lighting, TweenInfo.new(self.settings.reducedMotion and 0 or 0.32, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), target)
@@ -235,8 +237,10 @@ function Scene:_light(mode)
 	tween:Play()
 	self.rays.Enabled = false
 	self.atmosphere.Density = if tunnel then 0 else 0.035
+	-- Presence of Atmosphere overrides classic distance fog even at zero density.
+	self.atmosphere.Parent = if tunnel then nil else Lighting
 	self.atmosphere.Haze = 0
-	self.grade.TintColor = if tunnel then Color3.fromRGB(229, 244, 246) else (interior and Color3.fromRGB(255, 248, 233) or Color3.fromRGB(221, 255, 247))
+	self.grade.TintColor = if tunnel then TunnelLighting.Post.TintColor else (interior and Color3.fromRGB(255, 248, 233) or Color3.fromRGB(221, 255, 247))
 end
 
 function Scene:_actor(club, kit, position, yaw, pose, number)
@@ -429,19 +433,19 @@ function Scene:ApplySettings(settings)
 	Lighting.PrioritizeLightingQuality = high
 	Lighting.GlobalShadows = not low
 	self.bloom.Enabled = not low
-	self.bloom.Intensity = if self.mode == "Tunnel" then 0.12 else (self.mode == "Interior" and 0.06 or (high and 0.2 or 0.1))
+	self.bloom.Intensity = if self.mode == "Tunnel" then TunnelLighting.Post.BloomIntensity else (self.mode == "Interior" and 0.06 or (high and 0.2 or 0.1))
 	if self.tunnel then
 		local tunnelQuality = if quality == "Baixa" then "Low" elseif quality == "Alta" then "High" else "Medium"
 		self.tunnel:ApplyQuality(tunnelQuality)
-		self.bloom.Size, self.bloom.Threshold = 20, 1.15
-		self.grade.Contrast, self.grade.Saturation = 0.12, -0.08
+		self.bloom.Size,self.bloom.Threshold = TunnelLighting.Post.BloomSize,TunnelLighting.Post.BloomThreshold
+		self.grade.Contrast,self.grade.Saturation = TunnelLighting.Post.Contrast,TunnelLighting.Post.Saturation
 	else
 		self.bloom.Size, self.bloom.Threshold = 28, 1.15
 		self.grade.Contrast, self.grade.Saturation = 0.1, -0.06
 	end
 	self.rays.Enabled = false
 	for _, object in ipairs(self.folder:GetDescendants()) do
-		if object:IsA("Light") then
+		if object:IsA("Light") and not object:GetAttribute("CL27TunnelLight") then
 			object.Shadows = high and object:IsA("SurfaceLight")
 			if object:IsA("PointLight") then
 				object.Enabled = not low
