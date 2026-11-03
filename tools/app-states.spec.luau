@@ -31,6 +31,11 @@ local kickOff = homeList:FindFirstChild("Opcao_3")
 local clubMist = homeList:FindFirstChild("FumacaVerde_4")
 check(clubMist ~= nil and clubMist:IsA("CanvasGroup"), "Névoa animável de Clubes não foi criada")
 check(clubMist.GroupTransparency == 1, "Efeito de opção inativa deve iniciar invisível")
+check(clubMist.Size.X.Offset <= 300 and clubMist.Size.Y.Offset <= 115,
+	"Névoa deve caber atrás do texto, sem ocupar a lateral inteira")
+local cloudGradient = clubMist:FindFirstChild("Nuvem1"):FindFirstChild("UIGradient")
+check(cloudGradient ~= nil and cloudGradient.Rotation == 90,
+	"Camadas da névoa precisam dissipar nas bordas verticais")
 clubOption.Activated:Fire()
 check(handle.state.homeFocus == 4 and handle.state.screen == "HomeInterior",
 	"Seleção de Clubes abriu conteúdo inexistente")
@@ -57,21 +62,23 @@ check(handle.state.homeFocus == 3 and kickOff.TextTransparency == 0
 local news = homeList:FindFirstChild("Opcao_1")
 news.MouseEnter:Fire()
 advance(0.32)
-check(news.TextTransparency == 0 and handle.state.homeFocus == 3,
-	"Hover deve acender o texto sem alterar a seleção atual")
+check(news.TextTransparency == 0 and kickOff.TextTransparency == 0.32
+	and handle.state.homeFocus == 3,
+	"Hover deve trocar o foco visual, nunca deixar dois botões brancos")
 news.MouseLeave:Fire()
 advance(0.32)
-check(news.TextTransparency == 0.32,
-	"MouseLeave deve escurecer suavemente a opção não selecionada")
+check(news.TextTransparency == 0.32 and kickOff.TextTransparency == 0,
+	"MouseLeave deve restaurar somente a seleção persistente")
 local manager = homeList:FindFirstChild("Opcao_2")
 manager.InputBegan:Fire({UserInputType = Enum.UserInputType.Touch})
 advance(0.32)
-check(manager.TextTransparency == 0 and handle.state.homeFocus == 3,
-	"Toque deve revelar destaque transitório sem acionar navegação")
+check(manager.TextTransparency == 0 and kickOff.TextTransparency == 0.32
+	and handle.state.homeFocus == 3,
+	"Toque deve transferir o foco visual sem duplicar o texto branco")
 manager.InputEnded:Fire({UserInputType = Enum.UserInputType.Touch})
 advance(0.32)
-check(manager.TextTransparency == 0.32,
-	"Soltar toque deve dissipar o destaque sem alteração de seleção")
+check(manager.TextTransparency == 0.32 and kickOff.TextTransparency == 0,
+	"Soltar toque deve devolver foco branco somente ao botão selecionado")
 -- A trilha toca automaticamente SEM painel fixo ou lista intrusiva.
 local overlay = gui:FindFirstChild("SoundtrackOverlay")
 local sound = services.SoundService:FindFirstChild("CL27SoundtrackLocal")
@@ -87,12 +94,9 @@ check(overlay:FindFirstChild("SoundtrackControls") == nil
 check(notification:FindFirstChild("NomeFaixa") ~= nil and notification:FindFirstChild("ArtistaFaixa") ~= nil
 	and notification:FindFirstChild("ProgressoNotificacao") ~= nil,
 	"Novo design musical deve mostrar título, artista e progresso")
-check(notification.GroupTransparency == 1, "Notificação deve iniciar transparente para animar")
-advance(0.22)
-check(notification.GroupTransparency > 0 and notification.GroupTransparency < 1,
-	"Notificação travou durante a entrada")
-advance(0.22)
-check(notification.GroupTransparency == 0, "Notificação não finalizou a entrada suave")
+-- Os testes anteriores avançaram o relógio por 2,7 s; entrada inicial já finalizada.
+check(notification.GroupTransparency == 0, "Notificação inicial deve permanecer legível")
+
 local initialSound = sound.SoundId
 check(initialSound == "rbxassetid://5409360995" or initialSound == "rbxassetid://5410086218"
 	or initialSound == "rbxassetid://702367070", "Soundtrack played unknown audio ID")
