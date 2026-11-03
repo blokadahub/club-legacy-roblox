@@ -16,6 +16,7 @@ args = parser.parse_args()
 prelude = (root / "tools/runtime-smoke.luau").read_text().split("-- MODULES", 1)[0]
 setup = r'''
 events.Ended = true
+warn = function(...) print(...) end
 local constructInstance = Instance.new
 function Instance.new(className)
     local object = constructInstance(className)
