@@ -143,7 +143,10 @@ check(handle.state.screen == "HomeInterior" and wipe.Visible,
 advance(0.22)
 check(handle.state.screen == "Settings" and not homeHud.Enabled,
 	"Acessibilidade não abriu o menu de personalização")
-local settingsPage = canvas.Settings
+local settingsGui = playerGui:FindFirstChild("CL27_SettingsHUD")
+check(settingsGui ~= nil and settingsGui.DisplayOrder > gui.DisplayOrder and settingsGui.Enabled,
+	"Settings não está em um ScreenGui independente acima do wipe")
+local settingsPage = settingsGui:FindFirstChild("SettingsCanvas"):FindFirstChild("Settings")
 local settingsGrid = settingsPage:FindFirstChild("GradeConfiguracoes")
 check(settingsGrid ~= nil and settingsGrid.Size.X.Offset == 1018,
 	"Grade de configurações não apareceu na tela central")
@@ -178,18 +181,18 @@ check(settingsGrid:FindFirstChild("Cartao_6").BackgroundColor3.R > 0.95
 settingsPage:FindFirstChild("FecharConfiguracoes").Activated:Fire()
 advance(0.58)
 check(handle.state.screen == "HomeInterior" and homeHud.Enabled
-	and services.lastScene.settingsNeonVisible == false,
+	and not settingsGui.Enabled and services.lastScene.settingsNeonVisible == false,
 	"Voltar precisa restaurar lobby original sem neons de Settings")
 settingsIcon.Activated:Fire()
 check(wipe.Visible, "Engrenagem deve iniciar abertura de Configurações")
 advance(0.58)
-check(handle.state.screen == "Settings" and services.lastScene.settingsNeonVisible,
+check(handle.state.screen == "Settings" and services.lastScene.settingsNeonVisible and settingsGui.Enabled,
 	"Engrenagem não exibiu menu e neons")
-check(canvas.Settings:FindFirstChild("GradeConfiguracoes"):FindFirstChild("Cartao_6").BackgroundColor3.R > 0.95,
+check(settingsGrid:FindFirstChild("Cartao_6").BackgroundColor3.R > 0.95,
 	"Seleção visual deve persistir ao reabrir Configurações")
-canvas.Settings:FindFirstChild("FecharConfiguracoes").Activated:Fire()
+settingsPage:FindFirstChild("FecharConfiguracoes").Activated:Fire()
 advance(0.58)
-check(handle.state.screen == "HomeInterior" and homeHud.Enabled,
+check(handle.state.screen == "HomeInterior" and homeHud.Enabled and not settingsGui.Enabled,
 	"Fechar Configurações não retornou ao lobby original")
 
 check(handle.state.screen == "HomeInterior" and not wipe.Visible, "Initial state must be visible and idle")
@@ -298,7 +301,8 @@ advance(0.02)
 local scene = services.lastScene
 handle.destroy()
 advance(2)
-check(scene.destroyed and gui.Destroyed, "Disposal must destroy scene and GUI")
+check(scene.destroyed and gui.Destroyed and settingsGui.Destroyed,
+	"Disposal must destroy scene, principal UI and Settings HUD")
 check(homeHud.Destroyed, "HUD independente não foi destruído com o App")
 check(not UI.inputLocked, "Disposal must release shared input lock")
 handle.go("Finance")
