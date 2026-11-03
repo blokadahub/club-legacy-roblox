@@ -369,10 +369,22 @@ function HomeHUD.start(playerGui: Instance, state)
 	local function repaint(instant: boolean?)
 		if not alive then return end
 		local expanded = current == 4
-		learnGroup.Visible = expanded
-		animate(learnGroup, {
+		if expanded then learnGroup.Visible = true end
+		local submenuTween = animate(learnGroup, {
 			GroupTransparency = if expanded then 0 else 1,
+			Size = UDim2.fromOffset(350, if expanded then 138 else 0),
 		}, if instant then 0 else 0.26, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+		if not expanded then
+			if not submenuTween then
+				learnGroup.Visible = false
+			else
+				submenuTween.Completed:Once(function(playback)
+					if alive and current ~= 4 and playback == Enum.PlaybackState.Completed then
+						learnGroup.Visible = false
+					end
+				end)
+			end
+		end
 		list.CanvasSize = UDim2.new(0, 0, 0, if expanded then 540 else 420)
 		for index, row in ipairs(rows) do
 			local focused = hovered or current
