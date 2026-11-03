@@ -103,7 +103,7 @@ services.StarterGui = {SetCoreGuiEnabled = function() end}
 services.UserInputService.GetFocusedTextBox = function() return nil end
 services.UserInputService.GamepadEnabled = true
 services.Lighting = Instance.new('Lighting')
-services.RunService = {RenderStepped = signal()}
+services.RunService = {RenderStepped = signal(), Heartbeat = signal()}
 '''
 paths = sorted((root / "src/shared").glob("*.luau"))
 paths += [root / f"src/client/{name}.luau" for name in ("Scope", "Rig", "UI", "Soundtrack", "App")]
