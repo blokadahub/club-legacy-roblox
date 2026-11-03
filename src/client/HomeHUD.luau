@@ -3,7 +3,7 @@
 -- cenario 3D, do ViewportFrame e do renderizador de paginas do CL 27.
 -- Nunca depender do carregamento do avatar ou da iluminacao para exibir o menu.
 local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local HomeHUD = {}
@@ -41,30 +41,52 @@ local function levelOf(player: Player): string
 end
 
 local function smoke(parent: Instance, offset: number)
-	local group = element("Frame", parent, {
+	-- Névoa VIVA: quatro camadas com velocidades/fases distintas, bordas
+	-- dissolvidas e respiração luminosa. Sem retângulo verde ou peça de cenário.
+	local group = element("CanvasGroup", parent, {
 		Name = "FumacaVerde",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0, -34, 0, offset - 17),
-		Size = UDim2.new(1, 42, 0, 82),
+		GroupTransparency = 1,
+		Position = UDim2.new(0, -43, 0, offset - 22),
+		Size = UDim2.new(1, 95, 0, 97),
 		ClipsDescendants = false,
 		ZIndex = 2,
-		Visible = false,
+		Visible = true,
 	})
-	-- Suporte visual opcional: mesmo sem textura, a lista continua visivel.
-	for index = 1, 3 do
-		element("ImageLabel", group, {
+	local clouds = {}
+	for index = 1, 4 do
+		local x = (index - 1) * 91 - 42
+		local y = if index % 2 == 0 then 8 else -5
+		local image = element("ImageLabel", group, {
 			Name = "Nuvem" .. tostring(index),
 			BackgroundTransparency = 1,
 			Image = SMOKE,
-			ImageColor3 = if index == 2 then Color3.fromRGB(42, 146, 90) else Color3.fromRGB(31, 108, 76),
-			ImageTransparency = 0.53 + index * 0.09,
-			Position = UDim2.new(0, (index - 1) * 86 - 18, 0, index % 2 * 7 - 1),
-			Size = UDim2.new(0, 230, 0, 70),
-			Rotation = (index - 2) * 8,
+			ImageColor3 = if index % 2 == 0
+				then Color3.fromRGB(32, 158, 100)
+				else Color3.fromRGB(22, 105, 71),
+			ImageTransparency = 0.43 + index * 0.045,
+			Position = UDim2.fromOffset(x, y),
+			Size = UDim2.fromOffset(212 + (index % 2) * 42, 88 + (index % 3) * 13),
+			Rotation = (index - 2.5) * 9,
 			ZIndex = 2,
 		})
+		element("UIGradient", image, {
+			Rotation = if index % 2 == 0 then 0 else 180,
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 1),
+				NumberSequenceKeypoint.new(0.18, 0.33),
+				NumberSequenceKeypoint.new(0.53, 0.04),
+				NumberSequenceKeypoint.new(0.83, 0.42),
+				NumberSequenceKeypoint.new(1, 1),
+			}),
+		})
+		clouds[index] = {
+			image = image, x = x, y = y, phase = index * 1.73,
+			rotation = (index - 2.5) * 9,
+			opacity = 0.43 + index * 0.045,
+		}
 	end
-	return group
+	return group, clouds
 end
 
 local function icon(parent: Instance, name: string, text: string, x: number, y: number)
@@ -160,9 +182,37 @@ function HomeHUD.start(playerGui: Instance, state)
 	})
 
 	local rows = {}
+	local tweens: {[Instance]: Tween} = {}
+	local reducedMotion = state.settings and state.settings.reducedMotion == true
+
+	local function animate(object: Instance, goals, duration: number, easing, direction)
+		local previous = tweens[object]
+		if previous then
+			tweens[object] = nil
+			previous:Cancel()
+		end
+		if reducedMotion or duration <= 0 then
+			for property, value in pairs(goals) do
+				(object :: any)[property] = value
+			end
+			return nil
+		end
+		local tween = TweenService:Create(
+			object,
+			TweenInfo.new(duration, easing or Enum.EasingStyle.Quart, direction or Enum.EasingDirection.Out),
+			goals
+		)
+		tweens[object] = tween
+		tween.Completed:Once(function()
+			if tweens[object] == tween then tweens[object] = nil end
+		end)
+		tween:Play()
+		return tween
+	end
+
 	for index, caption in ipairs(ITEMS) do
 		local y = 8 + (index - 1) * 77
-		local fog = smoke(list, y)
+		local fog, clouds = smoke(list, y)
 		local button = element("TextButton", list, {
 			Name = "Opcao_" .. tostring(index),
 			Text = caption,
@@ -178,18 +228,44 @@ function HomeHUD.start(playerGui: Instance, state)
 			Size = UDim2.new(1, -15, 0, 53),
 			ZIndex = 6,
 		})
-		rows[index] = {button = button, fog = fog}
+		-- Pressão curta, seguida de retorno macio, sem ampliar o botão inteiro.
+		local pressScale = element("UIScale", button, {Name = "RespostaToque", Scale = 1})
+		rows[index] = {button = button, fog = fog, clouds = clouds, scale = pressScale, y = y, visual = -1}
 	end
 
-	local function repaint()
+	local function repaint(instant: boolean?)
 		if not alive then return end
 		for index, row in ipairs(rows) do
-			local active = index == current or index == hovered
-			row.button.TextColor3 = if active then WHITE else GRAY
-			row.button.TextTransparency = if active then 0 else 0.32
-			row.button.Font = if active then Enum.Font.GothamBold else Enum.Font.GothamMedium
-			row.button.TextSize = if active then 30 else 26
-			row.fog.Visible = active
+			local mode = if index == current then 2 elseif index == hovered then 1 else 0
+			if instant or row.visual ~= mode then
+				row.visual = mode
+				local active = mode > 0
+				-- Prioriza leitura, não transforma cada item em uma caixa.
+				row.button.Font = if active then Enum.Font.GothamBold else Enum.Font.GothamMedium
+				animate(row.button, {
+					TextColor3 = if active then WHITE else GRAY,
+					TextTransparency = if active then 0 else 0.32,
+					TextSize = if mode == 2 then 30 elseif mode == 1 then 29 else 26,
+					Position = UDim2.new(0, if active then 14 else 6, 0, row.y),
+				}, if instant then 0 else 0.3, Enum.EasingStyle.Quart)
+				-- Dissolve a névoa ao mudar a seleção; sem trocar Visible
+				-- instantaneamente. O brilho selecionado é um pouco mais presente.
+				animate(row.fog, {
+					GroupTransparency = if mode == 2 then 0.18 elseif mode == 1 then 0.36 else 1,
+				}, if instant then 0 else 0.44, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+			end
+		end
+	end
+
+	local function pulse(row)
+		if reducedMotion then return end
+		local press = animate(row.scale, {Scale = 0.965}, 0.095, Enum.EasingStyle.Quad)
+		if press then
+			press.Completed:Once(function(state)
+				if alive and state == Enum.PlaybackState.Completed then
+					animate(row.scale, {Scale = 1}, 0.29, Enum.EasingStyle.Back)
+				end
+			end)
 		end
 	end
 
@@ -210,13 +286,55 @@ function HomeHUD.start(playerGui: Instance, state)
 			if hovered == index then hovered = nil end
 			repaint()
 		end))
+		table.insert(connections, row.button.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.Touch
+				or input.UserInputType == Enum.UserInputType.MouseButton1 then
+				hovered = index
+				repaint()
+			end
+		end))
+		table.insert(connections, row.button.InputEnded:Connect(function(input)
+			if (input.UserInputType == Enum.UserInputType.Touch
+				or input.UserInputType == Enum.UserInputType.MouseButton1) and hovered == index then
+				hovered = nil
+				repaint()
+			end
+		end))
 		table.insert(connections, row.button.Activated:Connect(function()
 			current = index
 			hovered = nil
 			state.homeFocus = index
 			repaint()
+			pulse(row)
+			-- Nenhuma seção é aberta. Só altera o foco da apresentação.
 		end))
 	end
+
+	-- Um único loop leve, limitado a 30 Hz, move APENAS a névoa que está
+	-- aparecendo. Em segundo plano não atualiza nada. Preserva o desempenho
+	-- do celular e não cria 20 loops/tweens infinitos concorrentes.
+	local elapsed, accumulator = 0, 0
+	table.insert(connections, RunService.Heartbeat:Connect(function(dt)
+		if not alive or not gui.Enabled or reducedMotion then return end
+		accumulator += math.min(dt, 0.1)
+		if accumulator < (1 / 30) then return end
+		elapsed += accumulator
+		accumulator = 0
+		for _, row in ipairs(rows) do
+			if row.fog.GroupTransparency < 0.96 then
+				for index, cloud in ipairs(row.clouds) do
+					local time = elapsed * (0.44 + index * 0.09) + cloud.phase
+					local horizontal = math.sin(time) * (9 + index * 2)
+					local vertical = math.sin(time * 0.68 + cloud.phase) * (3 + index)
+					cloud.image.Position = UDim2.fromOffset(cloud.x + horizontal, cloud.y + vertical)
+					cloud.image.Rotation = cloud.rotation + math.sin(time * 0.72) * 4
+					cloud.image.ImageTransparency = math.clamp(
+						cloud.opacity + math.sin(time * 1.13) * 0.055, 0, 1
+					)
+				end
+			end
+		end
+	end))
 
 	local username = element("TextLabel", root, {
 		Name = "NomeRealJogador",
@@ -268,17 +386,22 @@ function HomeHUD.start(playerGui: Instance, state)
 	table.insert(connections, player.ChildAdded:Connect(function(child)
 		if child.Name == "leaderstats" then hookStats(child) end
 	end))
-	repaint()
+	repaint(true)
 
 	return {
 		gui = gui,
 		SetVisible = function(_, visible: boolean)
-			if alive then gui.Enabled = visible end
+			if alive then
+				gui.Enabled = visible
+				if visible then repaint(true) end
+			end
 		end,
 		Destroy = function()
 			if not alive then return end
 			alive = false
 			for _, connection in ipairs(connections) do connection:Disconnect() end
+			for _, tween in pairs(tweens) do tween:Cancel() end
+			table.clear(tweens)
 			gui:Destroy()
 		end,
 	}
