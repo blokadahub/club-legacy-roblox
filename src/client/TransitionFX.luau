@@ -1,9 +1,9 @@
 --!strict
--- CL 27: carregamento CL em neon, com luz itinerante sobre as letras.
+-- CL 27: carregamento CL com brilho branco suave varrendo as arestas das letras.
 -- O cenário permanece visível e o símbolo continua fixo ao rodapé.
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
-local NeonSnake = require(script.Parent.NeonSnake)
+local OuterGlowSweep = require(script.Parent.OuterGlowSweep)
 
 local TransitionFX = {}
 TransitionFX.MINIMUM_SECONDS = 2.5
@@ -37,7 +37,7 @@ function TransitionFX.start(playerGui: Instance)
 		Size = UDim2.fromOffset(32, 32),
 		BackgroundTransparency = 1, ZIndex = 7,
 	})
-	local letterFX = NeonSnake.newCL(emblem)
+	local letterFX = OuterGlowSweep.newCL(emblem)
 	local alive, active, reduced = true, false, false
 	local elapsed, accumulator = 0, 0
 	local tweens: {Tween} = {}
