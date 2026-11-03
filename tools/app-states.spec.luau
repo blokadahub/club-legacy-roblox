@@ -176,6 +176,34 @@ check(not notification.Visible and notification.GroupTransparency == 1,
 check(gui:FindFirstChild("SoundtrackOverlay") == overlay and sound.Parent == services.SoundService,
 	"Trilha sonora não deve se perder em navegação")
 
+-- O conteúdo central precisa continuar legível no Android em paisagem.
+local uiCamera = workspace.CurrentCamera
+uiCamera.ViewportSize = Vector2.new(854, 393)
+uiCamera:GetPropertyChangedSignal("ViewportSize"):Fire()
+check(primary.Size.Y.Offset == 44
+	and showcase:FindFirstChild("TituloCentral").TextSize == 25
+	and primary:FindFirstChildOfClass("UISizeConstraint") ~= nil,
+	"A cápsula e a hierarquia central não se adaptaram à tela do celular")
+uiCamera.ViewportSize = Vector2.new(1600, 900)
+uiCamera:GetPropertyChangedSignal("ViewportSize"):Fire()
+check(showcase:FindFirstChild("TituloCentral").TextSize == 36,
+	"Rotação / aumento da tela deve restaurar tamanho desktop")
+
+local upgradeOption = homeList:FindFirstChild("Opcao_5")
+upgradeOption.Activated:Fire()
+advance(0.51)
+check(showcase:FindFirstChild("TituloCentral").Text == "UPGRADE"
+	and showcase:FindFirstChild("PrevisoesUpgrade").Visible,
+	"Upgrade precisa ter conteúdo próprio e três miniaturas")
+primary.Activated:Fire()
+check(handle.state.screen == "HomeInterior",
+	"Upgrade ainda não é rota disponível; não deve abrir um sistema inventado")
+kickOff.Activated:Fire()
+advance(0.51)
+check(showcase:FindFirstChild("TituloCentral").Text == "JOGO RÁPIDO",
+	"Voltar de Upgrade precisa restaurar a apresentação de Jogo Rápido")
+
+
 -- Ícones compactos em coluna e abertura da nova grade visual.
 local settingsIcon = homeRoot:FindFirstChild("Configuracoes")
 local accessIcon = homeRoot:FindFirstChild("Acessibilidade")
@@ -285,8 +313,9 @@ check(handle.state.screen == "HomeInterior" and not settingsGui.Enabled
 	"Após o erro, voltar deve recuperar o lobby sem ficar travado")
 
 check(handle.state.screen == "HomeInterior" and not wipe.Visible, "Initial state must be visible and idle")
-handle.go("Clubs")
-check(handle.state.screen == "HomeInterior" and wipe.Visible and UI.inputLocked, "Wipe must lock source before swapping")
+primary.Activated:Fire()
+check(handle.state.screen == "HomeInterior" and wipe.Visible and UI.inputLocked,
+	"A ação principal Jogo Rápido deve abrir seleção de equipes via transição")
 advance(0.22)
 check(handle.state.screen == "HomeInterior" and wipe.GroupTransparency > 0 and wipe.GroupTransparency < 1, "Mid-entry must preserve source")
 advance(0.22)
