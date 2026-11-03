@@ -33,10 +33,15 @@ check(clubMist ~= nil and clubMist:IsA("CanvasGroup"), "Névoa animável de Club
 check(clubMist.GroupTransparency == 1, "Efeito de opção inativa deve iniciar invisível")
 check(clubMist.Size.X.Offset <= 300 and clubMist.Size.Y.Offset <= 115,
 	"Névoa deve caber atrás do texto, sem ocupar a lateral inteira")
+local pulse = clubMist:FindFirstChild("PulsoSelecao")
+check(pulse ~= nil and pulse:IsA("ImageLabel"),
+	"Uma seleção branca precisa produzir pulso verde independente das nuvens")
 local cloudGradient = clubMist:FindFirstChild("Nuvem1"):FindFirstChild("UIGradient")
 check(cloudGradient ~= nil and cloudGradient.Rotation == 90,
 	"Camadas da névoa precisam dissipar nas bordas verticais")
 clubOption.Activated:Fire()
+check(pulse.ImageTransparency < 0.2,
+	"Efeito de impacto deve reagir imediatamente ao toque, sem virar animação de botão elástica")
 check(handle.state.homeFocus == 4 and handle.state.screen == "HomeInterior",
 	"Seleção de Clubes abriu conteúdo inexistente")
 check(clubOption.TextTransparency > 0,
@@ -320,10 +325,27 @@ check(services.Lighting.LightingStyle == Enum.LightingStyle.Realistic and not se
 presentation:ApplySettings({quality = "Baixa"})
 check(services.Lighting.LightingStyle == Enum.LightingStyle.Soft and not services.Lighting.PrioritizeLightingQuality,
 	"Low quality did not use native soft lighting")
+-- A geometria antiga da arena não é substituída; os neons pertencem
+-- exclusivamente à exibição de Configurações.
+presentation.mode = "Arena"
+presentation:SetSettingsAtmosphere(true)
+local neon = presentation.folder:FindFirstChild("CL27_SettingsNeon")
+check(neon ~= nil and #presentation.settingsRings == 3,
+	"Os três anéis verdes de Configurações não foram criados")
+for i = 1, 3 do
+	local ring = neon:FindFirstChild("AnelNeon_" .. tostring(i))
+	check(ring ~= nil and #ring:GetChildren() == 23,
+		"Cada anel precisa ter 22 segmentos e 1 ponto de luz")
+end
 presentation.cameraPosition = Vector3.new(0, 4, 17)
 presentation.cameraTarget = Vector3.new(0, 2, -1)
 services.RunService.RenderStepped:Fire(1 / 60)
 check(originalCamera.CameraType == Enum.CameraType.Scriptable, "Scene did not take camera control")
+check(presentation.settingsRings[1].light.Brightness ~= 0.38,
+	"Os neons devem pulsar enquanto o cenário está ativo")
+presentation:SetSettingsAtmosphere(false)
+check(presentation.settingsNeon == nil and #presentation.settingsRings == 0 and neon.Parent == nil,
+	"Neons continuam na arena depois de sair de Configurações")
 local replacement = Instance.new("Camera")
 replacement.ViewportSize = Vector2.new(1600, 900)
 replacement.CameraType = Enum.CameraType.Custom
