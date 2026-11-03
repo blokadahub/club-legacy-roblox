@@ -9,6 +9,7 @@ local Theme=require(ReplicatedStorage.CL27.Theme)
 local UI=require(script.Parent.UI)
 local Scope=require(script.Parent.Scope)
 local Scene=require(script.Parent.Scene)
+local Soundtrack=require(script.Parent.Soundtrack)
 local App={}
 App.routes={"HomeInterior","HomeTraining","Overview","Squad","Tactics","Assignments","Calendar","Transfers","Finance","Development","Competitions","Customization","Settings","Clubs","Kits"}
 local labels={HomeInterior="Menu • galeria",HomeTraining="Menu • treinamento",Overview="Visão geral",Squad="Elenco",Tactics="Táticas",Assignments="Atribuições",Calendar="Calendário",Transfers="Transferências",Finance="Finanças",Development="Desenvolvimento",Competitions="Competições",Customization="Personalização",Settings="Configurações",Clubs="Seleção de clubes",Kits="Seleção de uniformes"}
@@ -26,6 +27,8 @@ function App.start()
 	local gui=UI.new("ScreenGui",{Name="CL27",ResetOnSpawn=false,IgnoreGuiInset=true,
 		ZIndexBehavior=Enum.ZIndexBehavior.Sibling,DisplayOrder=20},playerGui)
 	local lifetime=Scope.new()
+	local soundtrack=Soundtrack.start(gui)
+	lifetime:Add(function() soundtrack.destroy() end)
 	local state={screen="HomeInterior",homeFocus=3,homeClub=1,awayClub=2,homeKit=1,awayKit=2,activeSide="home",
 		homeReady=false,awayReady=false,selectedPlayer=10,formation=1,assignments={},month=11,year=2026,
 		shortlist={},training={},accent="Turquesa",settings={reducedMotion=false,quality="Alta",highContrast=false,showHints=true}}
