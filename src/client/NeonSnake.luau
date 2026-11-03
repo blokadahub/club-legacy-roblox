@@ -57,7 +57,7 @@ local function pointOnLines(lines, fraction: number)
 	local walk = (fraction % 1) * total
 	for _, line in ipairs(lines) do
 		local length = (line[2] - line[1]).Magnitude
-		if walk <= length then return line[1]:Lerp(line[2], if length > 0 then walk / length else 0) end
+		if walk <= length then return line[1] + (line[2] - line[1]) * (if length > 0 then walk / length else 0) end
 		walk -= length
 	end
 	return lines[#lines][2]
