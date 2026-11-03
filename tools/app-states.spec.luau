@@ -29,9 +29,29 @@ local homeList = homeRoot and homeRoot:FindFirstChild("MenuPrincipalFC")
 check(homeList ~= nil and homeList:FindFirstChild("Opcao_1") ~= nil
 	and homeList:FindFirstChild("Opcao_5") ~= nil,
 	"Um ou mais botões principais não foram inseridos no PlayerGui")
-check(homeList:FindFirstChild("Opcao_3").Text == "Kick Off"
+check(homeList:FindFirstChild("Opcao_3").Text == "Jogo Rápido"
 	and homeList:FindFirstChild("Opcao_3").TextTransparency == 0,
-	"Kick Off não está visivelmente selecionado na primeira entrada")
+	"Jogo Rápido não está visivelmente selecionado na primeira entrada")
+local expectedMenuNames = {"Notícias do CL", "Clubs", "Jogo Rápido", "Aprenda a Jogar", "Upgrade"}
+for i, name in ipairs(expectedMenuNames) do
+	check(homeList:FindFirstChild("Opcao_" .. i).Text == name,
+		"Nomes precisam seguir a nova nomenclatura brasileira do lobby")
+end
+check(homeList:FindFirstChild("Opcao_3").TextSize == 27
+	and homeList:FindFirstChild("Opcao_1").TextSize == 23,
+	"Tipografia lateral deve ser menor, mas manter hierarquia de seleção")
+local showcase = homeRoot:FindFirstChild("ConteudoCentral")
+check(showcase ~= nil and showcase:IsA("CanvasGroup"),
+	"Lobby não criou conteúdo central independente do cenário 3D")
+check(showcase:FindFirstChild("TituloCentral").Text == "JOGO RÁPIDO",
+	"Conteúdo central inicial não combina com foco no menu")
+local primary = showcase:FindFirstChild("AcaoPrincipal")
+check(primary ~= nil and primary:IsA("TextButton")
+	and primary:FindFirstChildOfClass("UICorner") ~= nil
+	and primary:FindFirstChild("IconeControle") ~= nil,
+	"Ação central precisa ser uma cápsula verde com símbolo de controle")
+check(showcase:FindFirstChild("Logotipos"):FindFirstChild("Simbolo_quick") ~= nil,
+	"Símbolos devem ser próprios, geométricos e independentes da EA")
 check(homeRoot:FindFirstChild("NomeRealJogador").Text == services.Players.LocalPlayer.Name
 	and homeRoot:FindFirstChild("NivelRealJogador").Text == "Nível —",
 	"Nome/nível do Roblox não foram criados corretamente")
@@ -52,7 +72,13 @@ clubOption.Activated:Fire()
 check(pulse.ImageTransparency < 0.2,
 	"Efeito de impacto deve reagir imediatamente ao toque, sem virar animação de botão elástica")
 check(handle.state.homeFocus == 4 and handle.state.screen == "HomeInterior",
-	"Seleção de Clubes abriu conteúdo inexistente")
+	"Seleção lateral não pode navegar sem usar o botão principal")
+local lessons = homeList:FindFirstChild("SubmenuAprenda")
+check(lessons ~= nil and lessons.Visible
+	and lessons:FindFirstChild("SubOpcao_4") ~= nil,
+	"Aprenda a Jogar deve expandir quatro subopções")
+check(homeList:FindFirstChild("Opcao_5").Position.Y.Offset > 400,
+	"Upgrade deve deslocar para baixo quando Aprenda a Jogar expande")
 check(clubOption.TextTransparency > 0,
 	"Transição de destaque deve começar a partir do estado anterior, sem salto")
 advance(0.16)
@@ -71,8 +97,8 @@ check(mistCloud.Position ~= cloudBefore,
 kickOff.Activated:Fire()
 advance(0.51)
 check(handle.state.homeFocus == 3 and kickOff.TextTransparency == 0
-	and clubMist.GroupTransparency == 1,
-	"Transição de Clubes para Kick Off não dissipou a névoa anterior")
+	and clubMist.GroupTransparency == 1 and not lessons.Visible,
+	"Transição de Aprenda para Jogo Rápido não recolheu submenu e névoa")
 local news = homeList:FindFirstChild("Opcao_1")
 news.MouseEnter:Fire()
 advance(0.32)
@@ -93,6 +119,21 @@ manager.InputEnded:Fire({UserInputType = Enum.UserInputType.Touch})
 advance(0.32)
 check(manager.TextTransparency == 0.32 and kickOff.TextTransparency == 0,
 	"Soltar toque deve devolver foco branco somente ao botão selecionado")
+-- Testa a seleção interna sem fingir que os modos de jogo estão prontos.
+clubOption.Activated:Fire()
+advance(0.55)
+lessons:FindFirstChild("SubOpcao_2").Activated:Fire()
+check(handle.state.homeLesson == 2 and handle.state.screen == "HomeInterior",
+	"Selecionar Rush deve alterar somente a apresentação, sem abrir rota")
+advance(0.55)
+check(showcase:FindFirstChild("TituloCentral").Text == "RUSH"
+	and primary:FindFirstChild("TextoAcao").Text == "Conhecer Rush",
+	"Submenu deve atualizar título e botão central com transição")
+kickOff.Activated:Fire()
+advance(0.55)
+check(showcase:FindFirstChild("TituloCentral").Text == "JOGO RÁPIDO"
+	and not lessons.Visible,
+	"Trocar de seção precisa restaurar título e recolher submenu")
 -- A trilha toca automaticamente SEM painel fixo ou lista intrusiva.
 local overlay = gui:FindFirstChild("SoundtrackOverlay")
 local sound = services.SoundService:FindFirstChild("CL27SoundtrackLocal")
