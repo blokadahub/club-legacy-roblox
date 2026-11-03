@@ -87,7 +87,7 @@ advance(0.36)
 check(clubOption.TextTransparency == 0 and clubMist.GroupTransparency == 0.035,
 	"Opção selecionada não terminou o destaque suave")
 check(homeList:FindFirstChild("Opcao_5").Position.Y.Offset > 400,
-	"Upgrade deve deslocar para baixo quando Aprenda a Jogar expande")
+	"Upgrade deve terminar o deslocamento suave quando o submenu expande")
 local mistCloud = clubMist:FindFirstChild("Nuvem1")
 check(mistCloud ~= nil, "Névoa selecionada não possui a primeira camada")
 local cloudBefore = mistCloud.Position
