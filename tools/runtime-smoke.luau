@@ -82,7 +82,7 @@ end
 local events = {
 	Activated = true, MouseEnter = true, MouseLeave = true, SelectionGained = true,
 	SelectionLost = true, FocusLost = true, InputBegan = true, InputEnded = true, ChildAdded = true, Changed = true,
-	Destroying = true,
+	Destroying = true, DescendantAdded = true,
 }
 local methods = {}
 local instanceMeta = {}
