@@ -116,6 +116,26 @@ for _, node in ipairs(ctaSweep:GetChildren()) do
 	if node.Name:match("^SweepBorda_") then sweepSamples += 1 end
 end
 check(sweepSamples == 78, "Contorno deve ser amostrado para formar faixa continua, nao seis pontos")
+
+-- Brilho localizado, não contorno completo piscando: apenas uma porção da
+-- borda fica acesa a cada instante e o foco desloca-se continuamente.
+services.RunService.Heartbeat:Fire(0.05)
+local illuminated = 0
+for _, sample in ipairs(ctaSweep:GetChildren()) do
+	if sample.Name:match("^SweepBorda_") and sample.GroupTransparency < 0.98 then
+		illuminated += 1
+	end
+end
+check(illuminated >= 3 and illuminated <= 28,
+	"Outer Glow Sweep deve iluminar uma faixa curta e deixar o resto da borda apagado")
+local firstPillPiece = ctaSweep:FindFirstChild("SweepBorda_78")
+local beforePillGlow = firstPillPiece.GroupTransparency
+services.RunService.Heartbeat:Fire(0.10)
+check(firstPillPiece.GroupTransparency ~= beforePillGlow,
+	"Varredura deve deslocar luminosidade pela capsula sem flashes de borda inteira")
+check(ctaPiece.Position.Y.Offset > 30 and ctaPiece.Position.X.Offset < 65,
+	"Varredura da capsula precisa comecar junto a curva inferior esquerda")
+
 local clubOption = homeList:FindFirstChild("Opcao_4")
 local kickOff = homeList:FindFirstChild("Opcao_3")
 local glow = homeList:FindFirstChild("BrilhoRadialSelecao")
