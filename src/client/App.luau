@@ -10,6 +10,7 @@ local UI=require(script.Parent.UI)
 local Scope=require(script.Parent.Scope)
 local Scene=require(script.Parent.Scene)
 local Soundtrack=require(script.Parent.Soundtrack)
+local HomeHUD=require(script.Parent.HomeHUD)
 local App={}
 App.routes={"HomeInterior","HomeTraining","Overview","Squad","Tactics","Assignments","Calendar","Transfers","Finance","Development","Competitions","Customization","Settings","Clubs","Kits"}
 local labels={HomeInterior="Menu • galeria",HomeTraining="Menu • treinamento",Overview="Visão geral",Squad="Elenco",Tactics="Táticas",Assignments="Atribuições",Calendar="Calendário",Transfers="Transferências",Finance="Finanças",Development="Desenvolvimento",Competitions="Competições",Customization="Personalização",Settings="Configurações",Clubs="Seleção de clubes",Kits="Seleção de uniformes"}
@@ -32,6 +33,10 @@ function App.start()
 	local state={screen="HomeInterior",homeFocus=3,homeClub=1,awayClub=2,homeKit=1,awayKit=2,activeSide="home",
 		homeReady=false,awayReady=false,selectedPlayer=10,formation=1,assignments={},month=11,year=2026,
 		shortlist={},training={},accent="Turquesa",settings={reducedMotion=false,quality="Alta",highContrast=false,showHints=true}}
+	-- HUD nasce ANTES do cenário e do render das páginas: uma falha no 3D
+	-- nunca pode deixar o jogador diante de uma tela sem menu.
+	local homeHud=HomeHUD.start(playerGui,state)
+	lifetime:Add(function() homeHud:Destroy() end)
 	local scene=Scene.new(state.settings)
 	lifetime:Add(function() scene:Destroy() end)
 	local canvas=UI.frame(gui,0,0,1600,900,Theme.background,1)
@@ -166,6 +171,7 @@ function App.start()
 		UI.reducedMotion=state.settings.reducedMotion
 		page=UI.new("CanvasGroup",{Name=state.screen,BackgroundTransparency=1,Size=UDim2.fromScale(1,1),GroupTransparency=0},canvas)
 		local wanted=if state.screen=="HomeInterior" then "Interior" elseif state.screen=="HomeTraining" then "Training" elseif state.screen=="Kits" then "Kits" else "Arena"
+		homeHud:SetVisible(wanted=="Interior" or wanted=="Training")
 		if wanted~=mode then scene:Show(wanted,Data.clubs[state.homeClub],Data.clubs[state.awayClub],state.homeKit,state.awayKit);mode=wanted
 		else scene:UpdateClubs(Data.clubs[state.homeClub],Data.clubs[state.awayClub],state.homeKit,state.awayKit) end
 		scene:ApplySettings(state.settings)
@@ -179,7 +185,11 @@ function App.start()
 			UI.line(backdrop,760,890,1560,135,UI.accent,1).BackgroundTransparency=.9
 		end
 		local ctx={state=state,scope=pageScope,go=go,rerender=rerender,notify=notify,scene=scene}
-		screens[state.screen](page,ctx)
+		-- A HOME é desenhada no ScreenGui independente CL27_HomeHUD, não aqui.
+		-- O ScreenGui do menu não depende da cena 3D para inicializar.
+		if wanted~="Interior" and wanted~="Training" then
+			screens[state.screen](page,ctx)
+		end
 		-- A tela inicial da referência possui só cinco opções e os ícones decorativos.
 		-- O rodapé de navegação continua disponível nas outras páginas.
 		if wanted~="Interior" and wanted~="Training" then
