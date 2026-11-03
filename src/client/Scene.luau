@@ -5,6 +5,7 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local TweenService = game:GetService("TweenService")
 local Rig = require(script.Parent.Rig)
+local MenuAvatar = require(script.Parent.MenuAvatar)
 local Scene = {}
 Scene.__index = Scene
 
@@ -229,6 +230,11 @@ function Scene:_actor(club, kit, position, yaw, pose, number)
 	return actor
 end
 
+-- Avatar autêntico apenas nas duas telas iniciais; demais atletas continuam fictícios.
+function Scene:_menuAvatar(position, cameraPosition)
+	self.menuAvatar = MenuAvatar.mount(self.folder, position, cameraPosition, self.settings)
+end
+
 function Scene:_interior(club, kit)
 	local p = self.folder
 	floor(p, 36, true)
@@ -269,14 +275,7 @@ function Scene:_interior(club, kit)
 	keyLight.Face, keyLight.Angle, keyLight.Range, keyLight.Brightness = Enum.NormalId.Right, 110, 40, 3
 	keyLight.Color, keyLight.Shadows = Color3.fromRGB(255, 244, 217), true
 	keyLight.Parent = key
-	self:_actor(club, kit, Vector3.new(5.3, 2.81, 0.1), 166, "Presentation", 7)
-	local ball = block(p, "BolaDecorativa", Vector3.new(0.64, 0.64, 0.64), CFrame.new(4.5, 0.29, 0.9), C.white, Enum.Material.SmoothPlastic)
-	ball.Shape = Enum.PartType.Ball
-	for i = 0, 4 do
-		local angle = i * math.pi * 0.4
-		local patch = block(p, "GrafismoBola", Vector3.new(0.15, 0.025, 0.14), CFrame.new(ball.Position + Vector3.new(math.sin(angle) * 0.22, 0.23, math.cos(angle) * 0.2)) * CFrame.Angles(0, angle, 0), C.graphite)
-		patch.Shape = Enum.PartType.Cylinder
-	end
+	self:_menuAvatar(Vector3.new(5.3, 0, 0.1), Vector3.new(0, 3.9, 17))
 	self.cameraPosition, self.cameraTarget, self.fov = Vector3.new(0, 3.9, 17), Vector3.new(0, 2.6, -1), 34
 end
 
@@ -333,7 +332,7 @@ function Scene:_training(club, kit)
 	beam(p, "Travessao", Vector3.new(-3.6, 2.4, -46), Vector3.new(3.6, 2.4, -46), 0.11, C.white, Enum.Material.Metal)
 	for x = -3.6, 3.6, 0.6 do beam(p, "RedeGol", Vector3.new(x, 0, -47.5), Vector3.new(x, 2.4, -46), 0.018, Color3.fromRGB(168, 185, 172), Enum.Material.Fabric) end
 	for y = 0.4, 2.4, 0.4 do beam(p, "RedeGol", Vector3.new(-3.6, y, -47.5 + y / 2.4 * 1.5), Vector3.new(3.6, y, -47.5 + y / 2.4 * 1.5), 0.018, Color3.fromRGB(168, 185, 172), Enum.Material.Fabric) end
-	self:_actor(club, kit, Vector3.new(5.1, 2.81, 0), 174, "Standing", 10)
+	self:_menuAvatar(Vector3.new(5.1, 0, 0), Vector3.new(0, 3.5, 17))
 	self.cameraPosition, self.cameraTarget, self.fov = Vector3.new(0, 3.5, 17), Vector3.new(0, 2.6, -1), 34
 end
 
@@ -369,6 +368,7 @@ function Scene:Show(mode, homeClub, awayClub, homeKitIndex, awayKitIndex)
 		self:UpdateClubs(homeClub, awayClub, homeKitIndex, awayKitIndex)
 		return
 	end
+	if self.menuAvatar then self.menuAvatar:Destroy(); self.menuAvatar = nil end
 	self.mode, self.clubText = mode, nil
 	table.clear(self.actors)
 	self.folder:ClearAllChildren()
@@ -381,6 +381,7 @@ end
 
 function Scene:ApplySettings(settings)
 	if settings then self.settings = settings end
+	if self.menuAvatar then self.menuAvatar:SetSettings(self.settings) end
 	local quality = self.settings.quality or "Alta"
 	local low, high = quality == "Baixa", quality == "Alta"
 	Lighting.LightingStyle = low and Enum.LightingStyle.Soft or Enum.LightingStyle.Realistic
@@ -410,6 +411,7 @@ function Scene:UpdateClubs(homeClub, awayClub, homeKitIndex, awayKitIndex)
 end
 
 function Scene:Destroy()
+	if self.menuAvatar then self.menuAvatar:Destroy(); self.menuAvatar = nil end
 	if self.connection then self.connection:Disconnect() end
 	for _, tween in ipairs(self.lightTweens) do tween:Cancel() end
 	for _, effect in ipairs(self.effects) do effect:Destroy() end
