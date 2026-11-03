@@ -420,7 +420,9 @@ function Scene:SetSettingsAtmosphere(visible)
 			local p1 = center + Vector3.new(math.cos(a) * setting.radius, math.sin(a) * setting.radius, 0)
 			local p2 = center + Vector3.new(math.cos(b) * setting.radius, math.sin(b) * setting.radius, 0)
 			local line = beam(ring, "Arco_" .. tostring(segment), p1, p2, 0.046, tones[index], Enum.Material.Neon)
-			line.Transparency = if segment % 4 == 0 then 0.38 else 0.22
+			-- Arco luminoso com cauda em movimento: a rotação agora fica
+			-- perceptível mesmo com o anel perfeitamente circular.
+			line.Transparency = if segment <= 4 then 0.07 elseif segment <= 9 then 0.3 else 0.68
 		end
 		local heart = block(ring, "NucleoLuz", Vector3.new(0.05, 0.05, 0.05), CFrame.new(setting.center), tones[index], Enum.Material.Neon, 1)
 		local lamp = Instance.new("PointLight")
