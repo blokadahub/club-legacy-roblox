@@ -110,7 +110,7 @@ services.Lighting = Instance.new('Lighting')
 services.RunService = {RenderStepped = signal(), Heartbeat = signal()}
 '''
 paths = sorted((root / "src/shared").glob("*.luau"))
-paths += [root / f"src/client/{name}.luau" for name in ("Scope", "Rig", "UI", "Soundtrack", "MenuAvatar", "HomeHUD", "App")]
+paths += [root / f"src/client/{name}.luau" for name in ("Scope", "Rig", "UI", "SettingsIcons", "Soundtrack", "MenuAvatar", "HomeHUD", "App")]
 paths += sorted((root / "src/client/Screens").glob("*.luau"))
 paths.append(root / "src/client/Scene.luau")
 parts = ["local factories, moduleNodes, cache = {}, {}, {}\nlocal require\n"]
@@ -122,6 +122,7 @@ function Scene.new(settings)
     function self:Show(mode) table.insert(self.shows, mode); self.mode = mode end
     function self:UpdateClubs() self.updates += 1 end
     function self:ApplySettings(value) self.settings = value end
+    function self:SetSettingsAtmosphere(visible) self.settingsNeonVisible = visible end
     function self:Destroy() self.destroyed = true end
     services.lastScene = self
     return self
