@@ -14,11 +14,11 @@ local HomeHUD=require(script.Parent.HomeHUD)
 local SettingsHUD=require(script.Parent.SettingsHUD)
 local TransitionFX=require(script.Parent.TransitionFX)
 local App={}
-App.routes={"HomeInterior","HomeTraining","Overview","Squad","Tactics","Assignments","Calendar","Transfers","Finance","Development","Competitions","Customization","Settings","Clubs","Kits"}
-local labels={HomeInterior="Menu • galeria",HomeTraining="Menu • treinamento",Overview="Visão geral",Squad="Elenco",Tactics="Táticas",Assignments="Atribuições",Calendar="Calendário",Transfers="Transferências",Finance="Finanças",Development="Desenvolvimento",Competitions="Competições",Customization="Personalização",Settings="Configurações",Clubs="Seleção de clubes",Kits="Seleção de uniformes"}
+App.routes={"HomeInterior","Overview","Squad","Tactics","Assignments","Calendar","Transfers","Finance","Development","Competitions","Customization","Settings","Clubs","Kits"}
+local labels={HomeInterior="Menu • galeria",Overview="Visão geral",Squad="Elenco",Tactics="Táticas",Assignments="Atribuições",Calendar="Calendário",Transfers="Transferências",Finance="Finanças",Development="Desenvolvimento",Competitions="Competições",Customization="Personalização",Settings="Configurações",Clubs="Seleção de clubes",Kits="Seleção de uniformes"}
 local screens={}
 for _,id in ipairs(App.routes) do
-	screens[id]=require(script.Parent.Screens[if id=="HomeInterior" or id=="HomeTraining" then "Home" else id])
+	screens[id]=require(script.Parent.Screens[if id=="HomeInterior" then "Home" else id])
 end
 function App.start()
 	UI.inputLocked=false
@@ -207,8 +207,8 @@ function App.start()
 		tunnelBackGui.Enabled=(state.screen=="Clubs")
 		-- A UI de Settings fica em outro ScreenGui, nunca sob Transicao.
 		settingsHud:SetVisible(state.screen=="Settings")
-		local wanted=if state.screen=="HomeInterior" then "Interior" elseif state.screen=="HomeTraining" then "Training" elseif state.screen=="Kits" then "Kits" elseif state.screen=="Clubs" then "Tunnel" else "Arena"
-		homeHud:SetVisible(wanted=="Interior" or wanted=="Training")
+		local wanted=if state.screen=="HomeInterior" then "Interior" elseif state.screen=="Kits" then "Kits" elseif state.screen=="Clubs" then "Tunnel" else "Arena"
+		homeHud:SetVisible(wanted=="Interior")
 		if wanted~=mode then scene:Show(wanted,Data.clubs[state.homeClub],Data.clubs[state.awayClub],state.homeKit,state.awayKit);mode=wanted
 		else scene:UpdateClubs(Data.clubs[state.homeClub],Data.clubs[state.awayClub],state.homeKit,state.awayKit) end
 		 scene:ApplySettings(state.settings)
@@ -233,12 +233,12 @@ function App.start()
 		local ctx={state=state,scope=pageScope,go=go,rerender=rerender,notify=notify,scene=scene}
 		-- A HOME é desenhada no ScreenGui independente CL27_HomeHUD, não aqui.
 		-- O ScreenGui do menu não depende da cena 3D para inicializar.
-		if wanted~="Interior" and wanted~="Training" and state.screen~="Settings" and state.screen~="Clubs" then
+		if wanted~="Interior" and state.screen~="Settings" and state.screen~="Clubs" then
 			screens[state.screen](page,ctx)
 		end
 		-- A tela inicial da referência possui só cinco opções e os ícones decorativos.
 		-- O rodapé de navegação continua disponível nas outras páginas.
-		if wanted~="Interior" and wanted~="Training" and state.screen~="Settings" and state.screen~="Clubs" then
+		if wanted~="Interior" and state.screen~="Settings" and state.screen~="Clubs" then
 			local footer=UI.frame(page,0,839,1600,61,Theme.background,.3)
 			UI.line(footer,44,0,1556,0,Theme.muted,1).BackgroundTransparency=.8
 			UI.button(footer,"≡  CENTRAL",44,10,165,40,toggleTray,pageScope,{quiet=true,textSize=14})
@@ -246,7 +246,7 @@ function App.start()
 				local target=table.remove(history) or "HomeInterior"
 				go(target,true)
 			end,pageScope,{quiet=true,textSize=14})
-			UI.button(footer,"⌂  INÍCIO",391,10,130,40,function() go(if state.homeEnvironment=="Training" then "HomeTraining" else "HomeInterior") end,pageScope,{quiet=true,textSize=14})
+			UI.button(footer,"⌂  INÍCIO",391,10,130,40,function() go("HomeInterior") end,pageScope,{quiet=true,textSize=14})
 			UI.text(footer,"CL 27  /  APRESENTAÇÃO VISUAL",1240,17,314,25,10,Theme.muted).TextXAlignment=Enum.TextXAlignment.Right
 		end
 		if not busy then focusPage(focusOrdinal) end
@@ -260,7 +260,7 @@ function App.start()
 	-- apresenta carregamento artificial.
 	local function shouldLoad(from: string, to: string): boolean
 		local critical = {
-			HomeInterior=true, HomeTraining=true, Settings=true, Clubs=true, Kits=true,
+			HomeInterior=true, Settings=true, Clubs=true, Kits=true,
 		}
 		return critical[from] == true or critical[to] == true
 	end
@@ -299,7 +299,7 @@ function App.start()
 			if not ok then
 				warn("[CL27] Erro ao abrir "..tostring(id)..": "..tostring(errorMessage))
 				settingsHud:SetVisible(id=="Settings")
-				homeHud:SetVisible(id=="HomeInterior" or id=="HomeTraining")
+				homeHud:SetVisible(id=="HomeInterior")
 			end
 			return ok
 		end
@@ -345,11 +345,8 @@ function App.start()
 		if index==2 or index==3 then
 			go("Clubs")
 		elseif index==4 then
-			if not lesson or lesson==1 or lesson==4 then
-				go("HomeTraining")
-			else
-				notify(if lesson==2 then "Rush está em desenvolvimento." else "Jogos de habilidade estão em desenvolvimento.")
-			end
+			-- Treinamentos desativados ate nova atualizacao.
+			return
 		elseif index==1 then
 			notify("Notícias do CL: novidades em desenvolvimento.")
 		elseif index==5 then
