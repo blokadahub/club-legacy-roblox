@@ -5,20 +5,21 @@ Apresentação interativa de futebol para **Roblox**, escrita em **Luau** e comp
 ## Apresentações
 
 1. Menu principal na galeria do legado: arquitetura interior, telão, piso, luzes e atleta no Workspace.
-2. Menu principal no centro de treinamento: campo, sede, céu diurno e atleta no Workspace.
-3. Visão Geral.
-4. Elenco: onze titulares em campo de perspectiva, banco rolável e ficha selecionável.
-5. Táticas: três formações e ajustes de apresentação tática.
-6. Atribuições: capitão e responsabilidades.
-7. Calendário: dias reais, navegação de meses e detalhes de compromissos.
-8. Transferências: pesquisa, filtros, perfis e lista de observados.
-9. Finanças: categorias, balanço e gráfico de períodos.
-10. Desenvolvimento: seleção de atletas e planos.
-11. Competições: classificação e chaveamento demonstrativos.
-12. Personalização: paleta e uniforme, com personagem em ViewportFrame.
-13. Configurações: qualidade, ambiente preferido, movimento reduzido, contraste e dicas.
-14. **Clubs**: corredor cinematográfico 3D com carregamento CL permanente, sem véu escuro após a entrada. A seleção de clubes anterior permanece no código, mas não é exibida nesta rota.
-15. Seleção de Uniformes: dois atletas no Workspace e camisas isoladas em ViewportFrame.
+2. Visão Geral.
+3. Elenco: onze titulares em campo de perspectiva, banco rolável e ficha selecionável.
+4. Táticas: três formações e ajustes de apresentação tática.
+5. Atribuições: capitão e responsabilidades.
+6. Calendário: dias reais, navegação de meses e detalhes de compromissos.
+7. Transferências: pesquisa, filtros, perfis e lista de observados.
+8. Finanças: categorias, balanço e gráfico de períodos.
+9. Desenvolvimento: seleção de atletas e planos.
+10. Competições: classificação e chaveamento demonstrativos.
+11. Personalização: paleta e uniforme, com personagem em ViewportFrame.
+12. Configurações: qualidade, ambiente preferido, movimento reduzido, contraste e dicas.
+13. **Clubs**: corredor cinematográfico 3D com carregamento CL permanente, sem véu escuro após a entrada. A seleção de clubes anterior permanece no código, mas não é exibida nesta rota.
+14. Seleção de Uniformes: dois atletas no Workspace e camisas isoladas em ViewportFrame.
+
+**Aprenda a Jogar:** o submenu tem quatro opções informativas inativas, aguardando atualização. A cena 3D de treinamento foi removida.
 
 O túnel integrado utiliza os quatro módulos reutilizáveis do PR #7, sem o bootstrap do experimento. Consulte [a integração Clubs](docs/CLUBS_TUNNEL.md) para controles, indicador permanente, restauração e testes. O botão de voltar tem área de toque real de 54 px para Android.
 
