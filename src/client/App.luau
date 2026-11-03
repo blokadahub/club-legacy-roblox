@@ -180,16 +180,20 @@ function App.start()
 		end
 		local ctx={state=state,scope=pageScope,go=go,rerender=rerender,notify=notify,scene=scene}
 		screens[state.screen](page,ctx)
-		local footer=UI.frame(page,0,839,1600,61,Theme.background,.3)
-		UI.line(footer,44,0,1556,0,Theme.muted,1).BackgroundTransparency=.8
-		UI.button(footer,"≡  CENTRAL",44,10,165,40,toggleTray,pageScope,{quiet=true,textSize=14})
-		UI.button(footer,"‹  VOLTAR",230,10,144,40,function()
-			local target=table.remove(history) or "HomeInterior"
-			go(target,true)
-		end,pageScope,{quiet=true,textSize=14})
-		UI.button(footer,"⌂  INÍCIO",391,10,130,40,function() go(if state.homeEnvironment=="Training" then "HomeTraining" else "HomeInterior") end,pageScope,{quiet=true,textSize=14})
-		if state.settings.showHints then UI.text(footer,"CLIQUE / A  Selecionar    •    M / Y  Central    •    B  Voltar",566,17,640,25,12,Theme.muted) end
-		UI.text(footer,"CL 27  /  APRESENTAÇÃO VISUAL",1240,17,314,25,10,Theme.muted).TextXAlignment=Enum.TextXAlignment.Right
+		-- A tela inicial da referência possui só cinco opções e os ícones decorativos.
+		-- O rodapé de navegação continua disponível nas outras páginas.
+		if wanted~="Interior" and wanted~="Training" then
+			local footer=UI.frame(page,0,839,1600,61,Theme.background,.3)
+			UI.line(footer,44,0,1556,0,Theme.muted,1).BackgroundTransparency=.8
+			UI.button(footer,"≡  CENTRAL",44,10,165,40,toggleTray,pageScope,{quiet=true,textSize=14})
+			UI.button(footer,"‹  VOLTAR",230,10,144,40,function()
+				local target=table.remove(history) or "HomeInterior"
+				go(target,true)
+			end,pageScope,{quiet=true,textSize=14})
+			UI.button(footer,"⌂  INÍCIO",391,10,130,40,function() go(if state.homeEnvironment=="Training" then "HomeTraining" else "HomeInterior") end,pageScope,{quiet=true,textSize=14})
+			if state.settings.showHints then UI.text(footer,"CLIQUE / A  Selecionar    •    M / Y  Central    •    B  Voltar",566,17,640,25,12,Theme.muted) end
+			UI.text(footer,"CL 27  /  APRESENTAÇÃO VISUAL",1240,17,314,25,10,Theme.muted).TextXAlignment=Enum.TextXAlignment.Right
+		end
 		if not busy then focusPage(focusOrdinal) end
 		if not busy and not state.settings.reducedMotion then
 			page.GroupTransparency=0.22
