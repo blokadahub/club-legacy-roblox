@@ -11,6 +11,7 @@ local Scope=require(script.Parent.Scope)
 local Scene=require(script.Parent.Scene)
 local Soundtrack=require(script.Parent.Soundtrack)
 local HomeHUD=require(script.Parent.HomeHUD)
+local SettingsHUD=require(script.Parent.SettingsHUD)
 local App={}
 App.routes={"HomeInterior","HomeTraining","Overview","Squad","Tactics","Assignments","Calendar","Transfers","Finance","Development","Competitions","Customization","Settings","Clubs","Kits"}
 local labels={HomeInterior="Menu • galeria",HomeTraining="Menu • treinamento",Overview="Visão geral",Squad="Elenco",Tactics="Táticas",Assignments="Atribuições",Calendar="Calendário",Transfers="Transferências",Finance="Finanças",Development="Desenvolvimento",Competitions="Competições",Customization="Personalização",Settings="Configurações",Clubs="Seleção de clubes",Kits="Seleção de uniformes"}
@@ -37,6 +38,10 @@ function App.start()
 	-- nunca pode deixar o jogador diante de uma tela sem menu.
 	local homeHud=HomeHUD.start(playerGui,state)
 	lifetime:Add(function() homeHud:Destroy() end)
+	-- A grade de personalização nasce antes do cenário, em ScreenGui próprio.
+	-- DisplayOrder 85 supera o wipe do ScreenGui principal (DisplayOrder 20).
+	local settingsHud=SettingsHUD.start(playerGui,state)
+	lifetime:Add(function() settingsHud:Destroy() end)
 	local scene=Scene.new(state.settings)
 	lifetime:Add(function() scene:Destroy() end)
 	local canvas=UI.frame(gui,0,0,1600,900,Theme.background,1)
@@ -170,12 +175,19 @@ function App.start()
 		UI.highContrast=state.settings.highContrast==true
 		UI.reducedMotion=state.settings.reducedMotion
 		page=UI.new("CanvasGroup",{Name=state.screen,BackgroundTransparency=1,Size=UDim2.fromScale(1,1),GroupTransparency=0},canvas)
+		-- A UI de Settings fica em outro ScreenGui, nunca sob Transicao.
+		settingsHud:SetVisible(state.screen=="Settings")
 		local wanted=if state.screen=="HomeInterior" then "Interior" elseif state.screen=="HomeTraining" then "Training" elseif state.screen=="Kits" then "Kits" else "Arena"
 		homeHud:SetVisible(wanted=="Interior" or wanted=="Training")
 		if wanted~=mode then scene:Show(wanted,Data.clubs[state.homeClub],Data.clubs[state.awayClub],state.homeKit,state.awayKit);mode=wanted
 		else scene:UpdateClubs(Data.clubs[state.homeClub],Data.clubs[state.awayClub],state.homeKit,state.awayKit) end
 		scene:ApplySettings(state.settings)
-		scene:SetSettingsAtmosphere(state.screen=="Settings")
+		-- Neons são decorativos; falhas de geometria não podem prender o
+		-- jogador no wipe nem bloquear o menu de personalização.
+		local neonOK, neonError=pcall(function()
+			scene:SetSettingsAtmosphere(state.screen=="Settings")
+		end)
+		if not neonOK then warn("[CL27] Neon opcional de Settings: "..tostring(neonError)) end
 		-- A galeria de Settings usa a arena 3D existente; sem as fitas
 		-- e sem o véu de UI de outras rotas.
 		if wanted=="Arena" and state.screen~="Settings" then
@@ -190,7 +202,7 @@ function App.start()
 		local ctx={state=state,scope=pageScope,go=go,rerender=rerender,notify=notify,scene=scene}
 		-- A HOME é desenhada no ScreenGui independente CL27_HomeHUD, não aqui.
 		-- O ScreenGui do menu não depende da cena 3D para inicializar.
-		if wanted~="Interior" and wanted~="Training" then
+		if wanted~="Interior" and wanted~="Training" and state.screen~="Settings" then
 			screens[state.screen](page,ctx)
 		end
 		-- A tela inicial da referência possui só cinco opções e os ícones decorativos.
@@ -228,12 +240,30 @@ function App.start()
 		local duration=if state.settings.reducedMotion then .06 else .22
 		lifetime:Tween(transition,{GroupTransparency=0},duration)
 		lifetime:Delay(duration,function()
+			if not lifetime.alive then return end
 			if not back then table.insert(history,state.screen) end
 			state.screen=id
-			render()
+			-- Nunca deixar o retângulo de Transicao permanentemente opaco.
+			-- Um erro de render devolve controle, escreve o diagnóstico no Output
+			-- e permite usar o HUD independente para voltar ao lobby.
+			local ok, errorMessage=xpcall(render, function(err)
+				return tostring(err)..(debug and debug.traceback and "\n"..debug.traceback() or "")
+			end)
+			if not ok then
+				warn("[CL27] Erro ao abrir "..tostring(id)..": "..tostring(errorMessage))
+				settingsHud:SetVisible(id=="Settings")
+				homeHud:SetVisible(id=="HomeInterior" or id=="HomeTraining")
+				transition.GroupTransparency=1
+				transition.Visible=false
+				busy=false
+				UI.inputLocked=false
+				if pageScope then pageScope.inputsPaused=false end
+				return
+			end
 			local fade=if state.settings.reducedMotion then .08 else .36
 			lifetime:Tween(transition,{GroupTransparency=1},fade)
 			lifetime:Delay(fade,function()
+				if not lifetime.alive then return end
 				transition.Visible=false
 				busy=false
 				UI.inputLocked=false
@@ -247,6 +277,9 @@ function App.start()
 	homeHud:SetNavigation(function(tab)
 		state.settingsTab = tab
 		go("Settings")
+	end)
+	settingsHud:SetNavigation(function(target)
+		go(target)
 	end)
 	lifetime:Connect(UserInputService.InputBegan,function(input,processed)
 		if processed or UserInputService:GetFocusedTextBox() then return end
