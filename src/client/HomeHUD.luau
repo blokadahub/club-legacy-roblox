@@ -57,7 +57,7 @@ local function smoke(parent: Instance, offset: number)
 	local clouds = {}
 	for index = 1, 4 do
 		local x = (index - 1) * 48 - 20
-		local y = if index % 2 == 0 then 24 else 5
+		local y = if index % 2 == 0 then 12 else 3
 		local image = element("ImageLabel", group, {
 			Name = "Nuvem" .. tostring(index),
 			BackgroundTransparency = 1,
@@ -67,7 +67,7 @@ local function smoke(parent: Instance, offset: number)
 				else Color3.fromRGB(22, 105, 71),
 			ImageTransparency = 0.51 + index * 0.045,
 			Position = UDim2.fromOffset(x, y),
-			Size = UDim2.fromOffset(142 + (index % 2) * 30, 87 + (index % 3) * 13),
+			Size = UDim2.fromOffset(142 + (index % 2) * 30, 78 + (index % 3) * 9),
 			Rotation = (index - 2.5) * 9,
 			ZIndex = 2,
 		})
@@ -456,7 +456,11 @@ function HomeHUD.start(playerGui: Instance, state)
 		SetVisible = function(_, visible: boolean)
 			if alive then
 				gui.Enabled = visible
-				if visible then repaint(true) end
+				reducedMotion = state.settings and state.settings.reducedMotion == true
+				if visible then
+					hovered = nil
+					repaint(true)
+				end
 			end
 		end,
 		Destroy = function()
