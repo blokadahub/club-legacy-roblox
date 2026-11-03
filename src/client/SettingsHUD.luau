@@ -15,8 +15,8 @@ local function fallback(root: Instance, scope, navigate)
 	-- um menu visual utilizável e um botão para retornar ao lobby.
 	local grid = UI.new("Frame", {
 		Name = "GradeConfiguracoes", BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(291, 260),
-		Size = UDim2.fromOffset(1018, 456),
+		Position = UDim2.fromOffset(243, 232),
+		Size = UDim2.fromOffset(1115, 493),
 	}, root)
 	local titles = {
 		"Configurações", "Perfil", "Configurações Online", "Tempo de Jogo",
@@ -36,11 +36,11 @@ local function fallback(root: Instance, scope, navigate)
 			Name = "Cartao_" .. tostring(index), Text = title,
 			TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left,
 			TextYAlignment = Enum.TextYAlignment.Top,
-			Font = Enum.Font.GothamBold, TextSize = 23,
+			Font = Enum.Font.GothamBold, TextSize = 26,
 			BackgroundColor3 = Color3.fromRGB(14, 17, 19),
 			BorderSizePixel = 0, AutoButtonColor = false,
-			Position = UDim2.fromOffset(col * 256, row * 229),
-			Size = UDim2.fromOffset(249, 222),
+			Position = UDim2.fromOffset(col * 281, row * 251),
+			Size = UDim2.fromOffset(272, 242),
 		}, grid)
 		UI.new("UICorner", {CornerRadius = UDim.new(0, 8)}, card)
 		table.insert(cards, card)
@@ -52,9 +52,9 @@ local function fallback(root: Instance, scope, navigate)
 	update()
 	local back = UI.new("TextButton", {
 		Name = "FecharConfiguracoes", Text = "VOLTAR",
-		Position = UDim2.fromOffset(1180, 195),
-		Size = UDim2.fromOffset(130, 44),
-		Font = Enum.Font.GothamBold, TextSize = 18,
+		Position = UDim2.fromOffset(1228, 165),
+		Size = UDim2.fromOffset(130, 48),
+		Font = Enum.Font.GothamBold, TextSize = 19,
 		TextColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 1,
 	}, root)
 	scope:Connect(back.Activated, function() navigate("HomeInterior") end)
