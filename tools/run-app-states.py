@@ -60,6 +60,14 @@ local function interpolate(time)
         for key, value in pairs(tween.goals) do
             if type(value) == 'number' and type(tween.from[key]) == 'number' then
                 tween.target[key] = tween.from[key] + (value - tween.from[key]) * alpha
+            elseif typeof(value) == 'UDim2' and typeof(tween.from[key]) == 'UDim2' then
+                local from = tween.from[key]
+                tween.target[key] = UDim2.new(
+                    from.X.Scale + (value.X.Scale - from.X.Scale) * alpha,
+                    from.X.Offset + (value.X.Offset - from.X.Offset) * alpha,
+                    from.Y.Scale + (value.Y.Scale - from.Y.Scale) * alpha,
+                    from.Y.Offset + (value.Y.Offset - from.Y.Offset) * alpha
+                )
             end
         end
     end
