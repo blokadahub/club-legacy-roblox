@@ -18,7 +18,23 @@ check(wipe.Size.X.Scale == 1 and wipe.Size.Y.Scale == 1
 	and wipe.Position.X.Scale == 0 and wipe.Position.Y.Scale == 0,
 	"Transição precisa cobrir TODO o viewport, sem Canvas 16:9 ou retângulo interno")
 check(transitionGui.IgnoreGuiInset and transitionGui.DisplayOrder > 85,
-	"Transição precisa sobrepor os dois menus e ignorar margens da tela")
+	"Carregamento precisa sobrepor os dois menus sem margens")
+check(wipe.BackgroundTransparency >= 0.50 and wipe.BackgroundTransparency <= 0.70 and wipe.Active,
+	"Fundo do loading deve permanecer visivel e bloquear cliques")
+local emblem = wipe:FindFirstChild("IndicadorCL")
+check(emblem ~= nil and emblem.Size.X.Offset == 32 and emblem.Size.Y.Offset == 32
+	and emblem.AnchorPoint.X == 0.5 and emblem.AnchorPoint.Y == 1
+	and emblem.Position.X.Scale == 0.5 and emblem.Position.Y.Scale == 1,
+	"CL deve medir 32 px e permanecer no rodape central da tela")
+for i=1,4 do
+	local segment=emblem:FindFirstChild(string.format("SegmentoCL_%02d",i))
+	check(segment and segment:IsA("CanvasGroup") and segment:FindFirstChild("AuraDifusa")
+		and segment:FindFirstChild("LuzVerde") and segment:FindFirstChild("NucleoClaro"),
+		"Monograma segmentado deve ter brilho, neon e nucleo claro")
+end
+check(transitionGui:FindFirstChild("MarcaCentral",true)==nil
+	and transitionGui:FindFirstChild("FaixaDeLuz_1",true)==nil,
+	"O velho wipe cinematografico nao pode permanecer no carregamento")
 -- O menu inicial deve existir em seu PRÓPRIO ScreenGui, antes de
 -- qualquer montagem de cenário; não pode depender de telas legadas.
 local homeHud = playerGui:FindFirstChild("CL27_HomeHUD")
@@ -89,6 +105,13 @@ local yBefore = glow.Position.Y.Offset
 clubOption.Activated:Fire()
 check(pulse.GroupTransparency < 0.5,
 	"Seleção deve produzir pulso discreto no halo radial")
+check(wipe.Visible and UI.inputLocked and handle.state.menuInputLocked
+	and handle.state.screen=="HomeInterior",
+	"Selecao simples precisa iniciar 2,5 segundos de loading sem abrir outra tela")
+local initialSelection=handle.state.homeFocus
+kickOff.Activated:Fire()
+check(handle.state.homeFocus==initialSelection,
+	"Outra selecao deve ser bloqueada enquanto o CL luminoso carrega")
 check(handle.state.homeFocus == 4 and handle.state.screen == "HomeInterior",
 	"Seleção lateral não pode navegar sem usar o botão principal")
 local lessons = homeList:FindFirstChild("SubmenuAprenda")
@@ -104,7 +127,14 @@ check(clubOption.TextTransparency > 0 and clubOption.TextTransparency < 0.32
 advance(0.36)
 check(clubOption.TextTransparency == 0 and glow.Position.Y.Offset == 203
 	and glow.GroupTransparency == 0.09 and pulse.GroupTransparency == 1,
-	"Brilho radial não chegou suavemente à nova linha ou manteve o pulso")
+	"Brilho radial nao chegou suavemente a nova linha")
+check(wipe.Visible and UI.inputLocked, "Loading nao pode terminar antes de 2,5 segundos")
+advance(1.97)
+check(wipe.Visible and UI.inputLocked and handle.state.menuInputLocked,
+	"Loading deve continuar ativo antes de completar 2,5 segundos")
+advance(0.02)
+check(not wipe.Visible and not UI.inputLocked and not handle.state.menuInputLocked,
+	"Selecao lateral nao liberou cliques apos os 2,5 segundos")
 check(homeList:FindFirstChild("Opcao_5").Position.Y.Offset > 400,
 	"Upgrade deve terminar o deslocamento suave quando o submenu expande")
 local core = glow:FindFirstChild("CamadaRadial_14")
@@ -116,7 +146,10 @@ kickOff.Activated:Fire()
 advance(0.51)
 check(handle.state.homeFocus == 3 and kickOff.TextTransparency == 0
 	and glow.Position.Y.Offset == yBefore and not lessons.Visible,
-	"Troca de Aprenda para Jogo Rápido não moveu o brilho ou recolheu submenu")
+	"Troca de Aprenda para Jogo Rápido nao moveu o brilho ou recolheu submenu")
+advance(2.0)
+check(not wipe.Visible and not UI.inputLocked,
+	"Selecionar Jogo Rapido precisa liberar o controle ao concluir o loading")
 local news = homeList:FindFirstChild("Opcao_1")
 news.MouseEnter:Fire()
 advance(0.32)
@@ -139,16 +172,18 @@ check(manager.TextTransparency == 0.32 and kickOff.TextTransparency == 0,
 	"Soltar toque deve devolver foco branco somente ao botão selecionado")
 -- Testa a seleção interna sem fingir que os modos de jogo estão prontos.
 clubOption.Activated:Fire()
-advance(0.55)
+advance(2.51)
 lessons:FindFirstChild("SubOpcao_2").Activated:Fire()
+check(wipe.Visible and UI.inputLocked,
+	"Subopcao do Aprenda a Jogar deve exibir carregamento silencioso")
 check(handle.state.homeLesson == 2 and handle.state.screen == "HomeInterior",
 	"Selecionar Rush deve alterar somente a apresentação, sem abrir rota")
-advance(0.55)
+advance(2.51)
 check(showcase:FindFirstChild("TituloCentral").Text == "RUSH"
 	and primary:FindFirstChild("TextoAcao").Text == "Conhecer Rush",
-	"Submenu deve atualizar título e botão central com transição")
+	"Submenu deve atualizar titulo e botao central com transicao")
 kickOff.Activated:Fire()
-advance(0.55)
+advance(2.51)
 check(showcase:FindFirstChild("TituloCentral").Text == "JOGO RÁPIDO"
 	and not lessons.Visible,
 	"Trocar de seção precisa restaurar título e recolher submenu")
@@ -157,7 +192,7 @@ local overlay = gui:FindFirstChild("SoundtrackOverlay")
 local sound = services.SoundService:FindFirstChild("CL27SoundtrackLocal")
 check(overlay ~= nil and sound ~= nil and sound.IsPlaying, "Soundtrack must autoplay on entering CL 27")
 local notification = overlay:FindFirstChild("NowPlayingNotification")
-check(notification ~= nil and notification.Visible, "Notificação de música precisa abrir automaticamente")
+check(notification ~= nil, "Notificação da trilha deve existir após vários carregamentos do menu")
 check(notification:IsA("CanvasGroup"), "Notificação deve suportar transição de opacidade em grupo")
 check(notification.Position.X.Scale == 1 and notification.Position.Y.Scale == 0,
 	"Notificação deve ficar ancorada no canto superior direito")
@@ -167,8 +202,10 @@ check(overlay:FindFirstChild("SoundtrackControls") == nil
 check(notification:FindFirstChild("NomeFaixa") ~= nil and notification:FindFirstChild("ArtistaFaixa") ~= nil
 	and notification:FindFirstChild("ProgressoNotificacao") ~= nil,
 	"Novo design musical deve mostrar título, artista e progresso")
--- Os testes anteriores avançaram o relógio por 2,7 s; entrada inicial já finalizada.
-check(notification.GroupTransparency == 0, "Notificação inicial deve permanecer legível")
+-- Os testes do carregamento duram varios ciclos de 2,5 s; e esperado
+-- que a primeira notificacao ja tenha sumido antes de chegar aqui.
+check(not notification.Visible or notification.GroupTransparency == 0,
+	"Notificacao musical nao deve ficar parada no meio da animacao")
 
 local initialSound = sound.SoundId
 check(initialSound == "rbxassetid://5409360995" or initialSound == "rbxassetid://5410086218"
@@ -209,15 +246,15 @@ check(showcase:FindFirstChild("TituloCentral").TextSize == 36,
 
 local upgradeOption = homeList:FindFirstChild("Opcao_5")
 upgradeOption.Activated:Fire()
-advance(0.51)
+advance(2.51)
 check(showcase:FindFirstChild("TituloCentral").Text == "UPGRADE"
 	and showcase:FindFirstChild("PrevisoesUpgrade").Visible,
-	"Upgrade precisa ter conteúdo próprio e três miniaturas")
+	"Upgrade precisa ter conteudo proprio e tres miniaturas")
 primary.Activated:Fire()
 check(handle.state.screen == "HomeInterior",
-	"Upgrade ainda não é rota disponível; não deve abrir um sistema inventado")
+	"Upgrade ainda nao e rota disponivel; nao deve abrir um sistema inventado")
 kickOff.Activated:Fire()
-advance(0.51)
+advance(2.51)
 check(showcase:FindFirstChild("TituloCentral").Text == "JOGO RÁPIDO",
 	"Voltar de Upgrade precisa restaurar a apresentação de Jogo Rápido")
 
@@ -235,25 +272,29 @@ check(settingsIcon:FindFirstChild("EscalaIcone").Scale < 1
 	"Ícones superiores precisam ser visualmente menores")
 accessIcon.Activated:Fire()
 check(handle.state.screen == "HomeInterior" and wipe.Visible
-	and wipe.GroupTransparency == 1,
-	"Entrada deve começar transparente, sem flash de tela sólida")
-advance(0.22)
+	and wipe.GroupTransparency == 1 and UI.inputLocked,
+	"Entrar em Configuracoes deve iniciar loading sem esconder o fundo abruptamente")
+services.RunService.Heartbeat:Fire(0.09)
+local logoSegment = emblem:FindFirstChild("SegmentoCL_01")
+check(logoSegment.GroupTransparency < 1,
+	"Tracos do CL precisam ser desenhados em etapas durante o loading")
+advance(0.18)
 check(handle.state.screen == "HomeInterior" and wipe.Visible
 	and wipe.GroupTransparency > 0 and wipe.GroupTransparency < 1,
-	"Durante a entrada, a cobertura deve avançar gradualmente")
-advance(0.22)
+	"Entrada do loading deve escurecer a tela gradualmente")
+advance(1.87)
 check(handle.state.screen == "Settings" and not homeHud.Enabled
 	and wipe.Visible and wipe.GroupTransparency == 0,
-	"A página só pode trocar depois de a tela estar completamente coberta")
-advance(0.06)
-check(wipe.Visible and wipe.GroupTransparency == 0,
-	"Manter a tela coberta durante a breve estabilização do cenário")
-advance(0.30)
+	"Configuracoes devem carregar perto do final dos 2,5 segundos")
+advance(0.18)
+check(wipe.Visible and wipe.GroupTransparency == 0 and UI.inputLocked,
+	"Controles ainda devem estar bloqueados antes de revelar Settings")
+advance(0.10)
 check(wipe.Visible and wipe.GroupTransparency > 0 and wipe.GroupTransparency < 1,
-	"Durante a saída, a transição deve revelar suavemente o menu")
-advance(0.28)
+	"Loading deve revelar suavemente a tela de destino")
+advance(0.18)
 check(not wipe.Visible and wipe.GroupTransparency == 1 and not UI.inputLocked,
-	"Transição fullscreen não terminou ou manteve os controles bloqueados")
+	"Loading deve liberar a interface somente apos os 2,5 segundos")
 local settingsGui = playerGui:FindFirstChild("CL27_SettingsHUD")
 check(settingsGui ~= nil and settingsGui.DisplayOrder > gui.DisplayOrder and settingsGui.Enabled,
 	"Settings não está em um ScreenGui independente acima do wipe")
@@ -295,57 +336,62 @@ check(settingsGrid:FindFirstChild("Cartao_6").BackgroundColor3.R > 0.95
 	and settingsGrid:FindFirstChild("Cartao_2").BackgroundColor3.R < 0.1,
 	"Somente um cartão pode estar selecionado em branco")
 settingsPage:FindFirstChild("FecharConfiguracoes").Activated:Fire()
-advance(1.1)
+check(wipe.Visible and UI.inputLocked and handle.state.screen=="Settings",
+	"Fechar Configuracoes tambem deve carregar por 2,5 segundos")
+advance(2.51)
 check(handle.state.screen == "HomeInterior" and homeHud.Enabled
 	and not settingsGui.Enabled and services.lastScene.settingsNeonVisible == false,
 	"Voltar precisa restaurar lobby original sem neons de Settings")
 settingsIcon.Activated:Fire()
-check(wipe.Visible, "Engrenagem deve iniciar abertura de Configurações")
-advance(1.1)
+check(wipe.Visible, "Engrenagem deve iniciar carregamento CL")
+advance(2.51)
 check(handle.state.screen == "Settings" and services.lastScene.settingsNeonVisible and settingsGui.Enabled,
 	"Engrenagem não exibiu menu e neons")
 check(settingsGrid:FindFirstChild("Cartao_6").BackgroundColor3.R > 0.95,
 	"Seleção visual deve persistir ao reabrir Configurações")
 settingsPage:FindFirstChild("FecharConfiguracoes").Activated:Fire()
-advance(1.1)
+advance(2.51)
 check(handle.state.screen == "HomeInterior" and homeHud.Enabled and not settingsGui.Enabled,
 	"Fechar Configurações não retornou ao lobby original")
 
--- Reproduzir a condição da captura: um erro no cenário no meio do wipe.
--- A interface continua visível e o jogador consegue voltar.
+-- Mesmo que a cena falhe na troca, os 2,5 segundos sao respeitados
+-- e a interface permanece utilizavel depois da falha.
 services.failNextSceneShow = true
 settingsIcon.Activated:Fire()
-advance(0.44)
+advance(2.10)
 check(handle.state.screen == "Settings" and settingsGui.Enabled
 	and wipe.Visible and wipe.GroupTransparency == 0,
-	"Um erro na cena não pode revelar o cenário antes de concluir a troca")
-advance(0.64)
+	"Erro no cenario nao pode remover o loading antes de concluir")
+advance(0.41)
 check(not wipe.Visible and not UI.inputLocked,
-	"Um erro de render deixou a transição sobre o menu de configurações")
+	"Um erro de render deixou a tela de carregamento permanente")
 check(settingsGrid.Parent == settingsPage and settingsGrid:FindFirstChild("Cartao_2") ~= nil,
-	"Um erro na cena removeu os cartões do HUD independente")
+	"Erro na cena nao pode eliminar cartoes de Configuracoes")
 settingsPage:FindFirstChild("FecharConfiguracoes").Activated:Fire()
-advance(1.1)
+advance(2.51)
 check(handle.state.screen == "HomeInterior" and not settingsGui.Enabled
 	and homeHud.Enabled and not wipe.Visible and not UI.inputLocked,
-	"Após o erro, voltar deve recuperar o lobby sem ficar travado")
+	"Depois do erro, voltar precisa restaurar o lobby sem travar")
 
-check(handle.state.screen == "HomeInterior" and not wipe.Visible, "Initial state must be visible and idle")
+check(handle.state.screen == "HomeInterior" and not wipe.Visible,
+	"Lobby deve estar livre apos a ultima transicao")
 primary.Activated:Fire()
 check(handle.state.screen == "HomeInterior" and wipe.Visible and UI.inputLocked,
-	"A ação principal Jogo Rápido deve abrir seleção de equipes via transição")
+	"Acao principal Jogo Rapido precisa acionar carregamento CL")
 advance(0.22)
-check(handle.state.screen == "HomeInterior" and wipe.GroupTransparency > 0 and wipe.GroupTransparency < 1, "Mid-entry must preserve source")
-advance(0.22)
+check(handle.state.screen == "HomeInterior" and wipe.GroupTransparency > 0 and wipe.GroupTransparency < 1,
+	"Background deve escurecer gradualmente, sem wipe solido")
+advance(1.82)
 check(handle.state.screen == "Clubs" and UI.inputLocked and wipe.Visible
-	and wipe.GroupTransparency == 0, "Swap must happen under opaque full-screen wipe")
-check(not homeHud.Enabled, "HUD inicial deve ocultar ao acessar outra seção")
-check(services.GuiService.SelectedObject == nil, "Controller focus must wait until page input resumes")
-advance(0.36)
-check(wipe.GroupTransparency > 0 and wipe.GroupTransparency < 1 and UI.inputLocked, "Mid-exit must retain input lock")
-advance(0.28)
-check(not wipe.Visible and not UI.inputLocked, "Transition must finish visible and unlocked")
-check(services.GuiService.SelectedObject ~= nil, "Controller focus must activate after transition")
+	and wipe.GroupTransparency == 0, "Troca para modo de jogo deve ocorrer durante loading")
+check(not homeHud.Enabled, "HUD inicial deve ocultar ao acessar outra secao")
+check(services.GuiService.SelectedObject == nil, "Foco de controle deve aguardar desbloqueio")
+advance(0.24)
+check(wipe.GroupTransparency > 0 and wipe.GroupTransparency < 1 and UI.inputLocked,
+	"Saida deve revelar o modo de jogo sem liberar input cedo")
+advance(0.24)
+check(not wipe.Visible and not UI.inputLocked, "Loading de 2,5 segundos deve terminar")
+check(services.GuiService.SelectedObject ~= nil, "Foco do controle deve voltar apos loading")
 
 -- An open central menu must isolate both global key listeners and old buttons.
 local priorSelection = services.GuiService.SelectedObject
@@ -367,28 +413,28 @@ check(handle.state.homeClub == clubBefore, "Controller focus movement must not c
 key(Enum.KeyCode.Right)
 check(handle.state.homeClub ~= clubBefore, "Closing central menu must resume page input")
 
--- Latest queued route wins; no geometry swap is performed by a stale delay.
+-- Rotas programaticas em fila nao interrompem o loading ativo.
+-- O ultimo destino continua vencendo apos o tempo de 2,5 segundos.
 handle.go("Squad")
 advance(0.2)
 handle.go("Overview")
 handle.go("Kits")
-advance(0.24)
-check(handle.state.screen == "Squad", "Current transition must finish its intended handoff")
-advance(0.64)
+advance(2.29)
 check(handle.state.screen == "Squad" and UI.inputLocked and wipe.Visible,
-	"Queued transition must begin only after first exit completes")
-advance(0.44)
-check(handle.state.screen == "Kits" and wipe.GroupTransparency == 0,
-	"Latest queued route must replace earlier pending route under full coverage")
-advance(0.64)
-check(not wipe.Visible and not UI.inputLocked, "Queued navigation must release lock")
+	"Destino pendente nao pode interromper o primeiro carregamento")
+advance(2.05)
+check(handle.state.screen == "Kits" and wipe.Visible and UI.inputLocked,
+	"Ultima rota da fila deve vencer durante o carregamento seguinte")
+advance(0.46)
+check(not wipe.Visible and not UI.inputLocked,
+	"Depois da fila o loading precisa liberar novamente os controles")
 local kitBefore = handle.state.homeKit
 key(Enum.KeyCode.DPadRight)
 check(handle.state.homeKit == kitBefore, "Controller focus movement must not cycle kits globally")
 key(Enum.KeyCode.Right)
 check(handle.state.homeKit ~= kitBefore, "Keyboard arrows must continue cycling kits")
 key(Enum.KeyCode.ButtonB)
-advance(1.1)
+advance(2.51)
 check(handle.state.screen == "Squad", "History must preserve actual visited routes")
 key(Enum.KeyCode.M)
 for _, button in ipairs(canvas.Squad:GetDescendants()) do
@@ -400,12 +446,18 @@ check(not UI.inputLocked, "Closing central menu must release header lock")
 
 handle.state.settings.reducedMotion = true
 handle.go("HomeTraining")
-advance(0.05)
-check(handle.state.screen == "Squad" and UI.inputLocked, "Reduced motion still needs covered handoff")
-advance(0.05)
-check(handle.state.screen == "HomeTraining", "Reduced motion uses short entry phase")
-advance(0.16)
-check(not wipe.Visible and not UI.inputLocked, "Reduced motion must finish without lingering lock")
+advance(0.15)
+check(handle.state.screen == "Squad" and UI.inputLocked and wipe.Visible,
+	"Movimento reduzido mantem 2,5 s, apenas elimina a animacao segmentada")
+local reducedSegment=emblem:FindFirstChild("SegmentoCL_01")
+check(reducedSegment.GroupTransparency == 0,
+	"Movimento reduzido deve manter marca CL completa sem pulsacao")
+advance(2.0)
+check(handle.state.screen == "HomeTraining" and wipe.Visible and UI.inputLocked,
+	"Movimento reduzido nao deve eliminar o tempo minimo de carregamento")
+advance(0.36)
+check(not wipe.Visible and not UI.inputLocked,
+	"Movimento reduzido deve terminar em 2,5 s e liberar os controles")
 
 -- Completed jobs must not accumulate cleanup closures throughout a long session.
 local scope, callbacks = Scope.new(), 0
@@ -420,7 +472,7 @@ check(callbacks == 100 and not scope.alive, "Destroyed scope executed delayed wo
 
 -- A same-page update keeps the selected controller row and its scroll position.
 handle.go("Development")
-advance(0.28)
+advance(2.51)
 local development = canvas.Development
 local athleteList = development:FindFirstChild("AtletasEmDesenvolvimento", true)
 local lastAthlete
@@ -551,16 +603,17 @@ check(mobileList:FindFirstChild("Opcao_5").Position.Y.Offset <= 225,
 check(mobileList:FindFirstChild("Opcao_1").TextSize >= 22,
 	"Correção de espaçamento não pode encolher a tipografia excessivamente")
 mobileList:FindFirstChild("Opcao_4").Activated:Fire()
-advance(0.54)
+advance(2.51)
 local mobileLessons = mobileList:FindFirstChild("SubmenuAprenda")
 check(mobileLessons.Visible and mobileLessons.Size.X.Scale == 1
 	and mobileList.CanvasPosition.Y > 0,
 	"Submenu deve caber na largura do celular e posicionar a rolagem corretamente")
 mobileLessons:FindFirstChild("SubOpcao_4").Activated:Fire()
-check(mobile.state.homeLesson == 4,
-	"Submenu móvel precisa aceitar toque no quarto item")
+check(mobile.state.homeLesson == 4 and mobile.state.menuInputLocked,
+	"Submenu movel precisa aceitar toque e acionar carregamento")
+advance(2.51)
 mobileList:FindFirstChild("Opcao_5").Activated:Fire()
-advance(0.54)
+advance(2.51)
 check(mobile.state.homeFocus == 5 and mobileList.CanvasPosition.Y == 0,
 	"Fechar submenu no celular deve restaurar posição inicial da rolagem")
 mobile.destroy()
