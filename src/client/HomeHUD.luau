@@ -262,6 +262,11 @@ function HomeHUD.start(playerGui: Instance, state)
 	local rows = {}
 	local tweens: {[Instance]: Tween} = {}
 	local reducedMotion = state.settings and state.settings.reducedMotion == true
+	-- No celular horizontal, 72 px entre opções escondia Upgrade abaixo
+	-- do viewport. Preserve 72 px no desktop e compacte só a distância.
+	local camera = workspace.CurrentCamera
+	local viewportHeight = if camera then camera.ViewportSize.Y else 900
+	local rowGap = math.clamp(viewportHeight * 0.125, 50, 72)
 
 	local function animate(object: Instance, goals, duration: number, easing, direction)
 		local previous = tweens[object]
@@ -292,7 +297,7 @@ function HomeHUD.start(playerGui: Instance, state)
 		if navigatePrimary then navigatePrimary(index, lesson) end
 	end, reducedMotion)
 	for index, caption in ipairs(ITEMS) do
-		local y = 8 + (index - 1) * 72 + (if current == 4 and index > 4 then 144 else 0)
+		local y = 8 + (index - 1) * rowGap + (if current == 4 and index > 4 then 144 else 0)
 		local fog, clouds, impulse = smoke(list, y)
 		fog.Name = "FumacaVerde_" .. tostring(index)
 		local button = element("TextButton", list, {
@@ -319,8 +324,8 @@ function HomeHUD.start(playerGui: Instance, state)
 	local lessons = {"Centro de Treinamento", "Rush", "Jogos de Habilidade", "Arena de Treino"}
 	local selectedLesson = math.clamp(state.homeLesson or 1, 1, #lessons)
 	local learnGroup = element("CanvasGroup", list, {
-		Name = "SubmenuAprenda", Position = UDim2.fromOffset(25, 8 + 3 * 72 + 56),
-		Size = UDim2.fromOffset(350, 138),
+		Name = "SubmenuAprenda", Position = UDim2.fromOffset(25, 8 + 3 * rowGap + 56),
+		Size = UDim2.new(1, -25, 0, 138),
 		BackgroundTransparency = 1,
 		GroupTransparency = if current == 4 then 0 else 1,
 		Visible = current == 4, ZIndex = 7,
@@ -334,7 +339,7 @@ function HomeHUD.start(playerGui: Instance, state)
 			Font = if i == selectedLesson then Enum.Font.GothamBold else Enum.Font.GothamMedium,
 			TextSize = 17, TextXAlignment = Enum.TextXAlignment.Left,
 			Position = UDim2.fromOffset(20, (i - 1) * 34),
-			Size = UDim2.fromOffset(316, 32),
+			Size = UDim2.new(1, -24, 0, 32),
 			BackgroundTransparency = 1, AutoButtonColor = false,
 			Selectable = true, ZIndex = 8,
 		})
@@ -366,13 +371,22 @@ function HomeHUD.start(playerGui: Instance, state)
 		}, 0.58, Enum.EasingStyle.Quart)
 	end
 
+	local lastExpanded = current ~= 4
 	local function repaint(instant: boolean?)
 		if not alive then return end
 		local expanded = current == 4
+		if expanded ~= lastExpanded or instant then
+			-- Ao abrir as quatro lições, deslocar a área de rolagem para
+			-- manter Aprenda e as subopções visíveis mesmo em tela baixa.
+			local bottom = 8 + 3 * rowGap + 56 + 138 + 48
+			local scroll = if expanded then math.max(0, bottom - viewportHeight * 0.66) else 0
+			list.CanvasPosition = Vector2.new(0, scroll)
+			lastExpanded = expanded
+		end
 		if expanded then learnGroup.Visible = true end
 		local submenuTween = animate(learnGroup, {
 			GroupTransparency = if expanded then 0 else 1,
-			Size = UDim2.fromOffset(350, if expanded then 138 else 0),
+			Size = UDim2.new(1, -25, 0, if expanded then 138 else 0),
 		}, if instant then 0 else 0.26, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
 		if not expanded then
 			if not submenuTween then
@@ -389,7 +403,7 @@ function HomeHUD.start(playerGui: Instance, state)
 		for index, row in ipairs(rows) do
 			local focused = hovered or current
 			local mode = if index == focused then (if index == current then 2 else 1) else 0
-			local nextY = 8 + (index - 1) * 72 + (if expanded and index > 4 then 144 else 0)
+			local nextY = 8 + (index - 1) * rowGap + (if expanded and index > 4 then 144 else 0)
 			local moved = nextY ~= row.y
 			row.y = nextY
 			if moved then
