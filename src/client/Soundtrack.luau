@@ -265,12 +265,15 @@ function Soundtrack.start(screenGui: ScreenGui)
 
 	-- Um aviso de carregamento tardio não é um erro definitivo; a checagem após 18s
 	-- apenas evita que uma faixa bloqueada impeça a playlist inteira de avançar.
-	local overlayScale = UI.new("UIScale", {Scale = 1}, overlay)
+	local notificationScale = UI.new("UIScale", {Scale = 1}, toast)
+	local playerScale = UI.new("UIScale", {Scale = 1}, dock)
 	local function resize()
 		local camera = Workspace.CurrentCamera
 		if not camera then return end
 		local size = camera.ViewportSize
-		overlayScale.Scale = math.clamp(math.min(size.X / 690, size.Y / 480), 0.65, 1)
+		local factor = math.clamp(math.min(size.X / 690, size.Y / 480), 0.65, 1)
+		notificationScale.Scale = factor
+		playerScale.Scale = factor
 	end
 	local cameraConnection: RBXScriptConnection? = nil
 	local function watchCamera()
