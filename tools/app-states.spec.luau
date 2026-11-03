@@ -21,34 +21,30 @@ check(transitionGui.IgnoreGuiInset and transitionGui.DisplayOrder > 85,
 	"Carregamento precisa sobrepor os dois menus sem margens")
 check(wipe.BackgroundTransparency >= 0.50 and wipe.BackgroundTransparency <= 0.70 and wipe.Active,
 	"Fundo do loading deve permanecer visivel e bloquear cliques")
-local emblem = wipe:FindFirstChild("IndicadorDL")
+local emblem = wipe:FindFirstChild("IndicadorCL")
 check(emblem ~= nil and emblem.Size.X.Offset == 32 and emblem.Size.Y.Offset == 32
 	and emblem.AnchorPoint.X == 0.5 and emblem.AnchorPoint.Y == 1
 	and emblem.Position.X.Scale == 0.5 and emblem.Position.Y.Scale == 1,
-	"DL deve medir 32 px e permanecer no rodape central")
-for i=1,8 do
-	local segment=emblem:FindFirstChild(string.format("SegmentoDL_%02d",i))
-	check(segment and segment:IsA("CanvasGroup") and segment:FindFirstChild("AuraDifusa")
-		and segment:FindFirstChild("HaloNeon") and segment:FindFirstChild("NucleoClaro"),
-		"Monograma DL precisa de oito segmentos finos e camadas de luz")
-	check(segment:FindFirstChild("NucleoClaro").Size.Y.Offset == 1.2,
-		"O nucleo do tracado deve ter apenas 1,2 px")
-	check(segment:FindFirstChild("AuraDifusa").Size.Y.Offset == 9,
-		"Cada linha deve ter uma aura translucida separada")
+	"CL deve ficar centralizado no rodape e medir 32 px")
+local mark = emblem:FindFirstChild("MarcaCLNeon")
+check(mark ~= nil and mark:FindFirstChild("TracoCL_01") ~= nil,
+	"Logo CL proprio nao foi construido a partir da referencia")
+for i = 1, 5 do
+	local line = mark:FindFirstChild(string.format("TracoCL_%02d", i))
+	check(line ~= nil and line:FindFirstChild("AuraDifusa") ~= nil
+		and line:FindFirstChild("HaloNeon") ~= nil
+		and line:FindFirstChild("NucleoCL") ~= nil,
+		"CL deve ter cinco bordas vetoriais e tres camadas de luz")
+	check(line:FindFirstChild("NucleoCL").Size.Y.Offset == 2.8,
+		"Traco CL deve ser um pouco grosso, mas sem blocos pesados")
 end
-check(emblem:FindFirstChild("SegmentoCL_01")==nil,
-	"Traços anteriores nao devem permanecer no indicador")
-local outer = emblem:FindFirstChild("OrbitaExterna")
-local inner = emblem:FindFirstChild("OrbitaInterna")
-check(outer and inner
-	and outer:FindFirstChild("TracoCircular"):FindFirstChild("FendaLuminosa")
-	and inner:FindFirstChild("TracoCircular"):FindFirstChild("FendaLuminosa"),
-	"Efeitos especiais precisam de duas orbitas com reflexos")
-for i=1,3 do
-	local spark=emblem:FindFirstChild("ParticulaLuminosa_"..i)
-	check(spark and spark:FindFirstChild("HaloParticula"),
-		"Faiscas precisam de aura propria")
-end
+local snake = mark:FindFirstChild("CobraLuz_1")
+check(snake ~= nil and snake:FindFirstChild("AuraVerde")
+	and snake:FindFirstChild("NucleoBranco"),
+	"Foco de luz deve percorrer o CL sem trocar para DL")
+check(emblem:FindFirstChild("OrbitaExterna") == nil
+	and emblem:FindFirstChild("OrbitaInterna") == nil,
+	"Efeitos orbitais antigos nao pertencem a esta referencia")
 check(transitionGui:FindFirstChild("MarcaCentral",true)==nil
 	and transitionGui:FindFirstChild("FaixaDeLuz_1",true)==nil,
 	"O velho wipe cinematografico nao pode permanecer no carregamento")
@@ -86,8 +82,18 @@ check(primary ~= nil and primary:IsA("TextButton")
 check(showcase:FindFirstChild("Logotipos"):FindFirstChild("Simbolo_quick") ~= nil,
 	"Símbolos devem ser próprios, geométricos e independentes da EA")
 check(homeRoot:FindFirstChild("NomeRealJogador").Text == services.Players.LocalPlayer.Name
-	and homeRoot:FindFirstChild("NivelRealJogador").Text == "Nível —",
-	"Nome/nível do Roblox não foram criados corretamente")
+	and homeRoot:FindFirstChild("NivelRealJogador")==nil,
+	"Nome deve continuar e texto Nível deve ser removido")
+local brand = homeRoot:FindFirstChild("MarcaCL27")
+check(brand and brand.Text == "CL 27"
+	and brand.Position.X.Scale == 0.5 and brand.AnchorPoint.X == 0.5
+	and brand.TextXAlignment == Enum.TextXAlignment.Center,
+	"Texto CL 27 precisa estar precisamente centralizado na tela")
+check(homeRoot:FindFirstChild("AjudaInferior")==nil,
+	"Instrucoes A Selecionar B Voltar foram solicitadas para remocao")
+local ctaSnake = primary:FindFirstChild("CobraNeonCapsula")
+check(ctaSnake ~= nil and ctaSnake:FindFirstChild("CobraLuz_1"),
+	"Botao de X deve ter luz verde percorrendo a borda em looping")
 local clubOption = homeList:FindFirstChild("Opcao_4")
 local kickOff = homeList:FindFirstChild("Opcao_3")
 local glow = homeList:FindFirstChild("BrilhoRadialSelecao")
@@ -116,57 +122,43 @@ for i = 1, 14 do
 		"Camadas radiais devem dissolver verticalmente")
 end
 local pulse = glow:FindFirstChild("PulsoSelecao")
-check(pulse ~= nil and pulse:IsA("CanvasGroup") and pulse.GroupTransparency == 1,
-	"Pulso radial deve ser independente e começar transparente")
+check(pulse ~= nil and pulse:IsA("CanvasGroup")
+	and pulse.GroupTransparency == 1 and glow.GroupTransparency == 1,
+	"Brilho verde deve ficar completamente invisivel antes do clique")
 local yBefore = glow.Position.Y.Offset
 clubOption.Activated:Fire()
-check(pulse.GroupTransparency < 0.5,
-	"Seleção deve produzir pulso discreto no halo radial")
-check(wipe.Visible and UI.inputLocked and handle.state.menuInputLocked
-	and handle.state.screen=="HomeInterior",
-	"Selecao simples precisa iniciar 2,5 segundos de loading sem abrir outra tela")
-local initialSelection=handle.state.homeFocus
-kickOff.Activated:Fire()
-check(handle.state.homeFocus==initialSelection,
-	"Outra selecao deve ser bloqueada enquanto o CL luminoso carrega")
+check(glow.GroupTransparency == 0 and pulse.GroupTransparency < 0.5
+	and not wipe.Visible and not UI.inputLocked and not handle.state.menuInputLocked,
+	"Clicar na opcao branca deve causar impacto verde, sem loading artificial")
 check(handle.state.homeFocus == 4 and handle.state.screen == "HomeInterior",
-	"Seleção lateral não pode navegar sem usar o botão principal")
+	"Opcao lateral deve mudar apenas a selecao sem abrir outra tela")
 local lessons = homeList:FindFirstChild("SubmenuAprenda")
-check(lessons ~= nil and lessons.Visible
-	and lessons:FindFirstChild("SubOpcao_4") ~= nil,
-	"Aprenda a Jogar deve expandir quatro subopções")
-check(clubOption.TextTransparency > 0 and glow.Position.Y.Offset == yBefore,
-	"Troca de seleção deve iniciar sem deslocamento instantâneo")
+check(lessons and lessons.Visible and lessons:FindFirstChild("SubOpcao_4"),
+	"Aprenda a Jogar deve expandir quatro subopcoes")
+check(glow.Position.Y.Offset > yBefore,
+	"Impacto verde deve aparecer atras da opcao que foi clicada")
 advance(0.16)
 check(clubOption.TextTransparency > 0 and clubOption.TextTransparency < 0.32
-	and glow.Position.Y.Offset > yBefore and glow.Position.Y.Offset < 203,
-	"Aos 160 ms, texto e halo radial devem estar em transição")
-advance(0.36)
-check(clubOption.TextTransparency == 0 and glow.Position.Y.Offset == 203
-	and glow.GroupTransparency == 0.09 and pulse.GroupTransparency == 1,
-	"Brilho radial nao chegou suavemente a nova linha")
-check(wipe.Visible and UI.inputLocked, "Loading nao pode terminar antes de 2,5 segundos")
-advance(1.97)
-check(wipe.Visible and UI.inputLocked and handle.state.menuInputLocked,
-	"Loading deve continuar ativo antes de completar 2,5 segundos")
-advance(0.02)
-check(not wipe.Visible and not UI.inputLocked and not handle.state.menuInputLocked,
-	"Selecao lateral nao liberou cliques apos os 2,5 segundos")
+	and glow.GroupTransparency > 0 and glow.GroupTransparency < 1,
+	"Glow forte deve diminuir rapidamente apos impacto")
+advance(0.52)
+check(clubOption.TextTransparency == 0 and glow.GroupTransparency == 1
+	and pulse.GroupTransparency == 1 and not wipe.Visible and not UI.inputLocked,
+	"Selecao branca deve permanecer SEM glow verde depois do impacto")
 check(homeList:FindFirstChild("Opcao_5").Position.Y.Offset > 400,
-	"Upgrade deve terminar o deslocamento suave quando o submenu expande")
+	"Upgrade deve descer quando Aprenda a Jogar expande")
 local core = glow:FindFirstChild("CamadaRadial_14")
 local brightnessBefore = core.BackgroundTransparency
 services.RunService.Heartbeat:Fire(0.05)
 check(core.BackgroundTransparency ~= brightnessBefore,
-	"Centro do halo deve respirar discretamente sem partículas")
+	"Camadas podem animar em fundo, mas grupo oculto nao pode exibir luz")
 kickOff.Activated:Fire()
-advance(0.51)
+check(glow.GroupTransparency == 0 and not wipe.Visible,
+	"Novo clique deve reiniciar o impacto imediatamente, sem loading")
+advance(0.69)
 check(handle.state.homeFocus == 3 and kickOff.TextTransparency == 0
-	and glow.Position.Y.Offset == yBefore and not lessons.Visible,
-	"Troca de Aprenda para Jogo Rápido nao moveu o brilho ou recolheu submenu")
-advance(2.0)
-check(not wipe.Visible and not UI.inputLocked,
-	"Selecionar Jogo Rapido precisa liberar o controle ao concluir o loading")
+	and glow.GroupTransparency == 1 and not lessons.Visible,
+	"Troca para Jogo Rapido precisa sumir com efeito verde logo apos clique")
 local news = homeList:FindFirstChild("Opcao_1")
 news.MouseEnter:Fire()
 advance(0.32)
@@ -187,67 +179,39 @@ manager.InputEnded:Fire({UserInputType = Enum.UserInputType.Touch})
 advance(0.32)
 check(manager.TextTransparency == 0.32 and kickOff.TextTransparency == 0,
 	"Soltar toque deve devolver foco branco somente ao botão selecionado")
--- Testa a seleção interna sem fingir que os modos de jogo estão prontos.
+-- Selecoes internas tambem devem ser imediatas; animacao breve de impacto.
 clubOption.Activated:Fire()
-advance(2.51)
+advance(0.69)
 lessons:FindFirstChild("SubOpcao_2").Activated:Fire()
-check(wipe.Visible and UI.inputLocked,
-	"Subopcao do Aprenda a Jogar deve exibir carregamento silencioso")
+check(not wipe.Visible and not UI.inputLocked,
+	"Subopcao de Aprenda nao deve exibir carregamento")
 check(handle.state.homeLesson == 2 and handle.state.screen == "HomeInterior",
-	"Selecionar Rush deve alterar somente a apresentação, sem abrir rota")
-advance(2.51)
+	"Subopcao Rush deve atualizar foco sem inventar rota")
+advance(0.55)
 check(showcase:FindFirstChild("TituloCentral").Text == "RUSH"
 	and primary:FindFirstChild("TextoAcao").Text == "Conhecer Rush",
-	"Submenu deve atualizar titulo e botao central com transicao")
+	"Submenu deve atualizar CTA e titulo central")
 kickOff.Activated:Fire()
-advance(2.51)
+advance(0.55)
 check(showcase:FindFirstChild("TituloCentral").Text == "JOGO RÁPIDO"
-	and not lessons.Visible,
-	"Trocar de seção precisa restaurar título e recolher submenu")
--- A trilha toca automaticamente SEM painel fixo ou lista intrusiva.
-local overlay = gui:FindFirstChild("SoundtrackOverlay")
+	and not lessons.Visible and not wipe.Visible,
+	"Troca de secao deve manter lobby livre do carregamento")
+-- Trilha continua ativa, mas NENHUMA notificação de música é criada.
 local sound = services.SoundService:FindFirstChild("CL27SoundtrackLocal")
-check(overlay ~= nil and sound ~= nil and sound.IsPlaying, "Soundtrack must autoplay on entering CL 27")
-local notification = overlay:FindFirstChild("NowPlayingNotification")
-check(notification ~= nil, "Notificação da trilha deve existir após vários carregamentos do menu")
-check(notification:IsA("CanvasGroup"), "Notificação deve suportar transição de opacidade em grupo")
-check(notification.Position.X.Scale == 1 and notification.Position.Y.Scale == 0,
-	"Notificação deve ficar ancorada no canto superior direito")
-check(overlay:FindFirstChild("SoundtrackControls") == nil
-	and overlay:FindFirstChild("TracklistPanel") == nil,
-	"Painel ou lista musical ainda está visível no layout")
-check(notification:FindFirstChild("NomeFaixa") ~= nil and notification:FindFirstChild("ArtistaFaixa") ~= nil
-	and notification:FindFirstChild("ProgressoNotificacao") ~= nil,
-	"Novo design musical deve mostrar título, artista e progresso")
--- Os testes do carregamento duram varios ciclos de 2,5 s; e esperado
--- que a primeira notificacao ja tenha sumido antes de chegar aqui.
-check(not notification.Visible or notification.GroupTransparency == 0,
-	"Notificacao musical nao deve ficar parada no meio da animacao")
-
+check(sound ~= nil and sound.IsPlaying, "Musica ambiente deve continuar tocando")
+check(gui:FindFirstChild("SoundtrackOverlay")==nil
+	and gui:FindFirstChild("NowPlayingNotification",true)==nil,
+	"Remover totalmente banner e notificacao musical sem mutar a trilha")
 local initialSound = sound.SoundId
 check(initialSound == "rbxassetid://5409360995" or initialSound == "rbxassetid://5410086218"
-	or initialSound == "rbxassetid://702367070", "Soundtrack played unknown audio ID")
+	or initialSound == "rbxassetid://702367070", "Trilha tocou identificador nao esperado")
 sound.IsPlaying = false
 sound.Ended:Fire()
 advance(1.99)
-check(not sound.IsPlaying, "Next song started before the exact 2-second gap")
+check(not sound.IsPlaying, "Proxima musica nao pode tocar antes do intervalo")
 advance(0.01)
-check(sound.IsPlaying and notification.Visible, "Next song did not start after 2 seconds")
-check(notification.GroupTransparency == 1, "Próxima música não reiniciou animação da notificação")
-advance(0.44)
-check(notification.GroupTransparency == 0, "Próxima notificação não apareceu suavemente")
-advance(4.55)
-check(notification.Visible and notification.GroupTransparency == 0,
-	"Notificação encerrou antes dos cinco segundos completos")
-advance(0.2)
-check(notification.Visible and notification.GroupTransparency > 0 and notification.GroupTransparency < 1,
-	"Notificação deve desaparecer com fade, sem corte seco")
-advance(0.23)
-check(not notification.Visible and notification.GroupTransparency == 1,
-	"Notificação permaneceu visível após a saída animada")
-check(gui:FindFirstChild("SoundtrackOverlay") == overlay and sound.Parent == services.SoundService,
-	"Trilha sonora não deve se perder em navegação")
-
+check(sound.IsPlaying and gui:FindFirstChild("NowPlayingNotification",true)==nil,
+	"Musica deve trocar em 2 segundos SEM reaparecer notificacao")
 -- O conteúdo central precisa continuar legível no Android em paisagem.
 local uiCamera = workspace.CurrentCamera
 uiCamera.ViewportSize = Vector2.new(854, 393)
@@ -263,7 +227,7 @@ check(showcase:FindFirstChild("TituloCentral").TextSize == 36,
 
 local upgradeOption = homeList:FindFirstChild("Opcao_5")
 upgradeOption.Activated:Fire()
-advance(2.51)
+advance(0.55)
 check(showcase:FindFirstChild("TituloCentral").Text == "UPGRADE"
 	and showcase:FindFirstChild("PrevisoesUpgrade").Visible,
 	"Upgrade precisa ter conteudo proprio e tres miniaturas")
@@ -271,30 +235,30 @@ primary.Activated:Fire()
 check(handle.state.screen == "HomeInterior",
 	"Upgrade ainda nao e rota disponivel; nao deve abrir um sistema inventado")
 kickOff.Activated:Fire()
-advance(2.51)
+advance(0.55)
 check(showcase:FindFirstChild("TituloCentral").Text == "JOGO RÁPIDO",
 	"Voltar de Upgrade precisa restaurar a apresentação de Jogo Rápido")
 
 
--- Ícones compactos em coluna e abertura da nova grade visual.
+-- Única engrenagem vetorial moderna, sem botão de acessibilidade no lobby.
 local settingsIcon = homeRoot:FindFirstChild("Configuracoes")
-local accessIcon = homeRoot:FindFirstChild("Acessibilidade")
-check(settingsIcon ~= nil and accessIcon ~= nil and settingsIcon.Text == "" and accessIcon.Text == "",
-	"Configurações e Acessibilidade não podem usar emojis")
-check(settingsIcon.Position.X.Scale == accessIcon.Position.X.Scale
-	and accessIcon.Position.Y.Scale > settingsIcon.Position.Y.Scale + 0.07,
-	"Ícones precisam ficar um acima do outro à esquerda")
-check(settingsIcon:FindFirstChild("EscalaIcone").Scale < 1
-	and accessIcon:FindFirstChild("EscalaIcone").Scale < 1,
-	"Ícones superiores precisam ser visualmente menores")
-accessIcon.Activated:Fire()
+check(settingsIcon and settingsIcon.Text == ""
+	and settingsIcon:FindFirstChild("EngrenagemVetorial") ~= nil,
+	"Trocar engrenagem por desenho vetorial moderno e sem emoji")
+check(settingsIcon:FindFirstChild("Dente_12") ~= nil
+	and settingsIcon:FindFirstChild("EngrenagemVetorial"):FindFirstChild("FuroCentral") ~= nil,
+	"Ícone precisa ter aro de precisão e 12 dentes")
+check(homeRoot:FindFirstChild("Acessibilidade") == nil,
+	"Botao redundante de Acessibilidade deve desaparecer do lobby")
+settingsIcon.Activated:Fire()
 check(handle.state.screen == "HomeInterior" and wipe.Visible
 	and wipe.GroupTransparency == 1 and UI.inputLocked,
 	"Entrar em Configuracoes deve iniciar loading sem esconder o fundo abruptamente")
 services.RunService.Heartbeat:Fire(0.09)
-local logoSegment = emblem:FindFirstChild("SegmentoDL_01")
-check(logoSegment.GroupTransparency < 1,
-	"Tracos do CL precisam ser desenhados em etapas durante o loading")
+local snakeBefore = snake.Position
+services.RunService.Heartbeat:Fire(0.05)
+check(snake.Position ~= snakeBefore,
+	"Luz itinerante precisa percorrer a borda das letras CL")
 advance(0.18)
 check(handle.state.screen == "HomeInterior" and wipe.Visible
 	and wipe.GroupTransparency > 0 and wipe.GroupTransparency < 1,
@@ -466,9 +430,8 @@ handle.go("HomeTraining")
 advance(0.15)
 check(handle.state.screen == "Squad" and UI.inputLocked and wipe.Visible,
 	"Movimento reduzido mantem 2,5 s, apenas elimina a animacao segmentada")
-local reducedSegment=emblem:FindFirstChild("SegmentoDL_01")
-check(reducedSegment.GroupTransparency == 0,
-	"Movimento reduzido deve manter marca CL completa sem pulsacao")
+check(not snake.Visible,
+	"Movimento reduzido deve deixar CL estatico sem cobra luminosa")
 advance(2.0)
 check(handle.state.screen == "HomeTraining" and wipe.Visible and UI.inputLocked,
 	"Movimento reduzido nao deve eliminar o tempo minimo de carregamento")
@@ -620,17 +583,17 @@ check(mobileList:FindFirstChild("Opcao_5").Position.Y.Offset <= 225,
 check(mobileList:FindFirstChild("Opcao_1").TextSize >= 22,
 	"Correção de espaçamento não pode encolher a tipografia excessivamente")
 mobileList:FindFirstChild("Opcao_4").Activated:Fire()
-advance(2.51)
+advance(0.55)
 local mobileLessons = mobileList:FindFirstChild("SubmenuAprenda")
 check(mobileLessons.Visible and mobileLessons.Size.X.Scale == 1
 	and mobileList.CanvasPosition.Y > 0,
 	"Submenu deve caber na largura do celular e posicionar a rolagem corretamente")
 mobileLessons:FindFirstChild("SubOpcao_4").Activated:Fire()
-check(mobile.state.homeLesson == 4 and mobile.state.menuInputLocked,
-	"Submenu movel precisa aceitar toque e acionar carregamento")
-advance(2.51)
+check(mobile.state.homeLesson == 4 and not mobile.state.menuInputLocked,
+	"Submenu movel nao deve bloquear cliques com loading artificial")
+advance(0.55)
 mobileList:FindFirstChild("Opcao_5").Activated:Fire()
-advance(2.51)
+advance(0.55)
 check(mobile.state.homeFocus == 5 and mobileList.CanvasPosition.Y == 0,
 	"Fechar submenu no celular deve restaurar posição inicial da rolagem")
 mobile.destroy()

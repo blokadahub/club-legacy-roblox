@@ -22,25 +22,6 @@ local function element(className: string, parent: Instance, properties)
 	return object
 end
 
-local function levelOf(player: Player): string
-	for _, key in ipairs({"Level", "Nivel", "Nível"}) do
-		local value = player:GetAttribute(key)
-		if typeof(value) == "number" and value >= 0 then
-			return tostring(math.floor(value))
-		end
-	end
-	local stats = player:FindFirstChild("leaderstats")
-	if stats then
-		for _, key in ipairs({"Level", "Nivel", "Nível"}) do
-			local stat = stats:FindFirstChild(key)
-			if stat and (stat:IsA("IntValue") or stat:IsA("NumberValue")) then
-				return tostring(math.max(0, math.floor(stat.Value)))
-			end
-		end
-	end
-	return "—"
-end
-
 -- Símbolos vetoriais nativos, sem emoji ou imagem externa.
 -- A superfície clicável é maior do que o desenho para funcionar no toque.
 local function icon(parent: Instance, name: string, kind: string, x: number, y: number)
@@ -64,22 +45,34 @@ local function icon(parent: Instance, name: string, kind: string, x: number, y: 
 		return part
 	end
 	if kind == "gear" then
-		for i = 0, 7 do
-			local angle = i * math.pi / 4
-			strokeSegment(4.5, 9, 23 + math.sin(angle) * 14, 25 - math.cos(angle) * 14, i * 45)
-		end
+		-- Ícone próprio de precisão: aro fino, dentes radiais e miolo vazado.
+		-- Construção vetorial com UIStroke, sem emojis ou dependência de asset.
 		local ring = element("Frame", button, {
-			Position = UDim2.fromOffset(12, 14), Size = UDim2.fromOffset(22, 22),
-			BackgroundTransparency = 1, ZIndex = 9,
+			Name = "EngrenagemVetorial", AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromOffset(23, 25),
+			Size = UDim2.fromOffset(25, 25),
+			BackgroundTransparency = 1, ZIndex = 10,
 		})
 		element("UICorner", ring, {CornerRadius = UDim.new(1, 0)})
-		element("UIStroke", ring, {Color = ink, Transparency = 0.11, Thickness = 4})
-		local hole = element("Frame", button, {
-			Position = UDim2.fromOffset(19, 21), Size = UDim2.fromOffset(8, 8),
-			BackgroundColor3 = Color3.fromRGB(14, 30, 30),
-			BackgroundTransparency = 0.3, BorderSizePixel = 0, ZIndex = 10,
+		element("UIStroke", ring, {Color = ink, Transparency = 0.06, Thickness = 2.25})
+		local center = element("Frame", ring, {
+			Name = "FuroCentral", AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromOffset(7.5, 7.5),
+			BackgroundTransparency = 1, ZIndex = 11,
 		})
-		element("UICorner", hole, {CornerRadius = UDim.new(1, 0)})
+		element("UICorner", center, {CornerRadius = UDim.new(1, 0)})
+		element("UIStroke", center, {Color = ink, Transparency = 0.04, Thickness = 2})
+		for i = 0, 11 do
+			local angle = i * math.pi / 6
+			local tooth = strokeSegment(
+				3.1, 6.0,
+				23 + math.sin(angle) * 16.2,
+				25 - math.cos(angle) * 16.2,
+				i * 30
+			)
+			tooth.Name = "Dente_" .. tostring(i + 1)
+		end
 	else
 		local head = element("Frame", button, {
 			Position = UDim2.fromOffset(19, 8), Size = UDim2.fromOffset(8, 8),
@@ -109,7 +102,6 @@ function HomeHUD.start(playerGui: Instance, state)
 	local hovered: number? = nil
 	local navigateSettings: ((number) -> ())? = nil
 	local navigatePrimary: ((number, number?) -> ())? = nil
-	local notifySelection: ((number) -> ())? = nil
 	local function locked(): boolean return state.menuInputLocked == true end
 
 	local gui = element("ScreenGui", playerGui, {
@@ -146,12 +138,11 @@ function HomeHUD.start(playerGui: Instance, state)
 		}),
 	})
 
-	-- Alinhados horizontalmente com CL News; sempre acessíveis por toque.
+	-- Configurações é o único atalho lateral. Acessibilidade segue dentro
+	-- do menu de Configurações, sem botão redundante no lobby.
 	local settingsButton, settingsGleam = icon(root, "Configuracoes", "gear", 0.018, 0.192)
-	local accessibilityButton, accessibilityGleam = icon(root, "Acessibilidade", "access", 0.018, 0.286)
 	for _, entry in ipairs({
 		{button = settingsButton, glow = settingsGleam, tab = 1},
-		{button = accessibilityButton, glow = accessibilityGleam, tab = 2},
 	}) do
 		table.insert(connections, entry.button.Activated:Connect(function()
 			if locked() then return end
@@ -170,10 +161,11 @@ function HomeHUD.start(playerGui: Instance, state)
 		Font = Enum.Font.GothamBlack,
 		TextSize = 34,
 		TextColor3 = WHITE,
-		TextXAlignment = Enum.TextXAlignment.Left,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		AnchorPoint = Vector2.new(0.5, 0),
 		BackgroundTransparency = 1,
-		Position = UDim2.fromScale(0.103, 0.048),
-		Size = UDim2.fromScale(0.24, 0.079),
+		Position = UDim2.fromScale(0.5, 0.048),
+		Size = UDim2.fromScale(0.28, 0.079),
 		ZIndex = 7,
 	})
 
@@ -237,7 +229,7 @@ function HomeHUD.start(playerGui: Instance, state)
 	local selectionGlow, selectionPulse, glowCore = RadialGlow.new(
 		list, 8 + (current - 1) * rowGap, glowWidth(current)
 	)
-	local lastGlowFocus = current
+	selectionGlow.GroupTransparency = 1
 	for index, caption in ipairs(ITEMS) do
 		local y = 8 + (index - 1) * rowGap + (if current == 4 and index > 4 then 144 else 0)
 		local button = element("TextButton", list, {
@@ -297,17 +289,26 @@ function HomeHUD.start(playerGui: Instance, state)
 	})
 	element("UICorner", learnAccent, {CornerRadius = UDim.new(1, 0)})
 
-	-- Pulso oval pontual: brilho discreto sem fumaça ou distorcer texto.
-	local function strike()
+	-- Impacto único: ao clicar, a opção branca ganha luz intensa,
+	-- depois a aura some totalmente em 0,62 s. Sem glow permanente.
+	local function strike(index: number)
 		if reducedMotion then return end
-		selectionPulse.GroupTransparency = 0.46
-		selectionPulse.Size = UDim2.fromScale(0.42, 0.40)
-		selectionPulse.Position = UDim2.fromScale(0.29, 0.30)
+		local y = 8 + (index - 1) * rowGap
+			+ (if current == 4 and index > 4 then 144 else 0)
+		selectionGlow.Position = UDim2.fromOffset(-27, y - 21)
+		selectionGlow.Size = UDim2.fromOffset(glowWidth(index), 92)
+		local prior = tweens[selectionGlow]
+		if prior then prior:Cancel();tweens[selectionGlow] = nil end
+		selectionGlow.GroupTransparency = 0
+		selectionPulse.GroupTransparency = 0.24
+		selectionPulse.Size = UDim2.fromScale(0.43, 0.44)
+		selectionPulse.Position = UDim2.fromScale(0.285, 0.28)
+		animate(selectionGlow, {GroupTransparency = 1}, 0.62, Enum.EasingStyle.Quad)
 		animate(selectionPulse, {
 			GroupTransparency = 1,
-			Size = UDim2.fromScale(0.70, 0.68),
-			Position = UDim2.fromScale(0.15, 0.16),
-		}, 0.5, Enum.EasingStyle.Quart)
+			Size = UDim2.fromScale(0.82, 0.72),
+			Position = UDim2.fromScale(0.09, 0.14),
+		}, 0.50, Enum.EasingStyle.Quart)
 	end
 
 	local lastExpanded = current ~= 4
@@ -339,17 +340,8 @@ function HomeHUD.start(playerGui: Instance, state)
 			end
 		end
 		list.CanvasSize = UDim2.new(0, 0, 0, if expanded then 540 else 420)
-		-- Única luz radial segue o foco em vez de cinco névoas independentes.
+		-- O branco indica seleção; o halo verde só é ativado pelo clique.
 		local focused = hovered or current
-		local focusedY = 8 + (focused - 1) * rowGap + (if expanded and focused > 4 then 144 else 0)
-		if instant or focused ~= lastGlowFocus then
-			animate(selectionGlow, {
-				Position = UDim2.fromOffset(-27, focusedY - 21),
-				Size = UDim2.fromOffset(glowWidth(focused), 92),
-				GroupTransparency = if focused == current then 0.09 else 0.19,
-			}, if instant then 0 else 0.28, Enum.EasingStyle.Quart)
-			lastGlowFocus = focused
-		end
 		for index, row in ipairs(rows) do
 			local mode = if index == focused then (if index == current then 2 else 1) else 0
 			local nextY = 8 + (index - 1) * rowGap + (if expanded and index > 4 then 144 else 0)
@@ -384,7 +376,7 @@ function HomeHUD.start(playerGui: Instance, state)
 			end
 			animate(learnAccent, {Position = UDim2.fromOffset(3, 5 + (i - 1) * 34)}, 0.22)
 			showcase:Show(4, false, selectedLesson)
-			if notifySelection then notifySelection(4) end
+			strike(4)
 		end))
 	end
 
@@ -444,8 +436,7 @@ function HomeHUD.start(playerGui: Instance, state)
 			state.homeFocus = index
 			repaint()
 			pulse(row)
-			strike()
-			if notifySelection then notifySelection(index) end
+			strike(index)
 			-- O botão principal abre as rotas existentes, sem inventar sistemas.
 		end))
 	end
@@ -463,15 +454,6 @@ function HomeHUD.start(playerGui: Instance, state)
 		glowCore.BackgroundTransparency = 0.922 + math.sin(elapsed * 1.15) * 0.012
 	end))
 
-	element("TextLabel", root, {
-		Name = "AjudaInferior", Text = "A   SELECIONAR        B   VOLTAR",
-		Font = Enum.Font.GothamMedium, TextSize = 12,
-		TextColor3 = Color3.fromRGB(180, 196, 192),
-		TextXAlignment = Enum.TextXAlignment.Left,
-		BackgroundTransparency = 1,
-		Position = UDim2.fromScale(0.087, 0.933),
-		Size = UDim2.fromScale(0.35, 0.033), ZIndex = 7,
-	})
 	local username = element("TextLabel", root, {
 		Name = "NomeRealJogador",
 		Text = player.Name,
@@ -484,44 +466,6 @@ function HomeHUD.start(playerGui: Instance, state)
 		Size = UDim2.fromScale(0.31, 0.046),
 		ZIndex = 7,
 	})
-	local level = element("TextLabel", root, {
-		Name = "NivelRealJogador",
-		Text = "Nível " .. levelOf(player),
-		TextColor3 = Color3.fromRGB(202, 215, 216),
-		Font = Enum.Font.GothamMedium,
-		TextSize = 17,
-		TextXAlignment = Enum.TextXAlignment.Right,
-		BackgroundTransparency = 1,
-		Position = UDim2.fromScale(0.74, 0.101),
-		Size = UDim2.fromScale(0.23, 0.038),
-		ZIndex = 7,
-	})
-
-	local function syncLevel()
-		if alive then level.Text = "Nível " .. levelOf(player) end
-	end
-	for _, key in ipairs({"Level", "Nivel", "Nível"}) do
-		table.insert(connections, player:GetAttributeChangedSignal(key):Connect(syncLevel))
-	end
-	local function hookStats(stats)
-		if not stats then return end
-		for _, stat in ipairs(stats:GetChildren()) do
-			if stat:IsA("IntValue") or stat:IsA("NumberValue") then
-				table.insert(connections, stat:GetPropertyChangedSignal("Value"):Connect(syncLevel))
-			end
-		end
-		table.insert(connections, stats.ChildAdded:Connect(function(stat)
-			if stat:IsA("IntValue") or stat:IsA("NumberValue") then
-				table.insert(connections, stat:GetPropertyChangedSignal("Value"):Connect(syncLevel))
-			end
-			syncLevel()
-		end))
-		syncLevel()
-	end
-	hookStats(player:FindFirstChild("leaderstats"))
-	table.insert(connections, player.ChildAdded:Connect(function(child)
-		if child.Name == "leaderstats" then hookStats(child) end
-	end))
 	repaint(true)
 
 	return {
@@ -532,14 +476,12 @@ function HomeHUD.start(playerGui: Instance, state)
 		SetPrimaryNavigation = function(_, callback: (number, number?) -> ())
 			navigatePrimary = callback
 		end,
-		SetSelectionLoading = function(_, callback: (number) -> ())
-			notifySelection = callback
-		end,
 		SetVisible = function(_, visible: boolean)
 			if alive then
 				gui.Enabled = visible
 				reducedMotion = state.settings and state.settings.reducedMotion == true
 				showcase:SetReducedMotion(reducedMotion)
+				if reducedMotion then selectionGlow.GroupTransparency = 1 end
 				if visible then
 					hovered = nil
 					repaint(true)

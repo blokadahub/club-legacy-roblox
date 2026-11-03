@@ -225,7 +225,6 @@ function App.start()
 				go(target,true)
 			end,pageScope,{quiet=true,textSize=14})
 			UI.button(footer,"⌂  INÍCIO",391,10,130,40,function() go(if state.homeEnvironment=="Training" then "HomeTraining" else "HomeInterior") end,pageScope,{quiet=true,textSize=14})
-			if state.settings.showHints then UI.text(footer,"CLIQUE / A  Selecionar    •    M / Y  Central    •    B  Voltar",566,17,640,25,12,Theme.muted) end
 			UI.text(footer,"CL 27  /  APRESENTAÇÃO VISUAL",1240,17,314,25,10,Theme.muted).TextXAlignment=Enum.TextXAlignment.Right
 		end
 		if not busy then focusPage(focusOrdinal) end
@@ -306,23 +305,8 @@ function App.start()
 		end)
 	end
 
-	-- Em selecoes apenas visuais o mesmo indicador permanece por 2,5 s.
-	-- Nenhuma mudanca de rota e fabricada: o conteudo ja selecionado fica
-	-- sob o vidro escurecido e os toques permanecem bloqueados.
-	homeHud:SetSelectionLoading(function(_index)
-		if busy or not lifetime.alive or (state.screen~="HomeInterior" and state.screen~="HomeTraining") then return end
-		lockNavigation()
-		local enter=transitionFx:Cover(state.settings.reducedMotion)
-		local exitDuration=if state.settings.reducedMotion then 0.15 else TransitionFX.EXIT_SECONDS
-		lifetime:Delay(math.max(enter,MINIMUM_LOAD_SECONDS-exitDuration),function()
-			if not lifetime.alive then return end
-			local exit=transitionFx:Reveal(state.settings.reducedMotion)
-			lifetime:Delay(exit,finishLoading)
-		end)
-	end)
-
-	-- A engrenagem abre Configurações; o símbolo de acessibilidade abre
-	-- diretamente a aba real de acessibilidade já existente.
+	-- Apenas a engrenagem abre Configurações. Seleções laterais são
+	-- imediatas e não disparam uma tela artificial de carregamento.
 	homeHud:SetNavigation(function(tab)
 		state.settingsTab = tab
 		go("Settings")

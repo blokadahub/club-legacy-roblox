@@ -3,6 +3,7 @@
 -- Símbolos geométricos próprios: não depende de logos/arquivos da EA SPORTS.
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
+local NeonSnake = require(script.Parent.NeonSnake)
 
 local Showcase = {}
 local GREEN = Color3.fromRGB(129, 223, 135)
@@ -121,7 +122,7 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.fromScale(0.5, 0.677),
 		Size = UDim2.new(0.59, 0, 0, 56),
-		ClipsDescendants = true, ZIndex = 7,
+		ClipsDescendants = false, ZIndex = 7,
 	})
 	item("UICorner", action, {CornerRadius = UDim.new(1, 0)})
 	item("UISizeConstraint", action, {
@@ -140,13 +141,9 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 	label(disc, "TeclaX", "X", 17, UDim2.fromScale(0, 0), UDim2.fromScale(1, 1), GREEN, Enum.Font.GothamBold)
 	local actionText = label(action, "TextoAcao", "", 17,
 		UDim2.new(0, 47, 0, 0), UDim2.new(1, -52, 1, 0), BLACK, Enum.Font.GothamBold)
-	local reflection = item("Frame", action, {
-		Name = "ReflexoAnimado",
-		Position = UDim2.fromScale(-0.20, -0.15),
-		Size = UDim2.fromScale(0.21, 1.4),
-		Rotation = 19, BackgroundColor3 = Color3.fromRGB(244, 255, 249),
-		BackgroundTransparency = 0.82, BorderSizePixel = 0, ZIndex = 8,
-	})
+	-- O antigo reflexo atravessava o corpo do botão; a luz agora percorre
+	-- somente a borda arredondada em looping, sem tapar o texto.
+	local capsuleFX = NeonSnake.newCapsule(action)
 
 	-- Miniaturas tipográficas, exibidas apenas na seção Upgrade.
 	local mini = item("Frame", stage, {
@@ -205,6 +202,7 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 
 	local selected, lesson, token, fadeTween = 0, nil, 0, nil
 	local isReduced = reducedMotion
+	capsuleFX:SetReducedMotion(reducedMotion)
 	local alive = true
 	local function fill(index: number, lessonIndex: number?)
 		local section = SECTIONS[index]
@@ -248,11 +246,12 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 	end
 	function self:Step(elapsed: number)
 		if not alive or isReduced then return end
-		reflection.Position = UDim2.fromScale(-0.22 + ((elapsed * 0.18) % 1.45), -0.15)
-		border.Transparency = 0.6 + math.sin(elapsed * 1.7) * 0.10
+		capsuleFX:Step(elapsed)
+		border.Transparency = 0.60
 	end
 	function self:SetReducedMotion(enabled: boolean)
 		isReduced = enabled
+		capsuleFX:SetReducedMotion(enabled)
 		if enabled then
 			if fadeTween then fadeTween:Cancel() end
 			stage.GroupTransparency = 0
@@ -264,6 +263,7 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 		if fadeTween then fadeTween:Cancel() end
 		if viewportConnection then viewportConnection:Disconnect() end
 		if cameraConnection then cameraConnection:Disconnect() end
+		capsuleFX:Destroy()
 		stage:Destroy()
 	end
 	action.Activated:Connect(function()
