@@ -278,6 +278,23 @@ function App.start()
 		state.settingsTab = tab
 		go("Settings")
 	end)
+	-- Só as rotas já implementadas são acionadas. Notícias e Upgrade
+	-- permanecem apresentações, sem compra ou sistemas fictícios.
+	homeHud:SetPrimaryNavigation(function(index, lesson)
+		if index==2 or index==3 then
+			go("Clubs")
+		elseif index==4 then
+			if not lesson or lesson==1 or lesson==4 then
+				go("HomeTraining")
+			else
+				notify(if lesson==2 then "Rush está em desenvolvimento." else "Jogos de habilidade estão em desenvolvimento.")
+			end
+		elseif index==1 then
+			notify("Notícias do CL: novidades em desenvolvimento.")
+		elseif index==5 then
+			notify("Upgrade: novidades em desenvolvimento.")
+		end
+	end)
 	settingsHud:SetNavigation(function(target)
 		go(target)
 	end)
