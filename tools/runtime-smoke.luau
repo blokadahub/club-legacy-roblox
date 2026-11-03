@@ -33,7 +33,7 @@ UDim2.fromOffset = function(x, y) return UDim2.new(0, x, 0, y) end
 UDim2.fromScale = function(x, y) return UDim2.new(x, 0, y, 0) end
 local cfMeta = {}
 cfMeta.__mul = function(a, b) return typed("CFrame", {Position = a.Position + b.Position}, cfMeta) end
-cfMeta.__index = {Lerp = function(a, b, alpha) return typed("CFrame", {Position = a.Position * (1 - alpha) + b.Position * alpha}, cfMeta) end}
+cfMeta.__index = {LookVector = Vector3.new(0, 0, -1), Lerp = function(a, b, alpha) return typed("CFrame", {Position = a.Position * (1 - alpha) + b.Position * alpha}, cfMeta) end}
 local CFrame = {}
 CFrame.new = function(x, y, z) return typed("CFrame", {Position = if typeof(x) == "Vector3" then x else Vector3.new(x, y, z)}, cfMeta) end
 CFrame.Angles = function() return CFrame.new() end
