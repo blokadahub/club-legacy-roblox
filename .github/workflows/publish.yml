@@ -43,8 +43,8 @@ jobs:
         shell: bash
         env:
           API_KEY: ${{ secrets.ROBLOX_API_KEY }}
-          UNIVERSE_ID: ${{ vars.ROBLOX_UNIVERSE_ID }}
-          PLACE_ID: ${{ vars.ROBLOX_PLACE_ID }}
+          UNIVERSE_ID: "9749365367"
+          PLACE_ID: "86256105108811"
           CONFIRMED_PLACE_ID: ${{ inputs.confirmar_place_id }}
         run: |
           set -euo pipefail
@@ -64,6 +64,20 @@ jobs:
             echo '::error::A confirmação não corresponde ao Place ID configurado. Publicação cancelada.'
             exit 1
           fi
+          # Conferir a relação Place → Universe antes de substituir a experiência existente.
+          place_meta=$(curl --fail-with-body --silent --show-error \
+            "https://apis.roblox.com/universes/v1/places/${PLACE_ID}/universe")
+          PLACE_METADATA="$place_meta" python3 - <<'PY'
+          import json, os, sys
+          try:
+              actual_universe = str(json.loads(os.environ["PLACE_METADATA"])["universeId"])
+          except (ValueError, KeyError, TypeError) as exc:
+              sys.exit(f"::error::Não foi possível conferir o Universe ID do Place: {exc}")
+          expected_universe = os.environ["UNIVERSE_ID"]
+          if actual_universe != expected_universe:
+              sys.exit(f"::error::Place ID pertence ao Universe {actual_universe}, diferente do destino autorizado {expected_universe}. Publicação cancelada.")
+          print("Place ID e Universe ID conferidos no Roblox.")
+          PY
           test -s club-legacy.rbxlx
           response=$(curl --fail-with-body --silent --show-error \
             --request POST \
