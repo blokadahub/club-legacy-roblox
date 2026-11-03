@@ -81,7 +81,7 @@ local function signal()
 end
 local events = {
 	Activated = true, MouseEnter = true, MouseLeave = true, SelectionGained = true,
-	SelectionLost = true, FocusLost = true, InputBegan = true, Changed = true,
+	SelectionLost = true, FocusLost = true, InputBegan = true, InputEnded = true, ChildAdded = true, Changed = true,
 	Destroying = true,
 }
 local methods = {}
@@ -148,6 +148,8 @@ function methods:Clone()
 	return result
 end
 local services = {ReplicatedStorage = Instance.new("ReplicatedStorage"), UserInputService = {InputBegan = signal()}, TweenService = {}}
+services.Players = {LocalPlayer = Instance.new("Player")}
+services.Players.LocalPlayer.Name = "RealUserTest"
 function services.TweenService:Create(object, info, goals)
 	local tween = {Completed = signal(), PlaybackState = Enum.PlaybackState.Begin, goals = goals, target = object}
 	function tween:Play()
