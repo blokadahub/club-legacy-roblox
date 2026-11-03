@@ -103,3 +103,11 @@ Não restou falha reproduzível nas verificações executadas após as correçõ
 - Na lista de novas faixas, a música originalmente na posição 7 (`DESERT STAR — Empty Sky`) passou à posição 1, e `DESERT STAR — Carissa` passou à posição 7.
 - Reprodução agora utiliza uma lista embaralhada por rodada, sem repetição enquanto houver faixas disponíveis e sem repetir a última entre rodadas. Áudios indisponíveis continuam sendo marcados como falhos e ignorados até reinicializar o player.
 - Conferência estática local: 12 IDs únicos e ausência dos IDs removidos. Teste automatizado atualizado para verificar catálogo, posições 1/7 e ausência de repetição consecutiva. O [GitHub Actions 41664392571](https://github.com/blokadahub/club-legacy-roblox/actions/runs/41664392571) foi concluído com **sucesso**, incluindo sintaxe Luau, testes de integração e compilação Rojo. A audição dentro da experiência Roblox ainda precisa de validação, pois depende das permissões dos assets; nenhuma publicação da experiência foi executada aqui.
+
+## Remoção do cenário de treinamento e auditoria de estruturas — 03/11/2026
+
+- Removida `HomeTraining` da navegação, da Central, dos atalhos de retorno e das regras de transição. `Scene:_training` (gramado, gol, edifícios, árvores, postes e avatar do centro) e seus parâmetros especiais de iluminação foram retirados.
+- A seção `Aprenda a Jogar` mantém as quatro opções visíveis, porém não selecionáveis e sem callback; a ação central apresenta **EM ATUALIZAÇÃO** e não abre cena. Uma eventual chamada de código a `Scene:Show("Training")` volta ao interior do lobby.
+- Auditoria das fontes: `Scene:Show` elimina a cena anterior com `self.folder:ClearAllChildren()`. Outros ambientes existentes e legítimos são `Interior`, `Arena`, `Kits` e `Tunnel`. O ambiente visual `CL27_SettingsNeon` existe somente em Configurações; `CL27Assets/AcademySoccerBall` é um modelo visual em `ReplicatedStorage`, sem partida.
+- Arquivos legados de interface, como `Screens/Home.luau`, `Screens/Clubs.luau` e `Screens/Pitch.luau`, permanecem como fontes no projeto; não implicam construções ocultas no Workspace. Telas alternativas podem ser acessadas pela Central, sem duplicar todos os cenários físicos.
+- Limite: verificação estática do código GitHub. Instâncias adicionadas no próprio Roblox Studio, fora do repositório, não foram inspecionadas aqui.
