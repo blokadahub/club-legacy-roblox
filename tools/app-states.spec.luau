@@ -684,6 +684,7 @@ for _, pair in ipairs({{"Baixa","Low"},{"Média","Medium"},{"Alta","High"}}) do
 			if host.Name:match("_CeilingCrossRib$") then
 				fill+=1
 				check(item.Range==28 and not item.Shadows,"Neutral fill range/shadow regression")
+				check(item.Brightness<=1.35,"Neutral fill returned to the overbright calibration")
 			end
 			check(not host.Name:match("_DistantHorizon$"),"A light still projects toward the camera from the horizon")
 		elseif item:IsA("ParticleEmitter") then
@@ -692,7 +693,11 @@ for _, pair in ipairs({{"Baixa","Low"},{"Média","Medium"},{"Alta","High"}}) do
 			check(item.LightEmission==0 and item.LightInfluence==1,"Fog emits light or ignores environment lighting")
 			check(item.Parent:GetAttribute("TunnelDepth")>=78 and item.Parent:GetAttribute("TunnelDepth")<=106,"Fog entered the foreground")
 			check(item.Texture=="rbxasset://textures/particles/smoke_main.dds","Fog depends on a permissioned texture")
-			check(item.EmittedCount==2 and item.Rate<=0.22,"Fog burst/rate exceeds budget")
+			check(item.EmittedCount==2 and item.Rate<=0.32,"Fog burst/rate exceeds budget")
+			check(item.TimeScale>0 and item.Speed.Min*3>=1.5 and item.Lifetime.Max<=18,"Fog motion is paused, imperceptibly slow or renews too late")
+			local inward = if item.Parent.Position.X<0 then Enum.NormalId.Right else Enum.NormalId.Left
+			check(item.EmissionDirection==inward and item.Drag>0,"Fog currents no longer stay directed into the corridor")
+			check(item.RotSpeed.Min*item.RotSpeed.Max>0 and math.min(math.abs(item.RotSpeed.Min),math.abs(item.RotSpeed.Max))>=2,"Fog lost its continuous swirl")
 			check(#item:GetChildren()==0,"Fog contains a hidden light")
 			particleLimit+=math.ceil(item.Rate*item.Lifetime.Max)+2
 		elseif item:IsA("SurfaceGui") then
