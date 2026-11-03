@@ -435,9 +435,12 @@ check(ambient ~= nil and ambient.Visible and not ambient.Active
 check(wipe.Visible == false and not UI.inputLocked and not handle.state.menuInputLocked,
 	"Carregamento infinito é apenas visual: nunca bloquear saída ou tela 3D")
 local tunnelPage = canvas.Clubs
-local backFromTunnel = tunnelPage:FindFirstChild("VoltarDoTunel")
-check(backFromTunnel and backFromTunnel:IsA("TextButton"),
-	"Clubs deve ter um retorno discreto para usuários Android")
+local backGui = playerGui:FindFirstChild("CL27_TunnelBack")
+local backFromTunnel = backGui and backGui:FindFirstChild("VoltarDoTunel")
+check(backGui and backGui.Enabled and backFromTunnel and backFromTunnel:IsA("TextButton")
+	and backFromTunnel.Size.X.Offset == 54 and backFromTunnel.Size.Y.Offset == 54
+	and backGui.DisplayOrder > gui.DisplayOrder,
+	"Clubs deve ter retorno de 54 px reais, sem escala de 16:9 no Android")
 check(tunnelPage:FindFirstChild("Action_≡  CENTRAL",true)==nil
 	and tunnelPage:FindFirstChild("Action_‹  VOLTAR",true)==nil,
 	"Clubs não deve mostrar rodapé ou seleção de equipes por cima do túnel")
@@ -449,8 +452,8 @@ key(Enum.KeyCode.Right)
 check(handle.state.homeClub == beforeClub,
 	"Setas não devem alterar clubes enquanto o túnel é apresentado")
 local oldHeading = tunnelPage:FindFirstChild("PAÍS    Todos   ›", true)
-check(oldHeading == nil and #tunnelPage:GetChildren() == 1,
-	"Clubs deve exibir somente o túnel e o pequeno botão de retorno")
+check(oldHeading == nil and #tunnelPage:GetChildren() == 0,
+	"Clubs deve manter o canvas vazio; o retorno fica em camada mobile separada")
 advance(9)
 check(ambient.Visible and not wipe.Visible and not UI.inputLocked,
 	"Indicador CL deve continuar indefinidamente sem voltar a sobreposição escura")
@@ -460,12 +463,13 @@ backFromTunnel.Activated:Fire()
 check(wipe.Visible and UI.inputLocked and handle.state.screen == "Clubs",
 	"Voltar do túnel deve iniciar transição normal, não travar na marca eterna")
 advance(2.51)
-check(handle.state.screen == "HomeInterior" and homeHud.Enabled
+check(handle.state.screen == "HomeInterior" and homeHud.Enabled and not backGui.Enabled
 	and not ambient.Visible and not wipe.Visible and not UI.inputLocked,
 	"Sair do túnel deve restaurar o lobby e remover o indicador persistente")
 primary.Activated:Fire()
 advance(2.51)
-check(handle.state.screen == "Clubs" and ambient.Visible and not wipe.Visible,
+check(handle.state.screen == "Clubs" and backGui.Enabled
+	and ambient.Visible and not wipe.Visible,
 	"Entrar novamente em Clubs deve montar de novo o túnel e o CL infinito")
 
 -- Rotas programaticas em fila nao interrompem o loading ativo.
@@ -548,7 +552,8 @@ handle.destroy()
 advance(2)
 check(scene.destroyed and gui.Destroyed and settingsGui.Destroyed and transitionGui.Destroyed,
 	"Disposal must destroy scene, principal UI, Settings HUD and transition overlay")
-check(homeHud.Destroyed, "HUD independente não foi destruído com o App")
+check(homeHud.Destroyed and backGui.Destroyed,
+	"HUD e retorno mobile devem ser destruídos com o App")
 check(not UI.inputLocked, "Disposal must release shared input lock")
 handle.go("Finance")
 advance(1)
