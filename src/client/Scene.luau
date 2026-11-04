@@ -139,7 +139,7 @@ function Scene.new(settings)
 	self.folder.Name = "CL27_CenarioLocal"
 	self.folder.Parent = Workspace
 	self.oldLighting = {}
-	for _, key in ipairs({ "Ambient", "OutdoorAmbient", "Brightness", "ClockTime", "ExposureCompensation", "EnvironmentDiffuseScale", "EnvironmentSpecularScale", "GlobalShadows", "ShadowSoftness", "LightingStyle", "PrioritizeLightingQuality", "FogColor", "FogStart", "FogEnd" }) do
+	for _, key in ipairs({ "Ambient", "OutdoorAmbient", "Brightness", "ClockTime", "ExposureCompensation", "EnvironmentDiffuseScale", "EnvironmentSpecularScale", "GlobalShadows", "ShadowSoftness", "FogColor", "FogStart", "FogEnd" }) do
 		self.oldLighting[key] = Lighting[key]
 	end
 	self.cameraSnapshots = setmetatable({}, { __mode = "k" })
@@ -429,8 +429,8 @@ function Scene:ApplySettings(settings)
 	if self.menuAvatar then self.menuAvatar:SetSettings(self.settings) end
 	local quality = self.settings.quality or "Alta"
 	local low, high = quality == "Baixa", quality == "Alta"
-	Lighting.LightingStyle = low and Enum.LightingStyle.Soft or Enum.LightingStyle.Realistic
-	Lighting.PrioritizeLightingQuality = high
+	-- LightingStyle e PrioritizeLightingQuality são propriedades protegidas
+	-- (RobloxScriptSecurity) e só devem ser definidas no arquivo Rojo.
 	Lighting.GlobalShadows = not low
 	self.bloom.Enabled = not low
 	self.bloom.Intensity = if self.mode == "Tunnel" then TunnelLighting.Post.BloomIntensity else (self.mode == "Interior" and 0.06 or (high and 0.2 or 0.1))

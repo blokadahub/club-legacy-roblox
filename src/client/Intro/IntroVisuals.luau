@@ -157,13 +157,16 @@ function Visuals.new(playerGui)
 		logo.root.GroupTransparency=if t<1.93 then 0 elseif t<2.15 then 1
 			elseif t<5.8 then 0 elseif t<6.14 then 1
 			elseif t<8.65 then 1-progress(t,6.14,6.3)
-			elseif t<16.6 then progress(t,8.65,8.9) else 1-progress(t,16.6,16.85)
+			elseif t<16.6 then progress(t,8.65,8.9) else 1
 		if t>=6.3 and t<8.65 then logo.root.GroupTransparency=0 end
 		logo.color(if t<2.15 then GREEN else WHITE)
 		local msg=""
 		local alpha=1
 		pill.Visible=false
-		if t>=8.9 and t<13.9 then
+		if errorMessage then
+			msg=errorMessage
+			alpha=0
+		elseif t>=8.9 and t<13.9 then
 			msg=name.." está preparando sua experiência no Roblox..."
 			pill.Visible=true
 			alpha=1-progress(t,8.9,9.1)+progress(t,13.65,13.9)
@@ -173,10 +176,11 @@ function Visuals.new(playerGui)
 		elseif t>=15.25 and t<16.6 then
 			msg=if snapshot.ready then "Conteúdo local carregado. Tudo pronto." else "Preparando o lobby..."
 			alpha=1-progress(t,15.25,15.4)+progress(t,16.4,16.6)
-		elseif snapshot.waiting or errorMessage then
-			msg=errorMessage or "Preparando o lobby..."
+		elseif snapshot.waiting then
+			msg="Preparando o lobby..."
 			alpha=0
 		end
+		message.Position=UDim2.fromOffset(260,if errorMessage then 315 else 342)
 		messageText.Text=msg
 		message.GroupTransparency=math.clamp(alpha,0,1)
 		local welcomeIn=if t>=16.6 and (snapshot.ready or snapshot.welcomed) then ease(progress(t,16.6,17.15)) else 0
@@ -189,9 +193,12 @@ function Visuals.new(playerGui)
 		if errorMessage then
 			welcome.GroupTransparency=0
 			line1.Visible=false;line2.Visible=false
-			start.Text="TENTAR NOVAMENTE"
+			start.Text="TENTAR"
+			logo.root.GroupTransparency=1
+			supportA.Visible=false;supportB.Visible=false
 		else
 			line1.Visible=true;line2.Visible=true;start.Text="START"
+			supportA.Visible=true;supportB.Visible=true
 		end
 		cut.BackgroundTransparency=if t>=1.93 and t<2.15 then 0 else 1
 		passage.BackgroundTransparency=1

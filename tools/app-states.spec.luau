@@ -590,18 +590,21 @@ originalCamera.CameraType = Enum.CameraType.Custom
 originalCamera.FieldOfView = 55
 local originalFrame = CFrame.new(1, 2, 3)
 originalCamera.CFrame = originalFrame
+-- Rojo serializes native LightingStyle/PrioritizeLightingQuality in the Place.
+-- Roblox LocalScripts cannot read/write these protected properties.
+-- Keep their mocked values unchanged when live quality options switch.
 services.Lighting.LightingStyle = Enum.LightingStyle.Soft
 services.Lighting.PrioritizeLightingQuality = false
 local presentation = SceneReal.new({reducedMotion = false})
-presentation:ApplySettings({quality = "Alta"})
-check(services.Lighting.LightingStyle == Enum.LightingStyle.Realistic and services.Lighting.PrioritizeLightingQuality,
-	"High quality did not request native realistic lighting")
-presentation:ApplySettings({quality = "Média"})
-check(services.Lighting.LightingStyle == Enum.LightingStyle.Realistic and not services.Lighting.PrioritizeLightingQuality,
-	"Medium quality did not preserve realistic lighting without priority")
-presentation:ApplySettings({quality = "Baixa"})
-check(services.Lighting.LightingStyle == Enum.LightingStyle.Soft and not services.Lighting.PrioritizeLightingQuality,
-	"Low quality did not use native soft lighting")
+for _,quality in ipairs({"Alta","Média","Baixa"}) do
+    presentation:ApplySettings({quality = quality})
+    check(services.Lighting.LightingStyle == Enum.LightingStyle.Soft
+        and not services.Lighting.PrioritizeLightingQuality,
+        "Live Scene changed a protected Lighting property: "..quality)
+end
+check(not services.Lighting.GlobalShadows, "Low quality did not disable global shadows")
+presentation:ApplySettings({quality="Alta"})
+check(services.Lighting.GlobalShadows, "High quality did not restore global shadows")
 -- A geometria antiga da arena não é substituída; os neons pertencem
 -- exclusivamente à exibição de Configurações.
 presentation.mode = "Arena"
