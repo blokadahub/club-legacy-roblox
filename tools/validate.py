@@ -84,9 +84,9 @@ def validate_sources() -> list[Path]:
     # These Lighting properties are restricted in live LocalScripts despite being
     # serialized successfully by Rojo and accepted by the Luau compiler.
     for restricted in ("LightingStyle", "PrioritizeLightingQuality"):
-        direct_access = re.search(rf"\\bLighting\\s*\\.\\s*{restricted}\\b", scene_text)
-        indexed_access = re.search(rf"""\\bLighting\\s*\\[\\s*['\\"]{restricted}['\\"]\\s*\\]""", scene_text)
-        string_key = re.search(rf"""['\\"]{restricted}['\\"]""", scene_text)
+        direct_access = re.search(rf"\bLighting\s*\.\s*{restricted}\b", scene_text)
+        indexed_access = f'Lighting["{restricted}"]' in scene_text or f"Lighting['{restricted}']" in scene_text
+        string_key = f'"{restricted}"' in scene_text or f"'{restricted}'" in scene_text
         require(not (direct_access or indexed_access or string_key),
                 f"Propriedade Lighting protegida no cliente: {restricted}. Configure em default.project.json, não em Scene.luau.")
     for doc in ("AGENTS.md", "CL27_PLAN.md", "CL27_PROGRESS.md"):
