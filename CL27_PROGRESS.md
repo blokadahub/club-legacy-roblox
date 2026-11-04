@@ -1,5 +1,20 @@
 # CL 27 — progresso verificável
 
+## Abertura cinematográfica CL 27
+
+- Base main confirmada via fetch: 133f6a1c21691deb6e684d1467f5197f4b62b7f8, incluindo os merges dos PRs #9 e #10. Branch dedicada feat/cl27-cinematic-intro. Backup verificado em bundle externo e branch remota backup/pre-cinematic-intro-133f6a1.
+- Referência acessível: ffprobe confirmou 1920×1080 / 60 FPS / 23,800454 s. Inspeção de quadros da sequência inteira e amostragem adicional nas transformações/saída. Não confundir isso com captura do resultado no Roblox.
+- Implementados fundo estático de sete facetas, marca CL Sports/CL 27 própria, transformação, mensagens locais honestas, nome real do jogador, boas-vindas interativas e saída de seis segundos para o lobby existente.
+- O escudo nasce antes de carregar App. O lobby é construído oculto uma vez; o mesmo indicador de TransitionFX é usado sem Cover inicial. Navegação e música ficam bloqueadas até completar a revelação. Soundtrack.create/release separa construção da reprodução e preserva as 12 faixas.
+- Efeitos autorizados: 98087823124682 em 6,30 s; 101494550141867 em 16,60 s (adiado se lobby indisponível); 135910449013772 em START + 0,50 s. Com START em 17,80 s, término/música em 23,80 s. Sem avanço automático da tela START, narração ou efeito extra em 22,5 s.
+- Auditoria 1 — composição por código contra a referência: enquadramento cover das facetas, conteúdo fit 1600×900, proporções da marca, posição superior e margens. START com mínimo físico 112×48 px e apoio reposicionado para não colidir. Fidelidade renderizada pendente.
+- Auditoria 2 — estados/animação: relógio absoluto, eventos únicos, testes a 60/30/15/5 Hz, espera longa no START, gate de prontidão, saída completa, efeitos ordenados, música liberada uma vez, movimento reduzido e cancelamento. Sem medição de curvas perceptuais no motor.
+- Auditoria 3 — integridade: 43 fontes aprovadas em sintaxe Luau 0.745; 653 verificações de dados; smoke com 519 montagens / 381 callbacks / 240 asserções; 5.907 asserções existentes de estados/Clubs; 616 asserções novas da abertura. Rojo 7.7.1 gera XML com as 43 fontes idênticas. API-Dump: 424 referências estáticas, zero erros; propriedades novas relevantes conferidas. git diff --check aprovado.
+- O workflow de build inclui a nova suíte. publish.yml, IDs Roblox e módulos dos ambientes/túnel não foram alterados.
+- Documentação completa de tempos, arquivos e roteiro Studio em [CINEMATIC_INTRO.md](docs/CINEMATIC_INTRO.md).
+- Limites: sem Studio/Player; render, toque/gamepad reais, FPS, audição/duração/permissão dos efeitos não certificados. O teste negativo de áudio produz avisos esperados e continua funcional.
+- API do GitHub negada pelo proxy (403); requisito api.github.com salvo no rascunho da rede, ainda não aplicado ao runtime no momento da verificação. A criação do PR e a consulta autenticada ao CI dependem desse acesso. A publicação do ambiente é distinta da publicação Roblox; nenhuma experiência foi publicada e nenhum merge foi feito.
+
 ## Ciclo 1 — inspeção e arquitetura
 
 - [x] Repositório identificado pela conexão GitHub; main e duas branches examinadas.

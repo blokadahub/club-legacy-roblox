@@ -36,11 +36,14 @@ python3 tools/validate.py --compiler /caminho/luau-compile
 python3 tools/run-data.py --runtime /caminho/luau
 python3 tools/run-runtime-smoke.py --runtime /caminho/luau
 python3 tools/run-app-states.py --runtime /caminho/luau
+python3 tools/run-app-states.py --runtime /caminho/luau --intro
 rojo build default.project.json --output club-legacy.rbxlx
 python3 tools/validate.py --place club-legacy.rbxlx
 ```
 
 Navegação: botão **Central** ou **M/Y** abre todas as seções; **B** volta. Mouse, toque e seleção de controle são suportados pelas APIs nativas. O canvas horizontal de 1600×900 se ajusta proporcionalmente à área disponível.
+
+A entrada passa pela abertura cinematográfica CL 27, com boas-vindas e botão **START**. O lobby é preparado oculto; a playlist só é liberada depois da revelação final. Veja [a linha do tempo, arquitetura e roteiro de auditoria](docs/CINEMATIC_INTRO.md). A abertura permanece em START até a interação do jogador.
 
 ## Estrutura e publicação
 

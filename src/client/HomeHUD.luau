@@ -110,9 +110,9 @@ function HomeHUD.start(playerGui: Instance, state)
 		IgnoreGuiInset = true,
 		ResetOnSpawn = false,
 		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-		Enabled = true,
+		Enabled = state.introLocked ~= true,
 	})
-	local root = element("Frame", gui, {
+	local root = element("CanvasGroup", gui, {
 		Name = "HomeOverlay",
 		BackgroundTransparency = 1,
 		Size = UDim2.fromScale(1, 1),
@@ -446,6 +446,9 @@ function HomeHUD.start(playerGui: Instance, state)
 
 	return {
 		gui = gui,
+		SetIntroAlpha = function(_, alpha: number)
+			root.GroupTransparency = 1-math.clamp(alpha,0,1)
+		end,
 		SetNavigation = function(_, callback: (number) -> ())
 			navigateSettings = callback
 		end,
