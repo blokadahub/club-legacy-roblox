@@ -6,6 +6,7 @@ Timeline.WELCOME = 16.6
 Timeline.START_READY = 17.8
 Timeline.EXIT_SECONDS = 6
 Timeline.SOUNDS = table.freeze({6.3, 16.6, 0.5})
+local EPSILON=1e-6
 
 function Timeline.new(origin, emit)
 	return setmetatable({origin=origin, emit=emit, elapsed=0, offset=0,
@@ -23,7 +24,7 @@ function Timeline:Step(now, ready)
 	self.ready=ready
 	local elapsed=math.max(self.elapsed, now-self.origin-self.offset)
 	if not self.departure then
-		if elapsed>=Timeline.WELCOME and not ready then
+		if not self.fired.welcome and elapsed>=Timeline.WELCOME-EPSILON and not ready then
 			self.held=true
 			elapsed=Timeline.WELCOME
 		elseif self.held then
@@ -33,14 +34,16 @@ function Timeline:Step(now, ready)
 		end
 	end
 	self.elapsed=elapsed
-	if elapsed>=6.3 then self:_once("sound", 1) end
+	if elapsed>=6.3-EPSILON then self:_once("sound", 1, self.origin+6.3) end
 	-- Distinct keys preserve at-most-once delivery across large time jumps.
-	if elapsed>=Timeline.WELCOME and ready then self:_once("welcome", 2) end
+	if elapsed>=Timeline.WELCOME-EPSILON and ready then
+		self:_once("welcome", 2, self.origin+self.offset+Timeline.WELCOME)
+	end
 	if self.departure then
 		local exit=math.max(0, now-self.departure)
-		if exit>=0.5-1e-6 then self:_once("departure", 3) end
-		if exit>=2.9-1e-6 then self:_once("reveal") end
-		if exit>=Timeline.EXIT_SECONDS-1e-6 then
+		if exit>=0.5-EPSILON then self:_once("departure", 3, self.departure+0.5) end
+		if exit>=2.9-EPSILON then self:_once("reveal") end
+		if exit>=Timeline.EXIT_SECONDS-EPSILON then
 			self:_once("complete")
 			self.alive=false
 		end
@@ -48,15 +51,15 @@ function Timeline:Step(now, ready)
 end
 
 function Timeline:RequestStart(now)
-	if not self.alive or not self.ready or self.departure or self.elapsed<Timeline.START_READY then return false end
+	if not self.alive or not self.ready or self.departure or self.elapsed<Timeline.START_READY-EPSILON then return false end
 	self.departure=now
 	self:_once("start")
 	return true
 end
 
 function Timeline:Snapshot(now)
-	return {elapsed=self.elapsed, ready=self.ready, waiting=self.held,
-		canStart=self.alive and self.ready and not self.departure and self.elapsed>=Timeline.START_READY,
+	return {elapsed=self.elapsed, ready=self.ready, waiting=self.held, welcomed=self.fired.welcome==true,
+		canStart=self.alive and self.ready and not self.departure and self.elapsed>=Timeline.START_READY-EPSILON,
 		exit=if self.departure then math.max(0,now-self.departure) else nil}
 end
 

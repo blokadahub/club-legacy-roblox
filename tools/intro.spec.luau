@@ -3,24 +3,161 @@
 local Timeline=require(moduleNodes["src/client/Intro/IntroTimeline.luau"])
 local Visuals=require(moduleNodes["src/client/Intro/IntroVisuals.luau"])
 local Controller=require(moduleNodes["src/client/Intro/IntroController.luau"])
+local Audio=require(moduleNodes["src/client/Intro/IntroAudio.luau"])
 local Soundtrack=require(moduleNodes["src/client/Soundtrack.luau"])
 local App=require(moduleNodes["src/client/App.luau"])
 local UI=require(moduleNodes["src/client/UI.luau"])
 local count=0
 local function check(value,message) assert(value,message);count+=1 end
 local function near(a,b) return math.abs(a-b)<.0001 end
+-- Regression: a normal late load must satisfy a pending cue, not discard it.
+do
+	services.unloadedSounds=true
+	local audio=Audio.new()
+	advance(0)
+	local lateSound=services.SoundService:FindFirstChild("CL27IntroEffect1")
+	local beforeLate=#audioLog
+	audio:Play(1,now)
+	check(#audioLog==beforeLate,"Unloaded effect played before readiness")
+	advance(.2)
+	lateSound.IsLoaded=true
+	lateSound.Loaded:Fire()
+	check(#audioLog==beforeLate+1 and audioLog[#audioLog].name=="CL27IntroEffect1",
+		"Normal late load permanently lost its scheduled effect")
+	audio:Destroy()
+	services.unloadedSounds=false
+end
+-- Transient fetch failures retry once; duplicate completion notifications
+-- cannot replay a cue, and the retry is not an unbounded background loop.
+do
+	services.unloadedSounds=true
+	local attempts={}
+	services.preloadIntro=function(items,callback)
+		local sound=items[1]
+		attempts[sound.Name]=(attempts[sound.Name] or 0)+1
+		if attempts[sound.Name]==1 then callback(sound.SoundId,Enum.AssetFetchStatus.Failure)
+		else
+			sound.IsLoaded=true
+			sound.Loaded:Fire()
+			callback(sound.SoundId,Enum.AssetFetchStatus.Success)
+		end
+	end
+	local audio=Audio.new()
+	local plays=#audioLog
+	audio:Play(1,now)
+	advance(.36)
+	check(#audioLog==plays+1,"Retry did not recover the pending sound")
+	local recovered=services.SoundService:FindFirstChild("CL27IntroEffect1")
+	recovered.Loaded:Fire();audio:Play(1,now);audio:Step(now)
+	check(#audioLog==plays+1,"Loaded/preload/repeated request replayed sound")
+	advance(7)
+	for i=1,3 do check(attempts["CL27IntroEffect"..i]==2,"Preload retries unbounded") end
+	audio:Destroy()
+	services.preloadIntro=nil
+	services.unloadedSounds=false
+end
+-- A stuck native preload yields. Both attempts time out/cancel without
+-- stalling the client; later engine Loaded can still recover a live cue.
+do
+	services.unloadedSounds=true
+	local workers={}
+	services.preloadIntro=function()
+		table.insert(workers,coroutine.running())
+		coroutine.yield()
+	end
+	local audio=Audio.new()
+	advance(7)
+	check(#workers==6,"Stuck preloads did not remain bounded to two attempts per ID")
+	for _,thread in ipairs(workers) do check(coroutine.status(thread)=="dead","Timed-out preload worker survived") end
+	local plays=#audioLog
+	audio:Play(1,now)
+	advance(.1)
+	local sound=services.SoundService:FindFirstChild("CL27IntroEffect1")
+	sound.IsLoaded=true;sound.Loaded:Fire()
+	check(#audioLog==plays+1,"Timeout permanently poisoned a later Loaded recovery")
+	audio:Destroy()
+	services.preloadIntro=nil
+	services.unloadedSounds=false
+end
+-- New cues supersede older pending ones; expiry and destruction prevent
+-- audio from leaking into the next phase or into the released playlist.
+do
+	services.unloadedSounds=true
+	local audio=Audio.new()
+	advance(0)
+	local sound1=services.SoundService:FindFirstChild("CL27IntroEffect1")
+	local sound2=services.SoundService:FindFirstChild("CL27IntroEffect2")
+	local sound3=services.SoundService:FindFirstChild("CL27IntroEffect3")
+	local plays=#audioLog
+	audio:Play(1,now)
+	audio:Play(2,now)
+	sound1.IsLoaded=true;sound1.Loaded:Fire()
+	check(#audioLog==plays,"Superseded effect played after newer cue")
+	advance(.2)
+	sound2.IsLoaded=true;sound2.Loaded:Fire()
+	check(#audioLog==plays+1 and audioLog[#audioLog].name=="CL27IntroEffect2","Pending second effect lost")
+	audio:Play(3,now)
+	check(not sound2.IsPlaying,"Effects overlapped across cue handoff")
+	advance(2.01)
+	sound3.IsLoaded=true;sound3.Loaded:Fire();audio:Step(now)
+	check(#audioLog==plays+1,"Expired sound started out of phase")
+	audio:Play(1,now);audio:Play(3,now)
+	check(#audioLog==plays+1,"Old or repeated request replayed after expiry")
+	audio:Destroy()
+	sound2.Loaded:Fire()
+	check(#audioLog==plays+1,"Destroyed audio handled Loaded")
+	services.unloadedSounds=false
+end
+-- Frame stalls must use the original cue timestamp, not a fresh grace
+-- period based on whichever frame happened to deliver that event.
+do
+	local audio=Audio.new()
+	local plays=#audioLog
+	audio:Play(1,now-3)
+	check(#audioLog==plays,"Stale frame delivered an out-of-phase cue")
+	local scheduled=now+.5
+	audio:Play(2,scheduled)
+	audio:Step(now)
+	check(#audioLog==plays,"Future cue started early")
+	advance(.5);audio:Step(now)
+	check(#audioLog==plays+1 and near(audioLog[#audioLog].time,scheduled),"Future cue not synchronized")
+	audio:Destroy()
+end
+-- Polling also recovers readiness if Loaded/Preload completion was missed,
+-- with useful tolerance near the end of the two-second grace window.
+do
+	services.unloadedSounds=true
+	local audio=Audio.new()
+	local plays=#audioLog
+	audio:Play(1,now)
+	advance(1.9)
+	local sound=services.SoundService:FindFirstChild("CL27IntroEffect1")
+	sound.IsLoaded=true
+	audio:Step(now)
+	check(#audioLog==plays+1,"Within-window readiness lost without a Loaded notification")
+	audio:Step(now);sound.Loaded:Fire()
+	check(#audioLog==plays+1,"Polling and Loaded duplicated a recovered cue")
+	audio:Play(2,now)
+	local pendingSound=services.SoundService:FindFirstChild("CL27IntroEffect2")
+	audio:Destroy()
+	pendingSound.IsLoaded=true;pendingSound.Loaded:Fire();advance(5)
+	check(#audioLog==plays+1,"Cancelled pending cue or preload played after cleanup")
+	services.unloadedSounds=false
+end
 -- Timing remains identical at 60, 30, 15 and 5 Hz; each event fires once.
 for _,hz in ipairs({60,30,15,5}) do
 	local received={}
-	local timeline=Timeline.new(0,function(key,index) table.insert(received,{key,index}) end)
+	local timeline=Timeline.new(0,function(key,index,scheduledAt) table.insert(received,{key,index,scheduledAt}) end)
 	for frame=0,math.ceil(17.8*hz) do timeline:Step(frame/hz,true) end
 	check(#received==2 and received[1][2]==1 and received[2][2]==2,"Early sound order")
+	check(near(received[1][3],6.3) and near(received[2][3],16.6),"Sound cue times drift with framerate")
 	check(timeline:RequestStart(17.8),"START rejected")
 	check(not timeline:RequestStart(17.81),"Duplicate START")
 	timeline:Step(18.299,true)
 	check(#received==3,"Third effect too early")
 	timeline:Step(18.3,true)
 	check(received[4][1]=="departure" and received[4][2]==3,"Third effect at 18.3")
+	check(near(received[4][3],18.3),"Departure sound timestamp shifted")
 	timeline:Step(20.7,true)
 	check(received[5][1]=="reveal","Reveal must start at 20.7")
 	timeline:Step(23.799,true)
@@ -42,6 +179,26 @@ delayed:Step(155.99,true)
 check(delayed.alive,"Late START shortened departure")
 delayed:Step(156,true)
 check(not delayed.alive and eventsLog[#eventsLog]=="complete","Late START duration")
+do
+	local emitted={}
+	local timeline=Timeline.new(0,function(key,index,at) table.insert(emitted,{key,index,at}) end)
+	timeline:Step(17.8,true)
+	timeline:Step(18.1,false)
+	local snapshot=timeline:Snapshot(18.1)
+	check(snapshot.elapsed==18.1 and snapshot.welcomed and not snapshot.canStart,
+		"Temporary readiness loss rewound the intro")
+	check(not timeline:RequestStart(18.1),"START accepted a stale ready state")
+	local visuals=Visuals.new(playerGui)
+	visuals:Resize(Vector2.new(1600,900))
+	visuals:Draw(snapshot,"RealName",false,nil)
+	check(visuals.welcome.GroupTransparency==0 and not visuals.start.Active,
+		"Readiness loss left a blank welcome or enabled START")
+	visuals:Destroy()
+	timeline:Step(18.2,true)
+	check(timeline:RequestStart(18.2),"START did not recover after readiness returned")
+	timeline:Step(24.2,true)
+	check(#emitted==6 and near(emitted[4][3],18.7),"Readiness recovery duplicated/reordered events")
+end
 local cancelled=Timeline.new(0,function() error("Cancelled timeline dispatched") end)
 cancelled:Destroy();cancelled:Step(100,true)
 check(not cancelled:RequestStart(100),"Cancellation allowed START")
@@ -83,11 +240,14 @@ local logBefore=#audioLog
 local function tick(t)
 	advance(origin+t-now)
 	services.RunService.Heartbeat:Fire(1/30)
+	check(not transition.Transicao.Visible,"Opening invoked the normal dark loading veil")
 end
 tick(2.2)
 check(not transition.Transicao.Visible,"Opening used dark Cover")
 check(transition:FindFirstChild("IndicadorCL",true)==nil
 	and loader:FindFirstChild("IndicadorCL",true)~=nil,"Loader duplicated or not reparented")
+local ambient=loader:FindFirstChild("CarregamentoContinuo")
+check(ambient.BackgroundTransparency==1 and not ambient.Active,"Standalone loader darkened/intercepted the opening")
 tick(6.3)
 check(audioLog[#audioLog].name=="CL27IntroEffect1"
 	and audioLog[#audioLog].id=="rbxassetid://98087823124682","First SFX")
@@ -102,8 +262,12 @@ check(audioLog[#audioLog].name=="CL27IntroEffect2"
 	and audioLog[#audioLog].id=="rbxassetid://101494550141867","Welcome SFX")
 tick(17.8)
 check(overlay:FindFirstChild("START",true).Selectable,"START gamepad unavailable")
+local readyCamera=workspace.CurrentCamera
+workspace.CurrentCamera=nil
+overlay:FindFirstChild("START",true).Activated:Fire()
+workspace.CurrentCamera=readyCamera
 tick(40)
-check(overlay.Parent==playerGui and actualApp.state.menuInputLocked,"Welcome auto advanced")
+check(overlay.Parent==playerGui and actualApp.state.menuInputLocked,"Welcome auto advanced or START accepted stale readiness")
 check(#audioLog==logBefore+2,"Music or extra SFX during wait")
 overlay:FindFirstChild("START",true).Activated:Fire()
 overlay:FindFirstChild("START",true).Activated:Fire()
@@ -127,6 +291,116 @@ check(actualApp.state.screen=="Clubs" and not actualApp.state.menuInputLocked,"N
 actualApp.destroy()
 intro:Destroy()
 
+-- Production path with all three effects loading 200 ms after their cues.
+-- Audio recovery must not extend the 23.8 s sequence or the 6 s exit.
+do
+	services.unloadedSounds=true
+	services.preloadIntro=function() coroutine.yield() end
+	local base=now
+	local plays=#audioLog
+	local delayedApp
+	local delayedIntro=Controller.start(function(fx)
+		delayedApp=App.start({deferIntro=true,transitionFx=fx})
+		return delayedApp
+	end)
+	advance(0)
+	local function sample(t)
+		advance(base+t-now)
+		services.RunService.Heartbeat:Fire(1/30)
+		check(not delayedApp.transitionFx.layer.Visible,"Delayed audio introduced a normal loading veil")
+	end
+	local function loaded(index)
+		local sound=services.SoundService:FindFirstChild("CL27IntroEffect"..index)
+		sound.IsLoaded=true;sound.Loaded:Fire()
+	end
+	sample(6.3)
+	check(#audioLog==plays,"First unloaded cue played before ready")
+	sample(6.5);loaded(1)
+	check(#audioLog==plays+1 and near(audioLog[#audioLog].time,base+6.5),"First late cue lost")
+	sample(16.6)
+	check(#audioLog==plays+1,"Second unloaded cue played before ready")
+	sample(16.8);loaded(2)
+	check(#audioLog==plays+2 and near(audioLog[#audioLog].time,base+16.8),"Second late cue lost")
+	sample(17.8)
+	playerGui.CL27_Intro:FindFirstChild("START",true).Activated:Fire()
+	sample(18.3)
+	check(#audioLog==plays+2,"Third unloaded cue played before ready")
+	sample(18.5);loaded(3)
+	check(#audioLog==plays+3 and near(audioLog[#audioLog].time,base+18.5),"Third late cue lost")
+	sample(23.7)
+	local music=services.SoundService:FindFirstChild("CL27SoundtrackLocal")
+	music.IsLoaded=true;music.Loaded:Fire()
+	check(#audioLog==plays+3 and music.Volume==0,"Loaded event unlocked music before reveal")
+	sample(23.799)
+	check(delayedApp.state.introLocked and #audioLog==plays+3,"Early completion after audio recovery")
+	sample(23.8)
+	check(playerGui:FindFirstChild("CL27_Intro")==nil and not delayedApp.state.introLocked,
+		"Audio recovery extended cinematic duration")
+	check(#audioLog==plays+4 and audioLog[#audioLog].name=="CL27SoundtrackLocal"
+		and near(audioLog[#audioLog].time,base+23.8),"Music release timestamp changed")
+	delayedApp:CompleteIntro()
+	check(#audioLog==plays+4,"Repeated completion restarted music")
+	delayedApp.destroy();delayedIntro:Destroy()
+	services.preloadIntro=nil
+	services.unloadedSounds=false
+end
+
+-- START ends the welcome phase, including its still-pending sound.
+do
+	services.unloadedSounds=true
+	local base=now
+	local plays=#audioLog
+	local opening=Controller.start(function(fx)
+		return App.start({deferIntro=true,transitionFx=fx})
+	end)
+	advance(0)
+	advance(16.6);services.RunService.Heartbeat:Fire(1/30)
+	advance(1.2);services.RunService.Heartbeat:Fire(1/30)
+	playerGui.CL27_Intro:FindFirstChild("START",true).Activated:Fire()
+	advance(.1)
+	local welcomeSound=services.SoundService:FindFirstChild("CL27IntroEffect2")
+	welcomeSound.IsLoaded=true;welcomeSound.Loaded:Fire()
+	check(#audioLog==plays,"Late welcome sound started after START")
+	advance(.4)
+	local exitSound=services.SoundService:FindFirstChild("CL27IntroEffect3")
+	exitSound.IsLoaded=true
+	services.RunService.Heartbeat:Fire(1/30)
+	check(#audioLog==plays+1 and audioLog[#audioLog].name=="CL27IntroEffect3"
+		and near(audioLog[#audioLog].time,base+18.3),"Cancelling welcome disrupted departure sound")
+	opening:Destroy()
+	check(not services.SoundService:FindFirstChild("CL27SoundtrackLocal"),"Cancelled opening released music")
+	services.unloadedSounds=false
+end
+
+-- Geometry bounds catch strokes clipped by the CanvasGroup even without rendering.
+do
+	local visuals=Visuals.new(playerGui)
+	visuals:Resize(Vector2.new(1600,900))
+	visuals:Draw({elapsed=6.2,ready=true,canStart=false},"RealName",false,nil)
+	local circleCenter=visuals.logo.root.Position.X.Offset+visuals.logo.scale.Scale
+		*(visuals.logo.disc.Position.X.Offset+105-400)
+	check(near(circleCenter,800),"Solo CL Sports circle must return centered before title expansion")
+	visuals:Draw({elapsed=6.6,ready=true,canStart=false},"RealName",false,nil)
+	check(visuals.logo.disc.Position.X.Offset==0,"Expanded composition failed to align circle/title")
+	local word=visuals.logo.word
+	for _,stroke in ipairs(word:GetChildren()) do
+		if stroke:IsA("Frame") then
+			local angle=math.rad(stroke.Rotation)
+			local halfX=(math.abs(math.cos(angle))*stroke.Size.X.Offset
+				+math.abs(math.sin(angle))*stroke.Size.Y.Offset)/2
+			local halfY=(math.abs(math.sin(angle))*stroke.Size.X.Offset
+				+math.abs(math.cos(angle))*stroke.Size.Y.Offset)/2
+			check(stroke.Position.X.Offset-halfX>=0 and stroke.Position.X.Offset+halfX<=word.Size.X.Offset
+				and stroke.Position.Y.Offset-halfY>=0 and stroke.Position.Y.Offset+halfY<=word.Size.Y.Offset,
+				"Wordmark stroke clipped by its own CanvasGroup")
+		end
+	end
+	visuals:Draw({elapsed=22.25,ready=true,exit=4.45,canStart=false},"RealName",false,nil)
+	check(near(visuals.shield.BackgroundTransparency*visuals.cut.BackgroundTransparency,.5),
+		"Two black overlays darken the same final reveal")
+	visuals:Destroy()
+end
+
 -- Frame sampling across all phases, mobile layouts and reduced motion.
 for _,size in ipairs({Vector2.new(1920,1080),Vector2.new(854,393),Vector2.new(1024,768),Vector2.new(2560,1080),Vector2.new(393,854)}) do
 	local visuals=Visuals.new(playerGui)
@@ -149,12 +423,14 @@ for _,size in ipairs({Vector2.new(1920,1080),Vector2.new(854,393),Vector2.new(10
 		for _,t in ipairs({0,1.93,2.15,5.8,6.14,6.3,6.6,7.4,8.9,13.9,15.25,16.6,17.8}) do
 			visuals:Draw({elapsed=t,ready=true,canStart=t>=17.8},"RealName",reduced,nil)
 			check(visuals.shield.BackgroundTransparency==0,"Early background lost opacity")
+			check(facets.ImageTransparency==0 and facets.BackgroundTransparency==0,"Initial facets darkened or hidden")
 			check(visuals.cut.BackgroundTransparency==(if t==1.93 then 0 else 1),"Accidental loading veil")
 			check(visuals.logo.scale.Scale>0,"Invalid logo scale")
 			if reduced then check(visuals.logo.disc.Rotation==0,"Reduced motion rotated logo") end
 		end
 		visuals:Draw({elapsed=18,ready=true,exit=3,canStart=false},"RealName",reduced,nil)
-		check(visuals.shield.BackgroundTransparency>0 and visuals.shield.BackgroundTransparency<1,"Missing gradual reveal")
+		local revealAlpha=visuals.shield.BackgroundTransparency*visuals.cut.BackgroundTransparency
+		check(revealAlpha>0 and revealAlpha<1,"Missing gradual reveal")
 	end
 	visuals:Destroy()
 end

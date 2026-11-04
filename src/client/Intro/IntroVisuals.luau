@@ -6,6 +6,7 @@ local Background=require(script.Parent.IntroBackground)
 local Visuals={}
 local GREEN=Color3.fromRGB(35,255,80)
 local WHITE=Color3.new(1,1,1)
+local WORD_PADDING=16
 local function group(parent,name,size)
 	return UI.new("CanvasGroup",{Name=name,BackgroundTransparency=1,Size=size,GroupTransparency=0},parent)
 end
@@ -37,12 +38,14 @@ local function brand(parent)
 	UI.new("UICorner",{CornerRadius=UDim.new(1,0)},disc)
 	monogram(disc,30,26,1.35,Color3.fromRGB(16,18,17))
 	text(disc,"SPORTS",135,210,38,29,Color3.fromRGB(16,18,17))
-	local word=group(root,"CL27",UDim2.fromOffset(555,180))
-	word.Position=UDim2.fromOffset(245,15)
-	monogram(word,0,5,2.05,WHITE)
+	-- CanvasGroup clips its own texture. Padding preserves the complete
+	-- rotated stroke thickness without moving the visible wordmark.
+	local word=group(root,"CL27",UDim2.fromOffset(555+2*WORD_PADDING,180+2*WORD_PADDING))
+	word.Position=UDim2.fromOffset(245-WORD_PADDING,15-WORD_PADDING)
+	monogram(word,WORD_PADDING,5+WORD_PADDING,2.05,WHITE)
 	for _,line in ipairs({{275,26,370,26},{370,26,355,81},{355,81,272,81},
 		{272,81,254,152},{254,152,350,152},{401,26,513,26},{513,26,444,152}}) do
-		stroke(word,line,WHITE,24)
+		stroke(word,{line[1]+WORD_PADDING,line[2]+WORD_PADDING,line[3]+WORD_PADDING,line[4]+WORD_PADDING},WHITE,24)
 	end
 	local scale=UI.new("UIScale",{Scale=1},root)
 	local function color(tint)
@@ -131,7 +134,8 @@ function Visuals.new(playerGui)
 		local transformed=progress(t,6.3,6.6)
 		local reveal=if exit then progress(exit,2.9,6) else 0
 		background.GroupTransparency=0
-		shield.BackgroundTransparency=reveal
+		shield.BackgroundColor3=Color3.fromRGB(24,24,24)
+		shield.BackgroundTransparency=0
 		-- Viewport transparency follows reveal, no camera or lighting changes.
 		geometry:SetTransparency(if exit then math.max(progress(exit,.5,.78),reveal) else 0)
 		logo.root.Position=UDim2.fromOffset(800,450-240*shrinking)
@@ -141,10 +145,14 @@ function Visuals.new(playerGui)
 			logo.root.Position=UDim2.fromOffset(800,if t<7.4 then 450 else 210)
 		end
 		logo.root.Rotation=0
+		-- The reference reintroduces the circle alone at screen center;
+		-- it moves left only as the title expands into the full composition.
+		local circleSlide=if reduced or t<6.14 or t>=6.6 then 0 else 295*(1-ease(transformed))
+		logo.disc.Position=UDim2.fromOffset(circleSlide,0)
 		logo.disc.Rotation=if reduced or t<6.14 or t>6.6 then 0 else -24*(1-ease(progress(t,6.14,6.38)))
 		logo.rim.Visible=t>=6.14 and t<6.6
-		logo.rim.Position=UDim2.fromOffset(14*(1-ease(transformed)),0)
-		logo.word.Position=UDim2.fromOffset(245+(if reduced or t<6.14 then 0 else 340*(1-ease(transformed))),15)
+		logo.rim.Position=UDim2.fromOffset(circleSlide+14*(1-ease(transformed)),0)
+		logo.word.Position=UDim2.fromOffset(245-WORD_PADDING+(if reduced or t<6.14 then 0 else 340*(1-ease(transformed))),15-WORD_PADDING)
 		logo.word.GroupTransparency=if t>=5.8 and t<6.3 then 1 else 0
 		logo.root.GroupTransparency=if t<1.93 then 0 elseif t<2.15 then 1
 			elseif t<5.8 then 0 elseif t<6.14 then 1
@@ -171,9 +179,11 @@ function Visuals.new(playerGui)
 		end
 		messageText.Text=msg
 		message.GroupTransparency=math.clamp(alpha,0,1)
-		local welcomeIn=if t>=16.6 and snapshot.ready then ease(progress(t,16.6,17.15)) else 0
+		local welcomeIn=if t>=16.6 and (snapshot.ready or snapshot.welcomed) then ease(progress(t,16.6,17.15)) else 0
 		welcome.GroupTransparency=1-welcomeIn
 		welcome.Position=UDim2.fromOffset(250,305+(if reduced then 0 else 32*(1-welcomeIn)))
+		line1.Position=UDim2.fromOffset(0,0)
+		line2.Position=UDim2.fromOffset(0,96)
 		start.Active=snapshot.canStart or errorMessage~=nil
 		start.Selectable=start.Active
 		if errorMessage then
@@ -199,15 +209,14 @@ function Visuals.new(playerGui)
 				passage.BackgroundTransparency=1-math.min(progress(exit,.5,.72),1-progress(exit,1.05,1.5))
 			end
 			if exit>=1.5 then
-				-- Black interval followed by gradual reveal of the already-built lobby.
-				shield.BackgroundColor3=Color3.new(0,0,0)
-				shield.BackgroundTransparency=reveal
+				-- Only cut owns the black interval/reveal. Leaving the shield
+				-- opaque too would multiply the fade and hide the lobby longer.
+				shield.BackgroundTransparency=1
 			end
 		end
 		return reveal, if exit then progress(exit,4.25,6) else 0
 	end
 	function self:Destroy() geometry:Destroy();gui:Destroy() end
-	-- Closure used by Draw; Background owns its independent ViewportFrame.
 	return self
 end
 return Visuals

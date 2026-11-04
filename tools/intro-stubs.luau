@@ -20,11 +20,26 @@ Instance.new=function(className)
 	return object
 end
 local os={clock=function() return now end}
-task.defer=function(callback) return later(0,callback) end
+-- Real coroutines let PreloadAsync tests model a yielding/stuck fetch.
+task.defer=function(callback)
+	local thread=coroutine.create(callback)
+	local job=later(0,function()
+		local ok,err=coroutine.resume(thread)
+		if not ok then error(err) end
+	end)
+	job.thread=thread
+	return job
+end
+local originalCancel=task.cancel
+task.cancel=function(job)
+	originalCancel(job)
+	if job.thread and coroutine.status(job.thread)=="suspended" then coroutine.close(job.thread) end
+end
 services.Players.LocalPlayer.Name="OpeningRealPlayer"
 services.ReplicatedFirst={RemoveDefaultLoadingScreen=function() services.defaultLoadingRemoved=true end}
 services.ContentProvider={
 	PreloadAsync=function(_,items,callback)
+		if services.preloadIntro then return services.preloadIntro(items,callback) end
 		for _,object in ipairs(items) do
 			callback(object.SoundId, if object.IsLoaded then Enum.AssetFetchStatus.Success else Enum.AssetFetchStatus.Failure)
 		end
@@ -33,6 +48,9 @@ services.ContentProvider={
 local audioLog={}
 function methods:Play()
 	assert(self.ClassName=="Sound")
+	if string.find(self.Name,"CL27IntroEffect",1,true) then
+		assert(self.IsLoaded,"Intro attempted playback before Loaded")
+	end
 	self.IsPlaying=true
 	table.insert(audioLog,{name=self.Name,id=self.SoundId,time=now})
 end

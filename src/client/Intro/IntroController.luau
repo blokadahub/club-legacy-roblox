@@ -18,7 +18,8 @@ function Controller.start(prepare)
 	local visuals=Visuals.new(playerGui)
 	pcall(function() ReplicatedFirst:RemoveDefaultLoadingScreen() end)
 	local scope=Scope.new()
-	local effects=Audio.new()
+	local clock=os.clock
+	local effects=Audio.new(clock)
 	local fx=TransitionFX.start(playerGui)
 	fx:SetIndicatorHost(visuals.loader)
 	local app=nil
@@ -28,7 +29,6 @@ function Controller.start(prepare)
 	local complete=false
 	local loaderEnabled=false
 	local focused=false
-	local clock=os.clock
 	local timeline
 	local function destroy()
 		if not scope.alive then return end
@@ -42,8 +42,9 @@ function Controller.start(prepare)
 		end
 		visuals:Destroy()
 	end
-	timeline=Timeline.new(clock(),function(event,index)
-		if event=="sound" or event=="welcome" or event=="departure" then effects:Play(index) end
+	timeline=Timeline.new(clock(),function(event,index,scheduledAt)
+		if event=="sound" or event=="welcome" or event=="departure" then effects:Play(index,scheduledAt) end
+		if event=="start" then effects:CancelPending() end
 		if event=="complete" then
 			-- Final order is deliberate: effects stop, HUD/inputs/music release once,
 			-- the independent opening camera and overlay are then destroyed.
@@ -80,8 +81,10 @@ function Controller.start(prepare)
 	end
 	scope:Connect(visuals.start.Activated,function()
 		if errorMessage then prepareLobby();return end
-		timeline:Step(clock(),ready)
-		if timeline:RequestStart(clock()) then
+		local now=clock()
+		ready=app~=nil and app:IsIntroReady()
+		timeline:Step(now,ready)
+		if timeline:RequestStart(now) then
 			GuiService.SelectedObject=nil
 			visuals.start.Active=false
 			visuals.start.Selectable=false
@@ -105,6 +108,7 @@ function Controller.start(prepare)
 		if app then ready=app:IsIntroReady() end
 		timeline:Step(now,ready)
 		if not scope.alive then return end
+		effects:Step(now)
 		local snapshot=timeline:Snapshot(now)
 		local reduced=app and app.state.settings.reducedMotion==true or false
 		local _,hudAlpha=visuals:Draw(snapshot,player.Name,reduced,errorMessage)
