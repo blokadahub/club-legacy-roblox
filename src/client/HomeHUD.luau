@@ -98,7 +98,7 @@ function HomeHUD.start(playerGui: Instance, state)
 	local player = Players.LocalPlayer
 	local connections: {RBXScriptConnection} = {}
 	local alive = true
-	local current = math.clamp(state.homeFocus or 3, 1, #ITEMS)
+	local current = math.clamp(state.homeFocus or 1, 1, #ITEMS)
 	local hovered: number? = nil
 	local navigateSettings: ((number) -> ())? = nil
 	local navigatePrimary: ((number, number?) -> ())? = nil
@@ -446,6 +446,7 @@ function HomeHUD.start(playerGui: Instance, state)
 
 	return {
 		gui = gui,
+		GetSelectedButton = function() return rows[current].button end,
 		SetIntroAlpha = function(_, alpha: number)
 			root.GroupTransparency = 1-math.clamp(alpha,0,1)
 		end,

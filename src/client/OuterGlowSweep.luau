@@ -207,7 +207,7 @@ local function pillPose(width: number, height: number, fraction: number): (Vecto
 	return Vector2.new(right - distance, cy + r), 180
 end
 
-function OuterGlowSweep.newCapsule(button: Instance)
+function OuterGlowSweep.newCapsule(button: Instance, sizeProvider: ((Instance) -> Vector2)?)
 	local overlay = make("Frame", button, {
 		Name = "OuterGlowSweepCapsula",
 		Position = UDim2.fromScale(0, 0),
@@ -235,7 +235,9 @@ function OuterGlowSweep.newCapsule(button: Instance)
 	end
 	local self = {overlay = overlay, samples = samples}
 	function self:Step(time: number)
-		local size = (button :: any).AbsoluteSize
+		-- UIScale owners supply their local canvas dimensions. AbsoluteSize
+		-- would otherwise be scaled a second time by the child offsets.
+		local size = if sizeProvider then sizeProvider(button) else (button :: any).AbsoluteSize
 		local width = if typeof(size) == "Vector2" and size.X > 0 then size.X else 230
 		local height = if typeof(size) == "Vector2" and size.Y > 0 then size.Y else 56
 		if math.abs(width - previousWidth) > 0.25 or math.abs(height - previousHeight) > 0.25 then
