@@ -79,7 +79,16 @@ def validate_sources() -> list[Path]:
         if route != "HomeInterior":
             require((ROOT / f"src/client/Screens/{route}.luau").is_file(), f"Tela ausente: {route}")
     require("HomeTraining" not in app_text, "HomeTraining nao pode permanecer no App.")
-    require("function Scene:_training" not in (ROOT / "src/client/Scene.luau").read_text(), "Geometria 3D de treinamento deve permanecer removida.")
+    scene_text = (ROOT / "src/client/Scene.luau").read_text()
+    require("function Scene:_training" not in scene_text, "Geometria 3D de treinamento deve permanecer removida.")
+    # These Lighting properties are restricted in live LocalScripts despite being
+    # serialized successfully by Rojo and accepted by the Luau compiler.
+    for restricted in ("LightingStyle", "PrioritizeLightingQuality"):
+        direct_access = re.search(rf"\\bLighting\\s*\\.\\s*{restricted}\\b", scene_text)
+        indexed_access = re.search(rf"""\\bLighting\\s*\\[\\s*['\\"]{restricted}['\\"]\\s*\\]""", scene_text)
+        string_key = re.search(rf"""['\\"]{restricted}['\\"]""", scene_text)
+        require(not (direct_access or indexed_access or string_key),
+                f"Propriedade Lighting protegida no cliente: {restricted}. Configure em default.project.json, não em Scene.luau.")
     for doc in ("AGENTS.md", "CL27_PLAN.md", "CL27_PROGRESS.md"):
         require((ROOT / doc).is_file(), f"Documento obrigatório ausente: {doc}")
     print(f"Estrutura: {len(sources)} fontes, 14 rotas, mapeamento Rojo e require locais verificados.")
