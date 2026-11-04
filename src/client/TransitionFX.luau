@@ -48,6 +48,7 @@ function TransitionFX.start(playerGui: Instance)
 		Active = false, Visible = false, ZIndex = 2,
 	})
 	local persistent, persistentReduced = false, false
+	local manualClock = false
 	local alive, active, reduced = true, false, false
 	local elapsed, accumulator = 0, 0
 	local tweens: {Tween} = {}
@@ -63,7 +64,7 @@ function TransitionFX.start(playerGui: Instance)
 		tween:Play()
 	end
 	local connection = RunService.Heartbeat:Connect(function(dt)
-		if not alive or not active or reduced then return end
+		if not alive or not active or reduced or manualClock then return end
 		accumulator += math.min(math.max(dt, 0), 0.1)
 		if accumulator < (1 / 30) then return end
 		elapsed += accumulator
@@ -72,6 +73,16 @@ function TransitionFX.start(playerGui: Instance)
 	end)
 	return {
 		gui = gui, layer = veil, emblem = emblem,
+		-- Move the SAME ambient mark into the opening overlay, never call Cover.
+		SetIndicatorHost = function(_, host: Instance?)
+			if not alive then return end
+			ambient.Parent = host or gui
+		end,
+		SetIndicatorTime = function(_, time: number?)
+			if not alive then return end
+			manualClock = time ~= nil
+			if time and not reduced then letterFX:Step(time) end
+		end,
 		Cover = function(_, reducedMotion: boolean)
 			if not alive then return 0 end
 			cancel()

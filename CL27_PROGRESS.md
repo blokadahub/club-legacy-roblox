@@ -1,5 +1,32 @@
 # CL 27 — progresso verificável
 
+## Revisão da abertura — PR #11
+
+- PR #11 existente e em rascunho confirmado pelo site do GitHub; branch remota e checkout coincidiam em 7eae2e3 antes das correções. O CI anterior 41754409795 foi consultado e estava em Success. Nenhum PR adicional criado.
+- Auditoria 1: quadros da referência reexaminados. Corrigidos círculo isolado fora do centro, traços recortados pelo CanvasGroup e revelação com duas camadas pretas acumuladas. Sete facetas / 14 peças, câmera independente e identidade própria preservadas. Render real ainda não avaliado.
+- Auditoria 2: áudio deixa de ser descartado no primeiro IsLoaded=false. Pré-carregamento paralelo com até duas tentativas limitadas a três segundos cada, retry após 0,35 s e pedido pendente por até dois segundos desde o marco absoluto. Loaded, preload e polling recuperam uma vez; evento posterior/expiração/destruição impedem reprodução fora de fase. Sem espera global ou sons substitutos.
+- Mantidos 6,30 s / 16,60 s / START+0,50 s. Cargas normais tardias não deslocam a timeline: teste com todos os efeitos atrasados em 200 ms conclui em 23,80 s com START em 17,80 s e saída de seis segundos. Perda transitória de prontidão após boas-vindas não rebobina a animação; START revalida o estado no clique.
+- Auditoria 3: falhas reproduzidas por testes antes das respectivas correções. Suíte de abertura ampliada de 616 para 836 asserções, incluindo preload suspenso/timeout, retry, recuperação até 1,9 s, expiração e callbacks duplicados. Nenhuma asserção de falha removida para encobrir defeitos.
+- Regressão: 43 fontes Luau, 653 verificações de dados, smoke 519 montagens/381 callbacks/240 asserções, 5.907 asserções de estados/Clubs; Rojo 7.7.1 e XML com fontes idênticas. Catálogo API: 424 referências, zero erros. Resultado correspondente ao commit e CI da revisão na entrega.
+- Música continua silenciosa até a revelação completa; teste cobre Loaded antecipado e CompleteIntro duplicado. Indicador CL permanece único, transparente e sem Cover inicial. App, Soundtrack, TransitionFX, Scene, túnel, iluminação, névoa, controles e workflows foram preservados nesta revisão.
+- A consulta do CI usa as páginas normais do GitHub; não foi necessário resolver o 403 da API nem alterar a rede. Sem merge ou publicação Roblox.
+- Pendente de Studio/Player: composição e animação renderizadas, audição/conteúdo/duração/permissão dos três assets, toque/gamepad e desempenho reais. Testes com stubs não aprovam esses itens. Detalhes em docs/CINEMATIC_INTRO.md.
+
+## Abertura cinematográfica CL 27
+
+- Base main confirmada via fetch: 133f6a1c21691deb6e684d1467f5197f4b62b7f8, incluindo os merges dos PRs #9 e #10. Branch dedicada feat/cl27-cinematic-intro. Backup verificado em bundle externo e branch remota backup/pre-cinematic-intro-133f6a1.
+- Referência acessível: ffprobe confirmou 1920×1080 / 60 FPS / 23,800454 s. Inspeção de quadros da sequência inteira e amostragem adicional nas transformações/saída. Não confundir isso com captura do resultado no Roblox.
+- Implementados fundo estático de sete facetas, marca CL Sports/CL 27 própria, transformação, mensagens locais honestas, nome real do jogador, boas-vindas interativas e saída de seis segundos para o lobby existente.
+- O escudo nasce antes de carregar App. O lobby é construído oculto uma vez; o mesmo indicador de TransitionFX é usado sem Cover inicial. Navegação e música ficam bloqueadas até completar a revelação. Soundtrack.create/release separa construção da reprodução e preserva as 12 faixas.
+- Efeitos autorizados: 98087823124682 em 6,30 s; 101494550141867 em 16,60 s (adiado se lobby indisponível); 135910449013772 em START + 0,50 s. Com START em 17,80 s, término/música em 23,80 s. Sem avanço automático da tela START, narração ou efeito extra em 22,5 s.
+- Auditoria 1 — composição por código contra a referência: enquadramento cover das facetas, conteúdo fit 1600×900, proporções da marca, posição superior e margens. START com mínimo físico 112×48 px e apoio reposicionado para não colidir. Fidelidade renderizada pendente.
+- Auditoria 2 — estados/animação: relógio absoluto, eventos únicos, testes a 60/30/15/5 Hz, espera longa no START, gate de prontidão, saída completa, efeitos ordenados, música liberada uma vez, movimento reduzido e cancelamento. Sem medição de curvas perceptuais no motor.
+- Auditoria 3 — integridade: 43 fontes aprovadas em sintaxe Luau 0.745; 653 verificações de dados; smoke com 519 montagens / 381 callbacks / 240 asserções; 5.907 asserções existentes de estados/Clubs; 616 asserções novas da abertura. Rojo 7.7.1 gera XML com as 43 fontes idênticas. API-Dump: 424 referências estáticas, zero erros; propriedades novas relevantes conferidas. git diff --check aprovado.
+- O workflow de build inclui a nova suíte. publish.yml, IDs Roblox e módulos dos ambientes/túnel não foram alterados.
+- Documentação completa de tempos, arquivos e roteiro Studio em [CINEMATIC_INTRO.md](docs/CINEMATIC_INTRO.md).
+- Limites: sem Studio/Player; render, toque/gamepad reais, FPS, audição/duração/permissão dos efeitos não certificados. O teste negativo de áudio produz avisos esperados e continua funcional.
+- Registro histórico da primeira entrega: API do GitHub negada pelo proxy (403), sem confirmação do CI naquele momento. Posteriormente o usuário criou o PR #11 e informou a aprovação do CI; na revisão acima a consulta funcionou pelo site do GitHub, sem reconfigurar a rede.
+
 ## Ciclo 1 — inspeção e arquitetura
 
 - [x] Repositório identificado pela conexão GitHub; main e duas branches examinadas.

@@ -25,8 +25,9 @@ local FADE_SECONDS = 0.55
 local LOAD_TIMEOUT = 18
 local MUSIC_VOLUME = 0.4
 
-function Soundtrack.start(screenGui: ScreenGui)
+function Soundtrack.create(screenGui: ScreenGui)
 	local scope = Scope.new()
+	local released = false
 	local trackSound = UI.new("Sound", {
 		Name = "CL27SoundtrackLocal",
 		Looped = false, Volume = 0,
@@ -58,7 +59,7 @@ function Soundtrack.start(screenGui: ScreenGui)
 
 	local playTrack: (number) -> ()
 	local function queueNext()
-		if waiting or currentIndex == 0 then return end
+		if not released or waiting or currentIndex == 0 then return end
 		local nextTrack = randomIndex()
 		if not nextTrack then return end
 		generation += 1
@@ -72,7 +73,7 @@ function Soundtrack.start(screenGui: ScreenGui)
 	end
 
 	playTrack = function(index: number)
-		if not scope.alive then return end
+		if not scope.alive or not released then return end
 		generation += 1
 		local token = generation
 		currentIndex = index
@@ -82,7 +83,9 @@ function Soundtrack.start(screenGui: ScreenGui)
 		trackSound.TimePosition = 0
 		trackSound.Volume = 0
 		trackSound:Play()
-		scope:Tween(trackSound, {Volume = MUSIC_VOLUME}, FADE_SECONDS)
+		if trackSound.IsLoaded then
+			scope:Tween(trackSound, {Volume = MUSIC_VOLUME}, FADE_SECONDS)
+		end
 		scope:Delay(LOAD_TIMEOUT, function()
 			if token ~= generation or trackSound.IsLoaded or waiting then return end
 			failed[index] = true
@@ -101,6 +104,11 @@ function Soundtrack.start(screenGui: ScreenGui)
 	end
 
 	scope:Connect(trackSound.Ended, queueNext)
+	scope:Connect(trackSound.Loaded, function()
+		if released and currentIndex~=0 and not waiting then
+			scope:Tween(trackSound, {Volume = MUSIC_VOLUME}, FADE_SECONDS)
+		end
+	end)
 	scope:Connect(RunService.Heartbeat, function()
 		if waiting or not trackSound.IsLoaded or not trackSound.IsPlaying then return end
 		local duration = trackSound.TimeLength
@@ -111,9 +119,15 @@ function Soundtrack.start(screenGui: ScreenGui)
 		end
 	end)
 	scope:Connect(screenGui.Destroying, function() scope:Destroy() end)
-	local firstTrack = randomIndex()
-	if firstTrack then playTrack(firstTrack) end
-	return {destroy = function() scope:Destroy() end}
+	return {
+		release = function()
+			if released or not scope.alive then return end
+			released = true
+			local firstTrack = randomIndex()
+			if firstTrack then playTrack(firstTrack) end
+		end,
+		destroy = function() scope:Destroy() end,
+	}
 end
 
 return Soundtrack

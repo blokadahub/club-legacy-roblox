@@ -12,10 +12,12 @@ import tempfile
 root = Path(__file__).resolve().parent.parent
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--runtime", required=True)
+parser.add_argument("--intro", action="store_true", help="Run opening timeline/integration tests using the same narrow stubs")
 args = parser.parse_args()
 prelude = (root / "tools/runtime-smoke.luau").read_text().split("-- MODULES", 1)[0]
 setup = r'''
 events.Ended = true
+events.Loaded = true
 local NumberRange = {new = function(a, b) return {Min=a, Max=b or a} end}
 function methods:Emit(count)
     assert(self.ClassName == 'ParticleEmitter')
@@ -134,6 +136,9 @@ paths = sorted((root / "src/shared").glob("*.luau"))
 paths += [root / f"src/client/{name}.luau" for name in ("Scope", "Rig", "UI", "SettingsIcons", "Soundtrack", "MenuAvatar", "OuterGlowSweep", "HomeShowcase", "RadialGlow", "HomeHUD", "SettingsHUD", "TransitionFX", "App")]
 paths += sorted((root / "src/client/Screens").glob("*.luau"))
 paths += sorted((root / "src/client/Environments").glob("*.luau"))
+if args.intro:
+    paths += sorted((root / "src/client/Intro").glob("*.luau"))
+    setup += (root / "tools/intro-stubs.luau").read_text()
 paths.append(root / "src/client/Scene.luau")
 parts = ["local factories, moduleNodes, cache = {}, {}, {}\nlocal require\n"]
 parts.append("local clientRoot = Instance.new('Folder')\nlocal sharedRoot = Instance.new('Folder'); sharedRoot.Name = 'CL27'; sharedRoot.Parent = services.ReplicatedStorage\n")
@@ -165,11 +170,13 @@ for path in paths:
         parts.append("if not folders['src/client/Screens'] then local folder = Instance.new('Folder'); folder.Name = 'Screens'; folder.Parent = clientRoot; folders['src/client/Screens'] = folder end\n")
     if parent == "src/client/Environments":
         parts.append("if not folders['src/client/Environments'] then local folder = Instance.new('Folder'); folder.Name = 'Environments'; folder.Parent = clientRoot; folders['src/client/Environments'] = folder end\n")
+    if parent == "src/client/Intro":
+        parts.append("if not folders['src/client/Intro'] then local folder = Instance.new('Folder'); folder.Name = 'Intro'; folder.Parent = clientRoot; folders['src/client/Intro'] = folder end\n")
     name = "SceneReal" if path.stem == "Scene" else path.stem
     parts.append(f"do local node = Instance.new('ModuleScript'); node.Name = '{name}'; node.Parent = folders['{parent}']; node:SetAttribute('ModulePath', '{relative}'); moduleNodes['{relative}'] = node end\n")
     parts.append(f"factories['{relative}'] = function(script)\n{path.read_text()}\nend\n")
 parts.append("require = function(node) assert(typeof(node) == 'Instance' and node:IsA('ModuleScript')); local path = node:GetAttribute('ModulePath'); if cache[path] == nil then cache[path] = assert(factories[path], 'Missing factory: ' .. tostring(path))(node) end; return cache[path] end\n")
-spec = (root / "tools/app-states.spec.luau").read_text()
+spec = (root / ("tools/intro.spec.luau" if args.intro else "tools/app-states.spec.luau")).read_text()
 with tempfile.TemporaryDirectory(prefix="cl27-app-") as folder:
     generated = Path(folder) / "app-check.luau"
     generated.write_text(prelude + setup + "\n".join(parts) + spec)

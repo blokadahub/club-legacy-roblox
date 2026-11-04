@@ -20,21 +20,25 @@ local screens={}
 for _,id in ipairs(App.routes) do
 	screens[id]=require(script.Parent.Screens[if id=="HomeInterior" then "Home" else id])
 end
-function App.start()
-	UI.inputLocked=false
+function App.start(options)
+	options=options or {}
+	local introLocked=options.deferIntro==true
+	local introHudVisible=false
+	UI.inputLocked=introLocked
 	local player=Players.LocalPlayer
 	local playerGui=player:WaitForChild("PlayerGui")
 	local previous=playerGui:FindFirstChild("CL27")
 	if previous then previous:Destroy() end
+	UI.inputLocked=introLocked
 	pcall(function() StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All,false) end)
 	local gui=UI.new("ScreenGui",{Name="CL27",ResetOnSpawn=false,IgnoreGuiInset=true,
-		ZIndexBehavior=Enum.ZIndexBehavior.Sibling,DisplayOrder=20},playerGui)
+		ZIndexBehavior=Enum.ZIndexBehavior.Sibling,DisplayOrder=20,Enabled=not introLocked},playerGui)
 	local lifetime=Scope.new()
-	local soundtrack=Soundtrack.start(gui)
+	local soundtrack=Soundtrack.create(gui)
 	lifetime:Add(function() soundtrack.destroy() end)
 	local state={screen="HomeInterior",homeFocus=3,homeClub=1,awayClub=2,homeKit=1,awayKit=2,activeSide="home",
 		homeReady=false,awayReady=false,selectedPlayer=10,formation=1,assignments={},month=11,year=2026,
-		shortlist={},training={},accent="Turquesa",menuInputLocked=false,settings={reducedMotion=false,quality="Alta",highContrast=false,showHints=true}}
+		shortlist={},training={},accent="Turquesa",introLocked=introLocked,menuInputLocked=introLocked,settings={reducedMotion=false,quality="Alta",highContrast=false,showHints=true}}
 	-- HUD nasce ANTES do cenário e do render das páginas: uma falha no 3D
 	-- nunca pode deixar o jogador diante de uma tela sem menu.
 	local homeHud=HomeHUD.start(playerGui,state)
@@ -82,7 +86,7 @@ function App.start()
 	local render,go
 	-- Carregamento CL neon: sobreposicao leve independente do cenario,
 	-- respeita toque, gamepad e visualizacao em celular horizontal.
-	local transitionFx=TransitionFX.start(playerGui)
+	local transitionFx=options.transitionFx or TransitionFX.start(playerGui)
 	lifetime:Add(function() transitionFx:Destroy() end)
 	local transition=transitionFx.layer
 	-- Retorno em pixels reais, não reduzido pelo UIScale do canvas 16:9.
@@ -110,9 +114,9 @@ function App.start()
 	end
 	local function unlockNavigation()
 		busy=false
-		UI.inputLocked=false
-		state.menuInputLocked=false
-		if pageScope then pageScope.inputsPaused=false end
+		UI.inputLocked=introLocked
+		state.menuInputLocked=introLocked
+		if pageScope then pageScope.inputsPaused=introLocked end
 	end
 	local toast=UI.panel(canvas,490,786,620,48,Theme.background,.05)
 	toast.ZIndex=120
@@ -131,8 +135,8 @@ function App.start()
 		local wasOpen=tray~=nil
 		if trayScope then trayScope:Destroy();trayScope=nil end
 		if tray then tray:Destroy();tray=nil end
-		if pageScope then pageScope.inputsPaused=busy end
-		UI.inputLocked=busy
+		if pageScope then pageScope.inputsPaused=busy or introLocked end
+		UI.inputLocked=busy or introLocked
 		if wasOpen then
 			GuiService.SelectedObject=if selectedBeforeTray and selectedBeforeTray.Parent then selectedBeforeTray else nil
 			selectedBeforeTray=nil
@@ -156,7 +160,7 @@ function App.start()
 		GuiService.SelectedObject=first
 	end
 	local function toggleTray()
-		if busy then return end
+		if busy or introLocked then return end
 		if tray then closeTray();return end
 		selectedBeforeTray=GuiService.SelectedObject
 		if pageScope then pageScope.inputsPaused=true end
@@ -199,7 +203,7 @@ function App.start()
 		if page then page:Destroy() end
 		GuiService.SelectedObject=nil
 		pageScope=Scope.new()
-		pageScope.inputsPaused=busy
+		pageScope.inputsPaused=busy or introLocked
 		UI.accent=if state.accent=="Esmeralda" then Color3.fromRGB(94,240,154) elseif state.accent=="Azul" then Color3.fromRGB(115,193,255) else Theme.accent
 		UI.highContrast=state.settings.highContrast==true
 		UI.reducedMotion=state.settings.reducedMotion
@@ -208,7 +212,7 @@ function App.start()
 		-- A UI de Settings fica em outro ScreenGui, nunca sob Transicao.
 		settingsHud:SetVisible(state.screen=="Settings")
 		local wanted=if state.screen=="HomeInterior" then "Interior" elseif state.screen=="Kits" then "Kits" elseif state.screen=="Clubs" then "Tunnel" else "Arena"
-		homeHud:SetVisible(wanted=="Interior")
+		homeHud:SetVisible(wanted=="Interior" and not introLocked)
 		if wanted~=mode then scene:Show(wanted,Data.clubs[state.homeClub],Data.clubs[state.awayClub],state.homeKit,state.awayKit);mode=wanted
 		else scene:UpdateClubs(Data.clubs[state.homeClub],Data.clubs[state.awayClub],state.homeKit,state.awayKit) end
 		 scene:ApplySettings(state.settings)
@@ -249,7 +253,7 @@ function App.start()
 			UI.button(footer,"⌂  INÍCIO",391,10,130,40,function() go("HomeInterior") end,pageScope,{quiet=true,textSize=14})
 			UI.text(footer,"CL 27  /  APRESENTAÇÃO VISUAL",1240,17,314,25,10,Theme.muted).TextXAlignment=Enum.TextXAlignment.Right
 		end
-		if not busy then focusPage(focusOrdinal) end
+		if not busy and not introLocked then focusPage(focusOrdinal) end
 		if not busy and not state.settings.reducedMotion then
 			page.GroupTransparency=0.22
 			pageScope:Tween(page,{GroupTransparency=0},0.18)
@@ -280,6 +284,7 @@ function App.start()
 
 	go=function(id,back)
 		if not lifetime.alive then return end
+		if introLocked then return end
 		if not screens[id] then notify("Esta seção não está disponível.");return end
 		if busy then pending={id,back};return end
 		if id==state.screen then closeTray();return end
@@ -357,7 +362,7 @@ function App.start()
 		go(target)
 	end)
 	lifetime:Connect(UserInputService.InputBegan,function(input,processed)
-		if busy or processed or UserInputService:GetFocusedTextBox() then return end
+		if busy or introLocked or processed or UserInputService:GetFocusedTextBox() then return end
 		if input.KeyCode==Enum.KeyCode.M or input.KeyCode==Enum.KeyCode.ButtonY then
 			if state.screen~="Clubs" then toggleTray() end
 		elseif input.KeyCode==Enum.KeyCode.B or input.KeyCode==Enum.KeyCode.ButtonB then
@@ -374,6 +379,34 @@ function App.start()
 		state.menuInputLocked=false
 	end)
 	render()
-	return {state=state,go=go,destroy=function() gui:Destroy() end}
+	if not introLocked then soundtrack.release() end
+	return {
+		state=state,go=go,transitionFx=transitionFx,
+		IsIntroReady=function()
+			return lifetime.alive and mode=="Interior" and workspace.CurrentCamera~=nil
+				and homeHud.gui.Parent~=nil
+		end,
+		RevealIntro=function(_,alpha)
+			if not lifetime.alive or not introLocked then return end
+			gui.Enabled=alpha>0
+			homeHud:SetIntroAlpha(alpha)
+			if introHudVisible~=(alpha>0) then
+				introHudVisible=alpha>0
+				homeHud:SetVisible(introHudVisible)
+			end
+		end,
+		CompleteIntro=function()
+			if not lifetime.alive or not introLocked then return end
+			introLocked=false
+			state.introLocked=false
+			gui.Enabled=true
+			homeHud:SetIntroAlpha(1)
+			homeHud:SetVisible(true)
+			unlockNavigation()
+			focusPage()
+			soundtrack.release()
+		end,
+		destroy=function() gui:Destroy() end,
+	}
 end
 return App

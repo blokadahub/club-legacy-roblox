@@ -1,5 +1,9 @@
 # CL 27 — plano técnico
 
+## Abertura cinematográfica
+
+O bootstrap único agora monta IntroController antes de carregar App. Timeline monotônica preserva os marcos da referência e aguarda START; o lobby existente é preparado em segundo plano com navegação e música bloqueadas. O indicador de TransitionFX é compartilhado sem Cover inicial; só após a revelação Soundtrack.create/release libera a playlist. Fundo de facetas independente, marca própria e três efeitos autorizados. Arquitetura, tempos e limites em [CINEMATIC_INTRO.md](docs/CINEMATIC_INTRO.md).
+
 ## Inspeção inicial — 03/11/2026
 
 Repositório confirmado pela conexão GitHub: `blokadahub/club-legacy-roblox`.
