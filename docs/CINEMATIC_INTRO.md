@@ -50,6 +50,12 @@ Antes do START, uma perda temporária de prontidão posterior às boas-vindas ma
 
 ## Implementação e recursos
 
+### Boas-vindas atualizadas em 04/11/2026
+
+As duas imagens recebidas orientam a composição: marca própria branca no centro superior, título WELCOME / TO THE CLUB em GothamBlack a 118 unidades e verde 0/239/83, facetas mais escuras e apoio discreto abaixo do START. A cápsula passa a ser o mesmo componente do lobby (`UI.capsule`), com círculo X e varredura localizada branca/menta de 4,8 s por volta. O componente não cria loops; `IntroVisuals:Draw` dirige o efeito, respeita movimento reduzido e bloqueio, e o destrói com a abertura.
+
+O alvo mantém mínimo físico 112×48 px; ícone e texto acompanham o tamanho ampliado em telas pequenas. As posições do contorno são calculadas nas unidades locais do canvas para que UIScale não reduza a geometria duas vezes. Ao concluir a abertura, Notícias do CL é a única seleção branca, seu conteúdo já está visível e o controle recebe o mesmo foco. Esta atualização não altera os tempos da tabela nem a liberação de áudio/música. A aparência renderizada ainda requer inspeção no Roblox.
+
 | Arquivo | Responsabilidade |
 | --- | --- |
 | src/client/Intro/IntroTimeline.luau | Relógio monotônico, gate de prontidão, START, eventos únicos e cancelamento. Não depende de FPS. |

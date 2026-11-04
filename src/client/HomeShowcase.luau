@@ -3,13 +3,12 @@
 -- Símbolos geométricos próprios: não depende de logos/arquivos da EA SPORTS.
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
-local OuterGlowSweep = require(script.Parent.OuterGlowSweep)
+local UI = require(script.Parent.UI)
 
 local Showcase = {}
 local GREEN = Color3.fromRGB(129, 223, 135)
 local WHITE = Color3.fromRGB(236, 240, 239)
 local MUTED = Color3.fromRGB(189, 201, 200)
-local BLACK = Color3.fromRGB(14, 23, 19)
 local SECTIONS = {
 	{title = "NOTÍCIAS DO CL", subtitle = "Acompanhe novidades e atualizações do Club Legacy.", action = "Ver notícias", symbol = "news"},
 	{title = "CLUBS", subtitle = "Escolha seu clube e prepare a próxima partida.", action = "Entrar em Clubs", symbol = "clubs"},
@@ -109,7 +108,7 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 	local subtitle = label(stage, "DescricaoCentral", "", 18,
 		UDim2.fromScale(0.115, 0.495), UDim2.fromScale(0.77, 0.115), MUTED, Enum.Font.GothamMedium)
 
-	local action = item("TextButton", stage, {
+	local action, capsule = UI.capsule(stage, {
 		Name = "AcaoPrincipal", Text = "", AutoButtonColor = false, Selectable = true,
 		Active = true, BorderSizePixel = 0, BackgroundColor3 = GREEN,
 		AnchorPoint = Vector2.new(0.5, 0),
@@ -117,26 +116,13 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 		Size = UDim2.new(0.59, 0, 0, 56),
 		ClipsDescendants = false, ZIndex = 7,
 	})
-	item("UICorner", action, {CornerRadius = UDim.new(1, 0)})
 	item("UISizeConstraint", action, {
 		MinSize = Vector2.new(206, 44), MaxSize = Vector2.new(340, 56),
 	})
-	local border = item("UIStroke", action, {
-		Name = "ReflexoBorda", Color = Color3.fromRGB(243, 252, 241),
-		Thickness = 1.1, Transparency = 0.82, ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-	})
-	local disc = item("Frame", action, {
-		Name = "IconeControle", Position = UDim2.new(0, 7, 0.5, -17),
-		Size = UDim2.fromOffset(34, 34), BackgroundColor3 = BLACK,
-		BorderSizePixel = 0, ZIndex = 9,
-	})
-	item("UICorner", disc, {CornerRadius = UDim.new(1, 0)})
-	label(disc, "TeclaX", "X", 17, UDim2.fromScale(0, 0), UDim2.fromScale(1, 1), GREEN, Enum.Font.GothamBold)
-	local actionText = label(action, "TextoAcao", "", 17,
-		UDim2.new(0, 47, 0, 0), UDim2.new(1, -52, 1, 0), BLACK, Enum.Font.GothamBold)
+	local border, disc, actionText = capsule.border, capsule.disc, capsule.label
 	-- Faixa branca localizada percorre a borda da capsula com halo macio
 	-- e rastro gradual. O botao, o circulo X e o texto ficam imoveis.
-	local capsuleFX = OuterGlowSweep.newCapsule(action)
+	local capsuleFX = capsule.fx
 
 	-- Miniaturas tipográficas, exibidas apenas na seção Upgrade.
 	local mini = item("Frame", stage, {

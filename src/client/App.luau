@@ -36,7 +36,7 @@ function App.start(options)
 	local lifetime=Scope.new()
 	local soundtrack=Soundtrack.create(gui)
 	lifetime:Add(function() soundtrack.destroy() end)
-	local state={screen="HomeInterior",homeFocus=3,homeClub=1,awayClub=2,homeKit=1,awayKit=2,activeSide="home",
+	local state={screen="HomeInterior",homeFocus=1,homeClub=1,awayClub=2,homeKit=1,awayKit=2,activeSide="home",
 		homeReady=false,awayReady=false,selectedPlayer=10,formation=1,assignments={},month=11,year=2026,
 		shortlist={},training={},accent="Turquesa",introLocked=introLocked,menuInputLocked=introLocked,settings={reducedMotion=false,quality="Alta",highContrast=false,showHints=true}}
 	-- HUD nasce ANTES do cenário e do render das páginas: uma falha no 3D
@@ -144,6 +144,10 @@ function App.start(options)
 	end
 	local function focusPage(preferredOrdinal)
 		if not UserInputService.GamepadEnabled or not page then return end
+		if state.screen=="HomeInterior" then
+			GuiService.SelectedObject=homeHud:GetSelectedButton()
+			return
+		end
 		if state.screen=="Clubs" then
 			GuiService.SelectedObject=tunnelBack
 			return

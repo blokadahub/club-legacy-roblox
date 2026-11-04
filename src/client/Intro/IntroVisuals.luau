@@ -5,6 +5,7 @@ local UI=require(script.Parent.Parent.UI)
 local Background=require(script.Parent.IntroBackground)
 local Visuals={}
 local GREEN=Color3.fromRGB(35,255,80)
+local WELCOME_GREEN=Color3.fromRGB(0,239,83)
 local WHITE=Color3.new(1,1,1)
 local WORD_PADDING=16
 local function group(parent,name,size)
@@ -87,22 +88,21 @@ function Visuals.new(playerGui)
 	pill.BackgroundTransparency=0
 	UI.new("UICorner",{CornerRadius=UDim.new(1,0)},pill)
 	local welcome=group(canvas,"BoasVindas",UDim2.fromOffset(1100,520))
-	welcome.Position=UDim2.fromOffset(250,305)
+	welcome.Position=UDim2.fromOffset(250,280)
 	welcome.GroupTransparency=1
-	local line1=text(welcome,"WELCOME",0,1100,105,88,GREEN)
-	local line2=text(welcome,"TO THE CLUB",96,1100,105,88,GREEN)
+	local line1=text(welcome,"WELCOME",0,1100,118,118,WELCOME_GREEN)
+	local line2=text(welcome,"TO THE CLUB",100,1100,118,118,WELCOME_GREEN)
 	line1.Font=Enum.Font.GothamBlack
 	line2.Font=Enum.Font.GothamBlack
-	local start=UI.new("TextButton",{Name="START",Text="START",Font=Enum.Font.GothamBold,TextSize=23,
-		TextColor3=Color3.fromRGB(9,21,12),BackgroundColor3=GREEN,BorderSizePixel=0,
-		Size=UDim2.fromOffset(184,58),Position=UDim2.fromOffset(458,263),AutoButtonColor=false,
-		Active=false,Selectable=false},welcome)
+	local start,capsule=UI.capsule(welcome,{Name="START",
+		Size=UDim2.fromOffset(184,58),Active=false,Selectable=false},function(button)
+		return Vector2.new(button.Size.X.Offset,button.Size.Y.Offset)
+	end)
 	start.AnchorPoint=Vector2.new(.5,.5)
-	start.Position=UDim2.fromOffset(550,292)
-	UI.new("UICorner",{CornerRadius=UDim.new(1,0)},start)
-	UI.new("UIStroke",{Color=WHITE,Thickness=1,Transparency=.7,ApplyStrokeMode=Enum.ApplyStrokeMode.Border},start)
-	local supportA=text(welcome,"CL 27 — CLUB LEGACY 27",346,1100,30,15,Color3.fromRGB(181,184,182))
-	local supportB=text(welcome,"Uma nova história começa no clube.",376,1100,30,14,Color3.fromRGB(145,149,146))
+	start.Position=UDim2.fromOffset(550,302)
+	capsule.label.Text="START"
+	local supportA=text(welcome,"CL 27 — CLUB LEGACY SPORTS™",386,1100,30,17,Color3.fromRGB(181,184,182))
+	local supportB=text(welcome,"Uma nova história começa no clube.",416,1100,30,15,Color3.fromRGB(145,149,146))
 	local cut=UI.new("Frame",{Name="CorteCinematografico",BackgroundColor3=Color3.new(0,0,0),
 		BorderSizePixel=0,Size=UDim2.fromScale(1,1),BackgroundTransparency=1,ZIndex=20},shield)
 	local passage=UI.new("Frame",{Name="PassagemArroxeada",BackgroundColor3=Color3.fromRGB(51,46,78),
@@ -120,8 +120,14 @@ function Visuals.new(playerGui)
 		-- Keep the actual interactive button at least 112 x 48 physical pixels,
 		-- even when the surrounding 1600 x 900 composition is scaled down.
 		start.Size=UDim2.fromOffset(math.max(184,112/scale.Scale),math.max(58,48/scale.Scale))
-		start.TextSize=math.max(23,14/scale.Scale)
-		local supportY=math.max(346,292+start.Size.Y.Offset/2+20)
+		local buttonScale=start.Size.Y.Offset/56
+		capsule.disc.Size=UDim2.fromOffset(34*buttonScale,34*buttonScale)
+		capsule.disc.Position=UDim2.new(0,7*buttonScale,.5,-17*buttonScale)
+		capsule.key.TextSize=17*buttonScale
+		capsule.label.TextSize=math.max(17,14/scale.Scale)
+		capsule.label.Position=UDim2.fromOffset(47*buttonScale,0)
+		capsule.label.Size=UDim2.new(1,-52*buttonScale,1,0)
+		local supportY=math.max(386,302+start.Size.Y.Offset/2+20)
 		supportA.Position=UDim2.fromOffset(0,supportY)
 		supportB.Position=UDim2.fromOffset(0,supportY+30)
 		canvas.Position=UDim2.fromOffset(topLeft.X+16+available.X/2,topLeft.Y+16+available.Y/2)
@@ -185,21 +191,25 @@ function Visuals.new(playerGui)
 		message.GroupTransparency=math.clamp(alpha,0,1)
 		local welcomeIn=if t>=16.6 and (snapshot.ready or snapshot.welcomed) then ease(progress(t,16.6,17.15)) else 0
 		welcome.GroupTransparency=1-welcomeIn
-		welcome.Position=UDim2.fromOffset(250,305+(if reduced then 0 else 32*(1-welcomeIn)))
+		welcome.Position=UDim2.fromOffset(250,280+(if reduced then 0 else 32*(1-welcomeIn)))
+		-- Reintroduce the small white CL 27 brand above the welcome title.
+		if t>=16.6 then logo.root.GroupTransparency=1-welcomeIn end
 		line1.Position=UDim2.fromOffset(0,0)
-		line2.Position=UDim2.fromOffset(0,96)
+		line2.Position=UDim2.fromOffset(0,100)
 		start.Active=snapshot.canStart or errorMessage~=nil
 		start.Selectable=start.Active
 		if errorMessage then
 			welcome.GroupTransparency=0
 			line1.Visible=false;line2.Visible=false
-			start.Text="TENTAR"
+			capsule.label.Text="TENTAR"
 			logo.root.GroupTransparency=1
 			supportA.Visible=false;supportB.Visible=false
 		else
-			line1.Visible=true;line2.Visible=true;start.Text="START"
+			line1.Visible=true;line2.Visible=true;capsule.label.Text="START"
 			supportA.Visible=true;supportB.Visible=true
 		end
+		capsule.fx:SetReducedMotion(reduced or not start.Active)
+		if start.Active and not reduced then capsule.fx:Step(t-16.6) end
 		cut.BackgroundTransparency=if t>=1.93 and t<2.15 then 0 else 1
 		passage.BackgroundTransparency=1
 		if exit then
@@ -208,7 +218,7 @@ function Visuals.new(playerGui)
 			logo.root.GroupTransparency=leave
 			if not reduced then
 				line1.Position=UDim2.fromOffset(0,-90*ease(leave))
-				line2.Position=UDim2.fromOffset(0,96-60*ease(leave))
+				line2.Position=UDim2.fromOffset(0,100-60*ease(leave))
 			end
 			background.GroupTransparency=math.max(leave,reveal)
 			cut.BackgroundTransparency=1-math.min(progress(exit,.5,.78),1-progress(exit,2.9,6))
@@ -223,7 +233,7 @@ function Visuals.new(playerGui)
 		end
 		return reveal, if exit then progress(exit,4.25,6) else 0
 	end
-	function self:Destroy() geometry:Destroy();gui:Destroy() end
+	function self:Destroy() capsule.fx:Destroy();geometry:Destroy();gui:Destroy() end
 	return self
 end
 return Visuals

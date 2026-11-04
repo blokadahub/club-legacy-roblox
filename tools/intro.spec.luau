@@ -282,6 +282,13 @@ check(#audioLog==logBefore+3,"Music before completed reveal")
 tick(46)
 check(playerGui:FindFirstChild("CL27_Intro")==nil,"Opening overlay leaked")
 check(not actualApp.state.menuInputLocked and not UI.inputLocked,"Inputs not released")
+local revealedNews=playerGui.CL27_HomeHUD:FindFirstChild("Opcao_1",true)
+check(actualApp.state.homeFocus==1 and revealedNews.TextTransparency==0
+	and playerGui.CL27_HomeHUD:FindFirstChild("Opcao_3",true).TextTransparency==.32,
+	"Completed opening must reveal Notícias do CL as the only white selection")
+check(services.GuiService.SelectedObject==revealedNews,"Opening did not hand gamepad focus to Notícias do CL")
+check(playerGui.CL27_HomeHUD:FindFirstChild("TituloCentral",true).Text=="NOTÍCIAS DO CL",
+	"Opening revealed content from a different lobby selection")
 check(#audioLog==logBefore+4 and audioLog[#audioLog].name=="CL27SoundtrackLocal","Music not released exactly once")
 check(#scene.shows==1,"Lobby rebuilt during reveal")
 check(transition:FindFirstChild("IndicadorCL",true)~=nil,"Loader not returned")
@@ -411,6 +418,35 @@ for _,size in ipairs({Vector2.new(1920,1080),Vector2.new(854,393),Vector2.new(10
 	local fitted=visuals.start.Parent.Parent:FindFirstChildOfClass("UIScale").Scale
 	check(visuals.start.Size.Y.Offset*fitted>=48-.001
 		and visuals.start.Size.X.Offset*fitted>=112-.001,"Mobile START touch area")
+	local caption=visuals.start:FindFirstChild("TextoAcao")
+	local disc=visuals.start:FindFirstChild("IconeControle")
+	local sweep=visuals.start:FindFirstChild("OuterGlowSweepCapsula")
+	check(disc and disc:FindFirstChild("TeclaX").Text=="X"
+		and caption and caption.Text=="START" and sweep,"START must use the lobby X capsule")
+	check(caption.TextSize*fitted>=14-.001 and disc.Size.Y.Offset*fitted>=28,
+		"Mobile START caption/X became too small")
+	check(caption.Position.X.Offset>=disc.Position.X.Offset+disc.Size.X.Offset
+		and caption.Size.X.Offset+visuals.start.Size.X.Offset>0,
+		"START caption overlaps its X disc or has no horizontal room")
+	visuals:Draw({elapsed=17.8,ready=true,canStart=true},"RealName",false,nil)
+	check(visuals.logo.root.GroupTransparency==0 and near(visuals.logo.scale.Scale,.25)
+		and visuals.logo.root.Position.Y.Offset==210,"Welcome must retain the small white brand above its title")
+	local lit=0
+	local mask={}
+	for i,sample in ipairs(sweep:GetChildren()) do
+		check(sample.Position.X.Offset>=0 and sample.Position.X.Offset<=visuals.start.Size.X.Offset
+			and sample.Position.Y.Offset>=0 and sample.Position.Y.Offset<=visuals.start.Size.Y.Offset,
+			"START sweep left the local capsule perimeter under UIScale")
+		mask[i]=sample.GroupTransparency
+		if sample.GroupTransparency<.98 then lit+=1 end
+	end
+	check(#mask==78 and lit>=3 and lit<=28,"START glow must illuminate a short continuous portion of its border")
+	visuals:Draw({elapsed=18.2,ready=true,canStart=true},"RealName",false,nil)
+	local moved=false
+	for i,sample in ipairs(sweep:GetChildren()) do
+		if sample.GroupTransparency~=mask[i] then moved=true end
+	end
+	check(moved,"START contour glow did not move")
 	local parts=0
 	for _,part in ipairs(facets:GetChildren()) do
 		if part.ClassName=="WedgePart" then
@@ -431,8 +467,10 @@ for _,size in ipairs({Vector2.new(1920,1080),Vector2.new(854,393),Vector2.new(10
 		visuals:Draw({elapsed=18,ready=true,exit=3,canStart=false},"RealName",reduced,nil)
 		local revealAlpha=visuals.shield.BackgroundTransparency*visuals.cut.BackgroundTransparency
 		check(revealAlpha>0 and revealAlpha<1,"Missing gradual reveal")
+		check(not sweep.Visible,"START sweep must stop on departure / reduced motion")
 	end
 	visuals:Destroy()
+	check(sweep.Parent==nil,"START contour survived intro destruction")
 end
 
 -- Regression for the actual mobile screenshot: failed lobby must not overlap the
@@ -442,10 +480,10 @@ failureUI:Resize(Vector2.new(854,393))
 failureUI:Draw({elapsed=5,ready=false,canStart=false,waiting=false},"RealName",false,
     "Não foi possível preparar o lobby. Tente novamente.")
 check(failureUI.logo.root.GroupTransparency==1,"Failure screen left logo over error")
-check(failureUI.start.Text=="TENTAR" and failureUI.start.Selectable,"Mobile failure button unreadable or disabled")
+check(failureUI.start:FindFirstChild("TextoAcao").Text=="TENTAR" and failureUI.start.Selectable,"Mobile failure button unreadable or disabled")
 check(failureUI.message.GroupTransparency==0,"Failure message not visible during early intro")
 failureUI:Draw({elapsed=5.1,ready=false,canStart=false,waiting=false},"RealName",false,nil)
-check(failureUI.start.Text=="START","Retry state did not reset")
+check(failureUI.start:FindFirstChild("TextoAcao").Text=="START","Retry state did not reset")
 failureUI:Destroy()
 
 -- Cancellation disconnects Heartbeat and stops effects, with no music unlock.

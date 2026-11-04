@@ -77,21 +77,24 @@ local homeList = homeRoot and homeRoot:FindFirstChild("MenuPrincipalFC")
 check(homeList ~= nil and homeList:FindFirstChild("Opcao_1") ~= nil
 	and homeList:FindFirstChild("Opcao_5") ~= nil,
 	"Um ou mais botões principais não foram inseridos no PlayerGui")
-check(homeList:FindFirstChild("Opcao_3").Text == "Jogo Rápido"
-	and homeList:FindFirstChild("Opcao_3").TextTransparency == 0,
-	"Jogo Rápido não está visivelmente selecionado na primeira entrada")
+check(handle.state.homeFocus == 1 and homeList:FindFirstChild("Opcao_1").TextTransparency == 0
+	and homeList:FindFirstChild("Opcao_3").TextTransparency == .32,
+	"Notícias do CL deve ser a única opção branca na primeira entrada")
+check(services.GuiService.SelectedObject == homeList:FindFirstChild("Opcao_1"),
+	"Controle deve começar na opção selecionada do lobby")
 local expectedMenuNames = {"Notícias do CL", "Clubs", "Jogo Rápido", "Aprenda a Jogar", "Upgrade"}
 for i, name in ipairs(expectedMenuNames) do
 	check(homeList:FindFirstChild("Opcao_" .. i).Text == name,
 		"Nomes precisam seguir a nova nomenclatura brasileira do lobby")
 end
-check(homeList:FindFirstChild("Opcao_3").TextSize == 27
-	and homeList:FindFirstChild("Opcao_1").TextSize == 23,
+check(homeList:FindFirstChild("Opcao_1").TextSize == 27
+	and homeList:FindFirstChild("Opcao_3").TextSize == 23,
 	"Tipografia lateral deve ser menor, mas manter hierarquia de seleção")
 local showcase = homeRoot:FindFirstChild("ConteudoCentral")
 check(showcase ~= nil and showcase:IsA("CanvasGroup"),
 	"Lobby não criou conteúdo central independente do cenário 3D")
-check(showcase:FindFirstChild("TituloCentral").Text == "JOGO RÁPIDO",
+check(showcase:FindFirstChild("TituloCentral").Text == "NOTÍCIAS DO CL"
+	and showcase:FindFirstChild("AcaoPrincipal"):FindFirstChild("TextoAcao").Text == "Ver notícias",
 	"Conteúdo central inicial não combina com foco no menu")
 local primary = showcase:FindFirstChild("AcaoPrincipal")
 check(primary ~= nil and primary:IsA("TextButton")

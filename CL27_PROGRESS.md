@@ -1,5 +1,15 @@
 # CL 27 — progresso verificável
 
+## Boas-vindas e seleção inicial do lobby — 04/11/2026
+
+- Base: main `8d40d4bbe6d5288a438aa882b6f814f6a9dcc479`; branch `fix/cl27-welcome-lobby-selection`.
+- Auditoria 1, composição: examinadas as duas imagens recebidas. Título verde ampliado de 88 para 118 unidades, marca branca CL Sports/CL 27 recuperada acima, botão central e apoio afastados do título; facetas mais escuras. Identidade própria preservada. Esta comparação é por referência/código, sem captura Roblox nova.
+- START e a ação central do lobby agora usam `UI.capsule`: mesma cor, círculo X, texto, borda e `OuterGlowSweep` de 78 segmentos. O dono controla o efeito pelo loop já existente e o descarta; nenhum loop ou conexão adicional. O contorno do START usa dimensões locais para evitar escala duplicada por UIScale.
+- `homeFocus=1` no App e fallback do HUD: Notícias do CL aparece branca, com conteúdo NOTÍCIAS DO CL e ação Ver notícias. O foco do controle acompanha essa seleção após a abertura; voltar ao lobby preserva a escolha feita na sessão.
+- Auditoria 2, estados: abertura completa, espera no START, prontidão temporariamente perdida, saída, tentativa após erro, movimento reduzido e descarte passaram. Em cinco proporções (incluindo 854×393 e 393×854), verificadas área mínima de toque 112×48 px, legenda/X legíveis, espaço entre ícone e texto, contorno dentro da cápsula e brilho localizado em movimento. Tempos/áudio continuam sob a mesma timeline.
+- Auditoria 3, integridade: Luau oficial 0.745 aprovou as 43 fontes; 653 verificações de dados; smoke com 519 montagens/381 callbacks/240 asserções; 5.910 asserções de estados e 1.278 da abertura. Rojo 7.7.1 gerou XML com as 43 fontes idênticas; `git diff --check` aprovado. Avisos de falhas simuladas são esperados nos testes negativos.
+- Pendente: aparência, fontes, toque/controle, áudio e desempenho reais no Roblox Studio/Player, indisponíveis neste ambiente. Nenhuma publicação Roblox foi executada.
+
 ## Revisão da abertura — PR #11
 
 - PR #11 existente e em rascunho confirmado pelo site do GitHub; branch remota e checkout coincidiam em 7eae2e3 antes das correções. O CI anterior 41754409795 foi consultado e estava em Success. Nenhum PR adicional criado.

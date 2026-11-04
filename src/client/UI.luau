@@ -68,6 +68,36 @@ function UI.button(parent,value,x,y,w,h,callback,scope,options)
 	scope:Connect(button.Activated,callback)
 	return button
 end
+-- Shared lobby/intro capsule. The owner drives Step and destroys the sweep;
+-- this component creates no connections, timers or independent frame loop.
+function UI.capsule(parent,props,sizeProvider)
+	local green=Color3.fromRGB(129,223,135)
+	local black=Color3.fromRGB(14,23,19)
+	local button=UI.new("TextButton",{Text="",AutoButtonColor=false,Selectable=true,
+		Active=true,BorderSizePixel=0,BackgroundColor3=green,
+		ClipsDescendants=false,ZIndex=7},parent)
+	for key,value in pairs(props or {}) do button[key]=value end
+	UI.new("UICorner",{CornerRadius=UDim.new(1,0)},button)
+	local border=UI.new("UIStroke",{Name="ReflexoBorda",Color=Color3.fromRGB(243,252,241),
+		Thickness=1.1,Transparency=.82,ApplyStrokeMode=Enum.ApplyStrokeMode.Border},button)
+	local disc=UI.new("Frame",{Name="IconeControle",Position=UDim2.new(0,7,.5,-17),
+		Size=UDim2.fromOffset(34,34),BackgroundColor3=black,BorderSizePixel=0,ZIndex=9},button)
+	UI.new("UICorner",{CornerRadius=UDim.new(1,0)},disc)
+	local key=UI.text(disc,"X",0,0,34,34,17,green,Enum.Font.GothamBold)
+	key.Name="TeclaX"
+	key.Size=UDim2.fromScale(1,1)
+	key.TextXAlignment=Enum.TextXAlignment.Center
+	key.ZIndex=10
+	local label=UI.text(button,"",47,0,0,0,17,black,Enum.Font.GothamBold)
+	label.Name="TextoAcao"
+	label.Size=UDim2.new(1,-52,1,0)
+	label.TextXAlignment=Enum.TextXAlignment.Center
+	label.TextTruncate=Enum.TextTruncate.None
+	label.TextWrapped=true
+	label.ZIndex=10
+	local fx=require(script.Parent.OuterGlowSweep).newCapsule(button,sizeProvider)
+	return button,{border=border,disc=disc,key=key,label=label,fx=fx}
+end
 function UI.logo(parent,x,y,scale)
 	local s=scale or 1
 	UI.line(parent,x,y+9*s,x+17*s,y-6*s,UI.accent,4*s)
