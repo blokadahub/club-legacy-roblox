@@ -435,6 +435,19 @@ for _,size in ipairs({Vector2.new(1920,1080),Vector2.new(854,393),Vector2.new(10
 	visuals:Destroy()
 end
 
+-- Regression for the actual mobile screenshot: failed lobby must not overlap the
+-- cinematic brand or render an overflowing retry label.
+local failureUI=Visuals.new(playerGui)
+failureUI:Resize(Vector2.new(854,393))
+failureUI:Draw({elapsed=5,ready=false,canStart=false,waiting=false},"RealName",false,
+    "Não foi possível preparar o lobby. Tente novamente.")
+check(failureUI.logo.root.GroupTransparency==1,"Failure screen left logo over error")
+check(failureUI.start.Text=="TENTAR" and failureUI.start.Selectable,"Mobile failure button unreadable or disabled")
+check(failureUI.message.GroupTransparency==0,"Failure message not visible during early intro")
+failureUI:Draw({elapsed=5.1,ready=false,canStart=false,waiting=false},"RealName",false,nil)
+check(failureUI.start.Text=="START","Retry state did not reset")
+failureUI:Destroy()
+
 -- Cancellation disconnects Heartbeat and stops effects, with no music unlock.
 local cancelledIntro=Controller.start(function(fx) return App.start({deferIntro=true,transitionFx=fx}) end)
 advance(0)
