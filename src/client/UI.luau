@@ -72,7 +72,7 @@ function UI.button(parent,value,x,y,w,h,callback,scope,options)
 end
 -- Shared lobby/intro capsule. The owner drives Step and destroys the sweep;
 -- this component creates no connections, timers or independent frame loop.
-function UI.capsule(parent,props,sizeProvider,pixelScaleProvider)
+function UI.capsule(parent,props,sizeProvider)
 	local green=Theme.actionGreen
 	local black=Color3.fromRGB(14,23,19)
 	local button=UI.new("TextButton",{Text="",AutoButtonColor=false,Selectable=true,
@@ -85,7 +85,7 @@ function UI.capsule(parent,props,sizeProvider,pixelScaleProvider)
 		Size=UDim2.fromScale(1,1),ClipsDescendants=false,ZIndex=7},button)
 	UI.new("UICorner",{CornerRadius=UDim.new(1,0)},surface)
 	local border=UI.new("UIStroke",{Name="ReflexoBorda",Color=Color3.fromRGB(243,252,241),
-		Thickness=1,Transparency=.72,ApplyStrokeMode=Enum.ApplyStrokeMode.Border},surface)
+		Thickness=1.1,Transparency=.82,ApplyStrokeMode=Enum.ApplyStrokeMode.Border},surface)
 	local disc=UI.new("Frame",{Name="IconeControle",Position=UDim2.new(0,7,.5,-17),
 		Size=UDim2.fromOffset(34,34),BackgroundColor3=black,BorderSizePixel=0,ZIndex=9},surface)
 	UI.new("UICorner",{CornerRadius=UDim.new(1,0)},disc)
@@ -101,7 +101,7 @@ function UI.capsule(parent,props,sizeProvider,pixelScaleProvider)
 	label.TextTruncate=Enum.TextTruncate.None
 	label.TextWrapped=true
 	label.ZIndex=10
-	local fx=require(script.Parent.OuterGlowSweep).newCapsule(surface,sizeProvider,pixelScaleProvider)
+	local fx=require(script.Parent.OuterGlowSweep).newCapsule(surface,sizeProvider)
 	return button,{surface=surface,border=border,disc=disc,key=key,label=label,fx=fx}
 end
 function UI.logo(parent,x,y,scale)

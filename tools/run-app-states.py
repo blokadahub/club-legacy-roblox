@@ -43,6 +43,7 @@ local function later(duration, callback)
     return job
 end
 task.delay = later
+task.defer = function(callback) return later(0,callback) end
 task.cancel = function(job) job.cancelled = true end
 function services.TweenService:Create(object, info, goals)
     local tween = {Completed = signal(), PlaybackState = Enum.PlaybackState.Begin, target = object, goals = goals, duration = info.Time}
@@ -120,7 +121,11 @@ workspace.CurrentCamera = Instance.new('Camera')
 workspace.CurrentCamera.ViewportSize = Vector2.new(1600, 900)
 services.Workspace = workspace
 services.SoundService = Instance.new('SoundService')
-function methods:Play() assert(self.ClassName == 'Sound'); self.IsPlaying = true end
+function methods:Play()
+    assert(self.ClassName == 'Sound')
+    self.IsPlaying = true
+    self:SetAttribute('PlayCount',(self:GetAttribute('PlayCount') or 0)+1)
+end
 function methods:Pause() assert(self.ClassName == 'Sound'); self.IsPlaying = false end
 function methods:Resume() assert(self.ClassName == 'Sound'); self.IsPlaying = true end
 function methods:Stop() assert(self.ClassName == 'Sound'); self.IsPlaying = false; self.TimePosition = 0 end
@@ -131,7 +136,7 @@ services.StarterGui = {SetCoreGuiEnabled = function() end}
 services.UserInputService.GetFocusedTextBox = function() return nil end
 services.UserInputService.GamepadEnabled = true
 services.Lighting = Instance.new('Lighting')
-services.ContentProvider = {}
+services.ContentProvider = {PreloadAsync=function() end}
 services.RunService = {RenderStepped = signal(), Heartbeat = signal()}
 '''
 if args.penalty:

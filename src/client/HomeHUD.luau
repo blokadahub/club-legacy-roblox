@@ -5,6 +5,9 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
+local SoundService = game:GetService("SoundService")
+local ContentProvider = game:GetService("ContentProvider")
+local GuiService = game:GetService("GuiService")
 local HomeShowcase = require(script.Parent.HomeShowcase)
 local RadialGlow = require(script.Parent.RadialGlow)
 
@@ -112,6 +115,68 @@ function HomeHUD.start(playerGui: Instance, state)
 		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 		Enabled = state.introLocked ~= true,
 	})
+	-- Three reusable local voices handle rapid selections without creating a
+	-- Sound per click or waiting for the previous one to finish.
+	local audio = element("Folder", SoundService, {Name="CL27_LobbySelectionAudio"})
+	local voices = {}
+	for i=1,3 do
+		voices[i]=element("Sound",audio,{Name="CyberClick_"..i,
+			SoundId="rbxassetid://135026594552200",Volume=.35,Looped=false,PlayOnRemove=false})
+	end
+	local preloadWorker=task.defer(function()
+		local ok,err=pcall(function() ContentProvider:PreloadAsync(voices,function() end) end)
+		if not ok and alive then warn("[CL27] Cyber Click: "..tostring(err)) end
+	end)
+	local nextVoice=0
+	local silentFocus=nil
+	local function feedback()
+		if not alive or locked() or not gui.Enabled then return end
+		for offset=1,#voices do
+			local index=(nextVoice+offset-1)%#voices+1
+			local sound=voices[index]
+			if sound.IsLoaded then
+				nextVoice=index
+				sound:Stop()
+				sound.TimePosition=0
+				sound:Play()
+				return
+			end
+		end
+		-- Unavailable audio is skipped, never queued for delayed playback.
+	end
+	local function wireFeedback(button,allowed)
+		local focused=false
+		local touchPress=nil
+		local function enabled()
+			return alive and not locked() and gui.Enabled and button.Selectable and (not allowed or allowed())
+		end
+		for _,event in ipairs({button.MouseEnter,button.SelectionGained}) do
+			table.insert(connections,event:Connect(function()
+				if not enabled() then return end
+				if event==button.SelectionGained then
+					local silent=silentFocus==button
+					silentFocus=nil
+					if silent then focused=true;return end
+				end
+				if not focused then feedback() end
+				focused=true
+			end))
+		end
+		for _,event in ipairs({button.MouseLeave,button.SelectionLost}) do
+			table.insert(connections,event:Connect(function() focused=false end))
+		end
+		table.insert(connections,button.InputBegan:Connect(function(input)
+			if not enabled() or input.UserInputType~=Enum.UserInputType.Touch then return end
+			touchPress=input
+			feedback()
+		end))
+		table.insert(connections,button.Activated:Connect(function(input)
+			if not enabled() then return end
+			local alreadyPlayed=input~=nil and input==touchPress
+			touchPress=nil
+			if not alreadyPlayed then feedback() end
+		end))
+	end
 	local root = element("CanvasGroup", gui, {
 		Name = "HomeOverlay",
 		BackgroundTransparency = 1,
@@ -276,6 +341,7 @@ function HomeHUD.start(playerGui: Instance, state)
 		})
 		lessonButtons[i]=button
 		if i==4 then
+			wireFeedback(button,function() return current==4 and learnGroup.Visible end)
 			button.TextTransparency=0.10
 			table.insert(connections,button.Activated:Connect(function()
 				if locked() or current~=4 or not gui.Enabled then return end
@@ -392,6 +458,7 @@ function HomeHUD.start(playerGui: Instance, state)
 	end
 
 	for index, row in ipairs(rows) do
+		wireFeedback(row.button)
 		table.insert(connections, row.button.MouseEnter:Connect(function()
 			if locked() then return end
 			hovered = index
@@ -466,10 +533,28 @@ function HomeHUD.start(playerGui: Instance, state)
 		ZIndex = 7,
 	})
 	repaint(true)
+	local function destroy()
+		if not alive then return end
+		alive=false
+		pcall(task.cancel,preloadWorker)
+		audio:Destroy()
+		for _,connection in ipairs(connections) do connection:Disconnect() end
+		for _,tween in pairs(tweens) do tween:Cancel() end
+		table.clear(tweens)
+		showcase:Destroy()
+		gui:Destroy()
+	end
+	table.insert(connections,gui.Destroying:Connect(destroy))
 
 	return {
 		gui = gui,
 		GetSelectedButton = function() return rows[current].button end,
+		FocusSelected = function()
+			local button=rows[current].button
+			if GuiService.SelectedObject==button then return end
+			silentFocus=button
+			GuiService.SelectedObject=button
+		end,
 		SetIntroAlpha = function(_, alpha: number)
 			root.GroupTransparency = 1-math.clamp(alpha,0,1)
 		end,
@@ -482,6 +567,7 @@ function HomeHUD.start(playerGui: Instance, state)
 		SetVisible = function(_, visible: boolean)
 			if alive then
 				gui.Enabled = visible
+				if not visible then for _,sound in ipairs(voices) do sound:Stop() end end
 				reducedMotion = state.settings and state.settings.reducedMotion == true
 				showcase:SetReducedMotion(reducedMotion)
 				if reducedMotion then selectionGlow.GroupTransparency = 1 end
@@ -491,15 +577,7 @@ function HomeHUD.start(playerGui: Instance, state)
 				end
 			end
 		end,
-		Destroy = function()
-			if not alive then return end
-			alive = false
-			for _, connection in ipairs(connections) do connection:Disconnect() end
-			for _, tween in pairs(tweens) do tween:Cancel() end
-			table.clear(tweens)
-			showcase:Destroy()
-			gui:Destroy()
-		end,
+		Destroy = destroy,
 	}
 end
 

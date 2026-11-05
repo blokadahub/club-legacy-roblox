@@ -105,7 +105,7 @@ function Visuals.new(playerGui)
 	local start,capsule=UI.capsule(welcome,{Name="START",
 		Size=UDim2.fromOffset(146,52),Active=false,Selectable=false},function(surface)
 		return Vector2.new(surface.Size.X.Offset,surface.Size.Y.Offset)
-	end,function() return welcomeScale.Scale end)
+	end)
 	start.AnchorPoint=Vector2.new(.5,.5)
 	start.Position=UDim2.fromOffset(550,308)
 	capsule.label.Text="Start"
@@ -146,7 +146,6 @@ function Visuals.new(playerGui)
 		capsule.label.Position=UDim2.fromOffset(textLeft,0)
 		capsule.label.Size=UDim2.new(1,-textLeft-8/s,1,0)
 		capsule.label.TextWrapped=false
-		capsule.border.Thickness=1/s
 		local supportY=math.max(390,308+start.Size.Y.Offset/2+38)
 		local supportHeight=math.max(24,14/s)
 		supportA.TextSize=math.max(15,9/s)

@@ -1,5 +1,14 @@
 # CL 27 — progresso verificável
 
+## Contorno antigo restaurado e Cyber Click no lobby — 05/11/2026
+
+- Base main `166674b4db48f3811239f687758cf96e9770e3a6`; branch `fix/lobby-classic-contour-cyber-click`. As alterações posteriores de arena/animações foram preservadas.
+- `OuterGlowSweep.luau` restaurado integralmente da versão anterior à revisão do PR #14: blob `cc81d3525ac9ab81825a05913ef3430dbe95b25f`, conferido por `git hash-object` e diff vazio contra `d871018`. Retornam cores, opacidades, núcleo de 2,25, halos de 8,4/16, percurso interno, espessuras do canvas, 78 segmentos e ciclo de 4,8 s. Borda estática em 1,1 / transparência 0,82. Layout fino e verde #5cff33 mantidos.
+- Cyber Click autorizado pelo usuário: `135026594552200`, disponível em [Creator Store](https://create.roblox.com/store/asset/135026594552200/Cyber-Click). Três Sounds locais reutilizáveis, volume 0,35, preload paralelo ao lobby; sem espera pelo som anterior, loop, criação por clique ou reprodução tardia de seleções antigas.
+- Feedback nos cinco botões principais e na opção branca Arena de Treino: foco por mouse/controle, confirmação e início do toque. O mesmo toque não toca novamente ao confirmar. Itens desativados, HUD oculto, navegação bloqueada e foco automático de entrada/retorno ficam silenciosos. Sons param ao ocultar e são destruídos com o HUD.
+- Verificação: Luau 0.745 aprovou 51 fontes; 653 verificações de dados; smoke 519 montagens/381 callbacks/240 asserções; 5.958 asserções de estados, 2.004 da abertura e 365.840 de regressão da arena. Rojo 7.7.1: XML válido, 51 fontes idênticas. `git diff --check` aprovado.
+- Limite: testes com APIs substituídas, sem audição/render Roblox. Disponibilidade/permissão do asset e volume percebido exigem conferência no jogo; nenhum fallback ou áudio substituto foi adicionado. Sem nova publicação Roblox nesta revisão.
+
 ## Start mais fino, contorno legível e paleta radioativa — três etapas
 
 - Base main `d871018c94f975210de626ea2805ff52eec69045`; branch `fix/cl27-radioactive-welcome`.
