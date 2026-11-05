@@ -552,4 +552,93 @@ advance(18);services.RunService.Heartbeat:Fire(18)
 check(playerGui.CL27_Intro:FindFirstChild("START",true).Selectable,"Audio failure blocked START")
 unavailable:Destroy()
 services.unloadedSounds=false
+
+-- Real HUD feedback with cold Sounds and yielding/failing preload APIs.
+-- These tests check requests/lifecycle; they cannot certify audible Roblox output.
+do
+	local HomeHUD=require(moduleNodes["src/client/HomeHUD.luau"])
+	local function fixture()
+		local host=Instance.new("PlayerGui")
+		local state={homeFocus=1,menuInputLocked=false,settings={reducedMotion=false}}
+		local hud=HomeHUD.start(host,state)
+		local audio=services.SoundService:FindFirstChild("CL27_LobbySelectionAudio")
+		local button=hud.gui:FindFirstChild("Opcao_2",true)
+		return hud,host,state,audio,button
+	end
+	services.unloadedSounds=true
+	local attempts=0
+	services.preloadIntro=function(items,callback)
+		attempts+=1
+		for _,sound in ipairs(items) do
+			check(sound.SoundId=="rbxassetid://135026594552200","Menu preload changed the requested asset")
+			if attempts==2 then sound.IsLoaded=true end
+			callback(sound.SoundId,if attempts==1 then Enum.AssetFetchStatus.Failure else Enum.AssetFetchStatus.Success)
+		end
+	end
+	local hud,host,state,audio,button=fixture()
+	local before=#audioLog
+	advance(0)
+	button.Activated:Fire()
+	check(#audioLog==before+1 and state.homeFocus==2,"Cold selection was discarded before first preload retry")
+	advance(.49)
+	check(attempts==1,"Menu preload retried without its bounded interval")
+	advance(.01)
+	check(attempts==2 and audio:GetAttribute("FetchStatus")==tostring(Enum.AssetFetchStatus.Success)
+		and audio:GetAttribute("LoadError")==nil,"Transient menu preload failure did not recover")
+	hud.gui:FindFirstChild("Opcao_3",true).Activated:Fire()
+	check(#audioLog==before+2 and audio:GetAttribute("PlayRequests")==2,"Recovered menu feedback did not play")
+	advance(5)
+	check(attempts==2,"Menu preload retry count grew without bound")
+	hud:Destroy();host:Destroy()
+
+	-- A false readiness flag must not suppress a legitimate input even when
+	-- preload itself reports success (or when it returns Failure without throwing).
+	for _,status in ipairs({Enum.AssetFetchStatus.Success,Enum.AssetFetchStatus.Failure}) do
+		attempts=0
+		services.preloadIntro=function(items,callback)
+			attempts+=1
+			for _,sound in ipairs(items) do callback(sound.SoundId,status) end
+		end
+		hud,host,state,audio,button=fixture()
+		advance(.6)
+		check(attempts==(if status==Enum.AssetFetchStatus.Success then 1 else 2),"Menu preload status/retry handling")
+		check((audio:GetAttribute("LoadError")~=nil)==(status==Enum.AssetFetchStatus.Failure),
+			"Failure callback was silently mistaken for a successful preload")
+		before=#audioLog
+		button.Activated:Fire()
+		check(#audioLog==before+1 and state.homeFocus==2,"Preload status muted a selection")
+		local voice=audio:FindFirstChild(audioLog[#audioLog].name)
+		check(voice.Volume==.75 and voice.TimePosition==0,"Click volume/start position was not preserved")
+		for _,sound in ipairs(audio:GetChildren()) do sound.IsLoaded=true;sound.Loaded:Fire() end
+		check(#audioLog==before+1,"Loaded callback replayed a past selection")
+		hud:SetVisible(false)
+		check(voice.IsPlaying,"Hiding the HUD cut off the selection cue in the same event")
+		button.Activated:Fire()
+		check(#audioLog==before+1,"Hidden menu requested playback")
+		hud:Destroy();host:Destroy()
+	end
+
+	local workers={}
+	services.preloadIntro=function()
+		table.insert(workers,coroutine.running())
+		coroutine.yield()
+	end
+	hud,host,state,audio,button=fixture()
+	advance(6.6)
+	check(#workers==2 and audio:GetAttribute("PreloadAttempts")==2
+		and audio:GetAttribute("LoadError")=="tempo limite de carregamento","Stuck menu preload was not bounded/diagnosed")
+	for _,worker in ipairs(workers) do check(coroutine.status(worker)=="dead","Timed-out menu preload worker survived") end
+	before=#audioLog;button.Activated:Fire()
+	check(#audioLog==before+1,"Preload timeout blocked the menu's native Play request")
+	hud:Destroy();host:Destroy()
+	workers={}
+	hud,host,state,audio,button=fixture()
+	advance(0)
+	hud:Destroy();host:Destroy()
+	advance(10)
+	check(#workers==1 and coroutine.status(workers[1])=="dead" and audio.Parent==nil,
+		"Destroying the HUD leaked a suspended preload, retry or sound folder")
+	services.preloadIntro=nil
+	services.unloadedSounds=false
+end
 print(string.format("PASS Intro: %d assertions; complete timeline/integration with API doubles, no Roblox render/audio certification.",count))

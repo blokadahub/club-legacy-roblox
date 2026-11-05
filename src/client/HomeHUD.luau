@@ -121,28 +121,82 @@ function HomeHUD.start(playerGui: Instance, state)
 	local voices = {}
 	for i=1,3 do
 		voices[i]=element("Sound",audio,{Name="CyberClick_"..i,
-			SoundId="rbxassetid://135026594552200",Volume=.35,Looped=false,PlayOnRemove=false})
+			SoundId="rbxassetid://135026594552200",Volume=.75,Looped=false,PlayOnRemove=false})
 	end
-	local preloadWorker=task.defer(function()
-		local ok,err=pcall(function() ContentProvider:PreloadAsync(voices,function() end) end)
-		if not ok and alive then warn("[CL27] Cyber Click: "..tostring(err)) end
-	end)
-	local nextVoice=0
-	local silentFocus=nil
-	local function feedback()
-		if not alive or locked() or not gui.Enabled then return end
-		for offset=1,#voices do
-			local index=(nextVoice+offset-1)%#voices+1
-			local sound=voices[index]
-			if sound.IsLoaded then
-				nextVoice=index
-				sound:Stop()
-				sound.TimePosition=0
-				sound:Play()
-				return
+	-- PreloadAsync reports ordinary fetch failures through its callback; a
+	-- successful pcall alone does not mean that the audio loaded.
+	local preloadWorker,preloadRetry,preloadTimeout=nil,nil,nil
+	local preload
+	preload=function(attempt)
+		if not alive then return end
+		audio:SetAttribute("PreloadAttempts",attempt)
+		local finished=false
+		local function finish(failed,detail)
+			if finished or not alive then return end
+			finished=true
+			if preloadTimeout then pcall(task.cancel,preloadTimeout);preloadTimeout=nil end
+			if not failed then return end
+			for _,sound in ipairs(voices) do if sound.IsLoaded then return end end
+			if attempt<2 then
+				preloadRetry=task.delay(.5,function() preloadRetry=nil;preload(attempt+1) end)
+			else
+				audio:SetAttribute("LoadError",detail)
+				warn("[CL27] Cyber Click 135026594552200: falha no pré-carregamento ("..detail
+					.."). Confira o acesso do áudio à experiência 9749365367 no Creator Dashboard.")
 			end
 		end
-		-- Unavailable audio is skipped, never queued for delayed playback.
+		preloadWorker=task.defer(function()
+			if not alive then return end
+			local failed=false
+			local detail=""
+			local ok,err=pcall(function()
+				ContentProvider:PreloadAsync(voices,function(_,status)
+					if not alive then return end
+					audio:SetAttribute("FetchStatus",tostring(status))
+					if status~=Enum.AssetFetchStatus.Success then failed=true;detail=tostring(status) end
+				end)
+			end)
+			if not alive then return end
+			if not ok then failed=true;detail=tostring(err) end
+			finish(failed,detail)
+		end)
+		preloadTimeout=task.delay(3,function()
+			if finished or not alive then return end
+			pcall(task.cancel,preloadWorker)
+			finish(true,"tempo limite de carregamento")
+		end)
+	end
+	preload(1)
+	local nextVoice=0
+	local silentFocus=nil
+	local playRequests=0
+	local warnedPlayback=false
+	local function feedback()
+		if not alive or locked() or not gui.Enabled then return end
+		local chosen=nextVoice%#voices+1
+		for offset=1,#voices do
+			local index=(nextVoice+offset-1)%#voices+1
+			if voices[index].IsLoaded then chosen=index;break end
+		end
+		nextVoice=chosen
+		local sound=voices[chosen]
+		-- Prefer an already loaded voice, but never discard the user's request
+		-- just because IsLoaded is false. Play also starts the engine load path.
+		playRequests+=1
+		audio:SetAttribute("PlayRequests",playRequests)
+		local ok,err=pcall(function()
+			sound:Stop()
+			sound.TimePosition=0
+			sound:Play()
+		end)
+		if not ok then
+			audio:SetAttribute("PlaybackError",tostring(err))
+			if not warnedPlayback then
+				warnedPlayback=true
+				warn("[CL27] Cyber Click 135026594552200: "..tostring(err))
+			end
+		end
+		-- No Loaded callback replays past clicks; only a fresh input calls Play.
 	end
 	local function wireFeedback(button,allowed)
 		local focused=false
@@ -537,6 +591,8 @@ function HomeHUD.start(playerGui: Instance, state)
 		if not alive then return end
 		alive=false
 		pcall(task.cancel,preloadWorker)
+		if preloadRetry then pcall(task.cancel,preloadRetry) end
+		if preloadTimeout then pcall(task.cancel,preloadTimeout) end
 		audio:Destroy()
 		for _,connection in ipairs(connections) do connection:Disconnect() end
 		for _,tween in pairs(tweens) do tween:Cancel() end
@@ -567,7 +623,9 @@ function HomeHUD.start(playerGui: Instance, state)
 		SetVisible = function(_, visible: boolean)
 			if alive then
 				gui.Enabled = visible
-				if not visible then for _,sound in ipairs(voices) do sound:Stop() end end
+				-- A navigation click may hide the HUD in the same event. Let its
+				-- one-shot finish; stopping it here can mute it before audio mixes.
+				-- Hidden/locked input is still rejected, and Destroy stops all voices.
 				reducedMotion = state.settings and state.settings.reducedMotion == true
 				showcase:SetReducedMotion(reducedMotion)
 				if reducedMotion then selectionGlow.GroupTransparency = 1 end

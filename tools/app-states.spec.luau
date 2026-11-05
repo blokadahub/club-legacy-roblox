@@ -179,7 +179,7 @@ local function clickCount()
 end
 check(#voices==3,"Selection feedback must reuse a bounded voice pool")
 for _,voice in ipairs(voices) do
-	check(voice.SoundId=="rbxassetid://135026594552200" and voice.Volume==.35 and not voice.Looped
+	check(voice.SoundId=="rbxassetid://135026594552200" and voice.Volume==.75 and not voice.Looped
 		and not voice.PlayOnRemove,"Cyber Click must use the supplied asset as a local one-shot")
 end
 check(clickCount()==0,"Lobby construction must not play selection audio")
@@ -217,11 +217,18 @@ homeList.Opcao_1.SelectionGained:Fire()
 check(clickCount()==rapid+9,"Hidden menu played audio")
 homeHud.Enabled=true
 for _,voice in ipairs(voices) do voice.IsLoaded=false end
+local beforeColdClick=clickCount()
 homeList.Opcao_5.Activated:Fire()
-check(clickCount()==rapid+9 and handle.state.homeFocus==5,"Missing audio must not block selection")
+check(clickCount()==beforeColdClick+1 and handle.state.homeFocus==5,
+	"Cold Cyber Click must request playback instead of being discarded by IsLoaded=false")
 for _,voice in ipairs(voices) do voice.IsLoaded=true;voice.Loaded:Fire() end
 advance(.7)
-check(clickCount()==rapid+9,"Late asset load replayed an obsolete click")
+check(clickCount()==beforeColdClick+1,"Late asset load replayed an obsolete click")
+services.menuPlayError=true
+homeList.Opcao_2.Activated:Fire()
+check(handle.state.homeFocus==2 and selectionAudio:GetAttribute("PlaybackError")~=nil,
+	"Audio playback errors must be diagnosed without blocking selection")
+services.menuPlayError=false
 homeList.Opcao_1.Activated:Fire();advance(.7)
 
 local clubOption = homeList:FindFirstChild("Opcao_4")
@@ -332,6 +339,9 @@ for cycle=1,3 do
 	local beforeArena=clickCount()
 	arenaEntry.Activated:Fire()
 	check(clickCount()==beforeArena+1,"White Arena choice must play Cyber Click before navigation")
+	local cueStillPlaying=false
+	for _,voice in ipairs(voices) do if voice.IsPlaying then cueStillPlaying=true end end
+	check(cueStillPlaying,"Arena navigation muted the click before the mixer could play it")
 	check(handle.state.screen=="PenaltyArena" and services.lastScene.mode=="Penalty"
 		and not homeHud.Enabled and not wipe.Visible and not UI.inputLocked,
 		"Selecionar arena deve montar diretamente a prévia sem tela intermediária")

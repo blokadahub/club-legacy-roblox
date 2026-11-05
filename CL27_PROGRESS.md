@@ -1,5 +1,15 @@
 # CL 27 — progresso verificável
 
+## Cyber Click silencioso — correção de reprodução — 05/11/2026
+
+- Base main `973ed3700e508e1c64b709b478bb6e774b56d048`; branch `fix/lobby-cyber-click-playback`. A publicação da base foi confirmada no Actions `42055484153`, inclusive o job Open Cloud, ambos aprovados; não se tratava apenas de um PR sem publicação.
+- Falha reproduzida antes da correção: o HUD descartava a seleção quando as três vozes tinham `IsLoaded=false`. A nova asserção falhou no código anterior. Agora uma voz pronta continua preferida, mas a ausência desse sinal não impede `Sound:Play()` de receber o comando. Nenhum handler Loaded reproduz cliques anteriores.
+- Corrigida a detecção de falhas de preload: o callback de `PreloadAsync` é inspecionado, pois falhas normais de busca não necessariamente lançam exceção. Duas tentativas no máximo, cada uma limitada a três segundos, com intervalo de 0,5 s; cancelamento no descarte. Status e erros ficam nos atributos do folder local e no Output, sem bloquear a interface.
+- Volume do efeito aumentado de 0,35 para 0,75, sem alterar a música. Um clique já disparado pode terminar quando a navegação oculta o HUD; o código antigo chamava Stop na mesma interação, antes de o mixer poder reproduzir o som. Destruir o HUD ainda interrompe e remove suas três vozes.
+- ID `135026594552200` mantido. A API pública confirmou Cyber Click / tipo Audio e o mesmo criador da experiência. Asset Delivery recusou a consulta externa sem autenticação; isso não confirma nem nega a permissão específica do jogo. Não houve audição no Roblox ou alteração de permissões.
+- Verificação: 51 fontes aprovadas no Luau 0.745; 653 verificações de dados; smoke 519 montagens/381 callbacks/240 asserções; 5.962 asserções de estados e 2.034 da abertura/carregamento, incluindo sucesso com flag falsa, callback Failure sem exceção, recuperação, timeout real em coroutine, erro de Play, descarte e clique preservado ao navegar. Arena: 365.840 asserções de regressão. Rojo 7.7.1 com XML válido e 51 fontes idênticas; `git diff --check` aprovado.
+- `OuterGlowSweep.luau` continua no blob antigo `cc81d3525ac9ab81825a05913ef3430dbe95b25f`. UI, contorno, fonte, cenários e animações não foram modificados. Testes são com APIs substituídas e não certificam audição, latência de rede ou volume percebido no aparelho.
+
 ## Contorno antigo restaurado e Cyber Click no lobby — 05/11/2026
 
 - Base main `166674b4db48f3811239f687758cf96e9770e3a6`; branch `fix/lobby-classic-contour-cyber-click`. As alterações posteriores de arena/animações foram preservadas.
