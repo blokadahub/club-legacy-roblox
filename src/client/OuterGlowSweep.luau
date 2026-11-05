@@ -44,7 +44,7 @@ local SOFT_EDGE = NumberSequence.new({
 	NumberSequenceKeypoint.new(1, 1),
 })
 
-local function sweepPiece(parent: Instance, label: string, z: number)
+local function sweepPiece(parent: Instance, label: string, z: number, capsule: boolean?)
 	local group = make("CanvasGroup", parent, {
 		Name = label, AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromOffset(0, 0),
@@ -55,11 +55,14 @@ local function sweepPiece(parent: Instance, label: string, z: number)
 		ZIndex = z,
 	})
 	-- As faixas seguem a tangente do contorno; não são luzes circulares.
-	local halo = round(group, "HaloExternoSuave", 16, HAZE, 0.85, z)
+	local halo = round(group, "HaloExternoSuave", if capsule then 20 else 16,
+		if capsule then Color3.fromRGB(163,255,107) else HAZE, if capsule then .60 else .85, z)
 	make("UIGradient", halo, {Rotation = 90, Transparency = SOFT_EDGE})
-	local middle = round(group, "GlowMedio", 8.4, WARM, 0.66, z + 1)
+	local middle = round(group, "GlowMedio", if capsule then 9.6 else 8.4,
+		if capsule then Color3.fromRGB(240,255,214) else WARM, if capsule then .30 else .66, z + 1)
 	make("UIGradient", middle, {Rotation = 90, Transparency = SOFT_EDGE})
-	round(group, "LinhaBranca", 2.25, LIGHT, 0.025, z + 2)
+	round(group, "LinhaBranca", if capsule then 2.4 else 2.25,
+		if capsule then Color3.fromRGB(255,255,248) else LIGHT, if capsule then 0 else .025, z + 2)
 	return group
 end
 
@@ -175,17 +178,18 @@ end
 
 -- Perímetro calculado pelo comprimento real de duas semicircunferências
 -- e dois trechos retos. O ponto inicial é a região inferior esquerda.
-local function pillGeometry(width: number, height: number)
-	local margin = 1.3
-	local radius = math.max(3, height * 0.5 - margin)
+local function pillGeometry(width: number, height: number, unit: number)
+	-- Center the bright stroke just outside the green fill, against the dark
+	-- background. An inset white stroke loses contrast on a neon surface.
+	local radius = math.max(3, height * 0.5 + .6 * unit)
 	local cxLeft, cxRight = height * 0.5, width - height * 0.5
 	local straight = math.max(1, cxRight - cxLeft)
 	local semicircle = math.pi * radius
 	return radius, cxLeft, cxRight, straight, semicircle, semicircle * 2 + straight * 2
 end
 
-local function pillPose(width: number, height: number, fraction: number): (Vector2, number)
-	local r, left, right, straight, arc, length = pillGeometry(width, height)
+local function pillPose(width: number, height: number, fraction: number, unit: number): (Vector2, number)
+	local r, left, right, straight, arc, length = pillGeometry(width, height, unit)
 	local distance = (fraction % 1) * length
 	local cy = height * 0.5
 	if distance < arc then
@@ -207,7 +211,7 @@ local function pillPose(width: number, height: number, fraction: number): (Vecto
 	return Vector2.new(right - distance, cy + r), 180
 end
 
-function OuterGlowSweep.newCapsule(button: Instance, sizeProvider: ((Instance) -> Vector2)?)
+function OuterGlowSweep.newCapsule(button: Instance, sizeProvider: ((Instance) -> Vector2)?, pixelScaleProvider: (() -> number)?)
 	local overlay = make("Frame", button, {
 		Name = "OuterGlowSweepCapsula",
 		Position = UDim2.fromScale(0, 0),
@@ -218,20 +222,23 @@ function OuterGlowSweep.newCapsule(button: Instance, sizeProvider: ((Instance) -
 	local samples = {}
 	local count = 78
 	for i = 1, count do
-		local segment = sweepPiece(overlay, string.format("SweepBorda_%02d", i), 12)
+		local segment = sweepPiece(overlay, string.format("SweepBorda_%02d", i), 12, true)
 		table.insert(samples, {node = segment, fraction = (i - 0.5) / count})
 	end
-	local previousWidth, previousHeight = -1, -1
-	local function resize(width: number, height: number)
-		local _, _, _, _, _, perimeter = pillGeometry(width, height)
-		local pieceWidth = perimeter / count + 1.6
+	local previousWidth, previousHeight, previousUnit = -1, -1, -1
+	local function resize(width: number, height: number, unit: number)
+		local _, _, _, _, _, perimeter = pillGeometry(width, height, unit)
+		local pieceWidth = perimeter / count + 1.6 * unit
 		for _, sample in ipairs(samples) do
-			local position, tangent = pillPose(width, height, sample.fraction)
+			local position, tangent = pillPose(width, height, sample.fraction, unit)
 			sample.node.Position = UDim2.fromOffset(position.X, position.Y)
-			sample.node.Size = UDim2.fromOffset(pieceWidth, 18)
+			sample.node.Size = UDim2.fromOffset(pieceWidth, 24 * unit)
 			sample.node.Rotation = tangent
+			sample.node.HaloExternoSuave.Size=UDim2.new(1,0,0,20*unit)
+			sample.node.GlowMedio.Size=UDim2.new(1,0,0,9.6*unit)
+			sample.node.LinhaBranca.Size=UDim2.new(1,0,0,2.4*unit)
 		end
-		previousWidth, previousHeight = width, height
+		previousWidth, previousHeight, previousUnit = width, height, unit
 	end
 	local self = {overlay = overlay, samples = samples}
 	function self:Step(time: number)
@@ -240,8 +247,9 @@ function OuterGlowSweep.newCapsule(button: Instance, sizeProvider: ((Instance) -
 		local size = if sizeProvider then sizeProvider(button) else (button :: any).AbsoluteSize
 		local width = if typeof(size) == "Vector2" and size.X > 0 then size.X else 230
 		local height = if typeof(size) == "Vector2" and size.Y > 0 then size.Y else 56
-		if math.abs(width - previousWidth) > 0.25 or math.abs(height - previousHeight) > 0.25 then
-			resize(width, height)
+		local unit = if pixelScaleProvider then 1/math.max(.05,pixelScaleProvider()) else 1
+		if math.abs(width - previousWidth) > 0.25 or math.abs(height - previousHeight) > 0.25 or math.abs(unit-previousUnit)>.001 then
+			resize(width, height, unit)
 		end
 		local head = (time / 4.8) % 1
 		for _, sample in ipairs(samples) do

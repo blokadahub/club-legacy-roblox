@@ -1,5 +1,14 @@
 # CL 27 — progresso verificável
 
+## Start mais fino, contorno legível e paleta radioativa — três etapas
+
+- Base main `d871018c94f975210de626ea2805ff52eec69045`; branch `fix/cl27-radioactive-welcome`.
+- Etapa 1: identificados preenchimento ampliado pelo mínimo de toque, espessura do brilho reduzida pelo UIScale, composição encolhida pelos insets e cores/tweens concorrentes. Corrigidos com superfície independente, espessura em pixels físicos, canvas próprio e paleta central.
+- Etapa 2: imagem de 1536×863 examinada por regiões e pixels verdes medidos. Revistos centros da marca, linhas WELCOME / TO THE CLUB, cápsula Start, rodapé e vértices/tons das facetas. Botões em `#5cff33`, estados de hover correspondentes e ações primárias opacas.
+- Etapa 3: referência reaberta após as mudanças; revisados hierarquia, espaçamento, proporção, contraste, escala e descarte. Testes cobrem seis resoluções, inset superior, área de toque separada, percurso completo e brilho localizado de espessura constante. Nenhum loop adicional.
+- Verificação: 43 fontes aprovadas no Luau 0.745; 653 verificações de dados; smoke 519 montagens/381 callbacks/240 asserções; 5.915 asserções de estados e 1.997 da abertura. Rojo 7.7.1 com XML e fontes idênticas; `git diff --check` passou.
+- Evidências, medidas e limites em [WELCOME_REFINEMENT.md](docs/WELCOME_REFINEMENT.md). Sem Studio/Player: aparência e tipografia finais ainda não foram certificadas por captura Roblox. Nenhuma nova publicação Roblox nesta revisão.
+
 ## Boas-vindas e seleção inicial do lobby — 04/11/2026
 
 - Base: main `8d40d4bbe6d5288a438aa882b6f814f6a9dcc479`; branch `fix/cl27-welcome-lobby-selection`.

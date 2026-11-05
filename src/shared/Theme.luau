@@ -6,6 +6,8 @@ return table.freeze({
 	white = Color3.fromRGB(241, 248, 249),
 	muted = Color3.fromRGB(145, 169, 184),
 	accent = Color3.fromRGB(54, 242, 201),
+	actionGreen = Color3.fromRGB(92, 255, 51), -- #5cff33
+	actionHover = Color3.fromRGB(127, 255, 92),
 	blue = Color3.fromRGB(22, 53, 112),
 	gold = Color3.fromRGB(233, 207, 136),
 	durations = { micro = 0.14, panel = 0.26, transition = 0.48, camera = 0.8 },

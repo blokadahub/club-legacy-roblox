@@ -3,6 +3,8 @@ local Theme = require(game:GetService("ReplicatedStorage").CL27.Theme)
 local Rig = require(script.Parent.Rig)
 local UI = {}
 UI.accent = Theme.accent
+UI.actionGreen = Theme.actionGreen
+UI.actionHover = Theme.actionHover
 function UI.new(className, props, parent)
 	local object = Instance.new(className)
 	for key, value in pairs(props or {}) do object[key] = value end
@@ -46,8 +48,8 @@ function UI.line(parent,x1,y1,x2,y2,color,thickness)
 end
 function UI.button(parent,value,x,y,w,h,callback,scope,options)
 	local opts = options or {}
-	local background = if opts.primary then UI.accent else Theme.panelLight
-	local transparency = opts.transparency or (if opts.quiet then 1 else (if opts.selected then 0.12 else 0.52))
+	local background = if opts.primary then Theme.actionGreen else Theme.panelLight
+	local transparency = opts.transparency or (if opts.quiet then 1 elseif opts.primary then 0 elseif opts.selected then 0.12 else 0.52)
 	local button = UI.new("TextButton", {Name="Action_"..tostring(value), BorderSizePixel=0,
 		BackgroundColor3=background, BackgroundTransparency=transparency, AutoButtonColor=false,
 		Position=UDim2.fromOffset(x,y), Size=UDim2.fromOffset(w,h),
@@ -70,33 +72,37 @@ function UI.button(parent,value,x,y,w,h,callback,scope,options)
 end
 -- Shared lobby/intro capsule. The owner drives Step and destroys the sweep;
 -- this component creates no connections, timers or independent frame loop.
-function UI.capsule(parent,props,sizeProvider)
-	local green=Color3.fromRGB(129,223,135)
+function UI.capsule(parent,props,sizeProvider,pixelScaleProvider)
+	local green=Theme.actionGreen
 	local black=Color3.fromRGB(14,23,19)
 	local button=UI.new("TextButton",{Text="",AutoButtonColor=false,Selectable=true,
-		Active=true,BorderSizePixel=0,BackgroundColor3=green,
+		Active=true,BorderSizePixel=0,BackgroundColor3=green,BackgroundTransparency=1,
 		ClipsDescendants=false,ZIndex=7},parent)
 	for key,value in pairs(props or {}) do button[key]=value end
-	UI.new("UICorner",{CornerRadius=UDim.new(1,0)},button)
+	-- The visual surface can be thinner than its transparent touch target.
+	local surface=UI.new("Frame",{Name="SuperficieCapsula",BackgroundColor3=green,
+		BorderSizePixel=0,AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5,.5),
+		Size=UDim2.fromScale(1,1),ClipsDescendants=false,ZIndex=7},button)
+	UI.new("UICorner",{CornerRadius=UDim.new(1,0)},surface)
 	local border=UI.new("UIStroke",{Name="ReflexoBorda",Color=Color3.fromRGB(243,252,241),
-		Thickness=1.1,Transparency=.82,ApplyStrokeMode=Enum.ApplyStrokeMode.Border},button)
+		Thickness=1,Transparency=.72,ApplyStrokeMode=Enum.ApplyStrokeMode.Border},surface)
 	local disc=UI.new("Frame",{Name="IconeControle",Position=UDim2.new(0,7,.5,-17),
-		Size=UDim2.fromOffset(34,34),BackgroundColor3=black,BorderSizePixel=0,ZIndex=9},button)
+		Size=UDim2.fromOffset(34,34),BackgroundColor3=black,BorderSizePixel=0,ZIndex=9},surface)
 	UI.new("UICorner",{CornerRadius=UDim.new(1,0)},disc)
 	local key=UI.text(disc,"X",0,0,34,34,17,green,Enum.Font.GothamBold)
 	key.Name="TeclaX"
 	key.Size=UDim2.fromScale(1,1)
 	key.TextXAlignment=Enum.TextXAlignment.Center
 	key.ZIndex=10
-	local label=UI.text(button,"",47,0,0,0,17,black,Enum.Font.GothamBold)
+	local label=UI.text(surface,"",47,0,0,0,17,black,Enum.Font.GothamBold)
 	label.Name="TextoAcao"
 	label.Size=UDim2.new(1,-52,1,0)
 	label.TextXAlignment=Enum.TextXAlignment.Center
 	label.TextTruncate=Enum.TextTruncate.None
 	label.TextWrapped=true
 	label.ZIndex=10
-	local fx=require(script.Parent.OuterGlowSweep).newCapsule(button,sizeProvider)
-	return button,{border=border,disc=disc,key=key,label=label,fx=fx}
+	local fx=require(script.Parent.OuterGlowSweep).newCapsule(surface,sizeProvider,pixelScaleProvider)
+	return button,{surface=surface,border=border,disc=disc,key=key,label=label,fx=fx}
 end
 function UI.logo(parent,x,y,scale)
 	local s=scale or 1

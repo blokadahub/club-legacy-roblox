@@ -76,6 +76,12 @@ function Visuals.new(playerGui)
 	local canvas=UI.frame(background,0,0,1600,900,WHITE,1)
 	canvas.AnchorPoint=Vector2.new(.5,.5)
 	local scale=UI.new("UIScale",{},canvas)
+	-- The welcome composition follows the full reference frame. Reserving the
+	-- Roblox top bar again would shrink/reposition this centered content on mobile.
+	local welcomeCanvas=UI.frame(background,0,0,1600,900,WHITE,1)
+	welcomeCanvas.Name="CanvasBoasVindas"
+	welcomeCanvas.AnchorPoint=Vector2.new(.5,.5)
+	local welcomeScale=UI.new("UIScale",{},welcomeCanvas)
 	local logo=brand(canvas)
 	local message=group(canvas,"EstadoPreparacao",UDim2.fromOffset(1080,180))
 	message.Position=UDim2.fromOffset(260,342)
@@ -87,22 +93,26 @@ function Visuals.new(playerGui)
 	pill.BackgroundColor3=WHITE
 	pill.BackgroundTransparency=0
 	UI.new("UICorner",{CornerRadius=UDim.new(1,0)},pill)
-	local welcome=group(canvas,"BoasVindas",UDim2.fromOffset(1100,520))
-	welcome.Position=UDim2.fromOffset(250,280)
+	local welcome=group(welcomeCanvas,"BoasVindas",UDim2.fromOffset(1100,560))
+	welcome.Position=UDim2.fromOffset(250,300)
 	welcome.GroupTransparency=1
-	local line1=text(welcome,"WELCOME",0,1100,118,118,WELCOME_GREEN)
-	local line2=text(welcome,"TO THE CLUB",100,1100,118,118,WELCOME_GREEN)
+	local line1=text(welcome,"WELCOME",0,1100,108,111,WELCOME_GREEN)
+	local line2=text(welcome,"TO THE CLUB",100,1100,108,111,WELCOME_GREEN)
+	line1.Name="WelcomeTitulo"
+	line2.Name="WelcomeSubtitulo"
 	line1.Font=Enum.Font.GothamBlack
 	line2.Font=Enum.Font.GothamBlack
 	local start,capsule=UI.capsule(welcome,{Name="START",
-		Size=UDim2.fromOffset(184,58),Active=false,Selectable=false},function(button)
-		return Vector2.new(button.Size.X.Offset,button.Size.Y.Offset)
-	end)
+		Size=UDim2.fromOffset(146,52),Active=false,Selectable=false},function(surface)
+		return Vector2.new(surface.Size.X.Offset,surface.Size.Y.Offset)
+	end,function() return welcomeScale.Scale end)
 	start.AnchorPoint=Vector2.new(.5,.5)
-	start.Position=UDim2.fromOffset(550,302)
-	capsule.label.Text="START"
-	local supportA=text(welcome,"CL 27 — CLUB LEGACY SPORTS™",386,1100,30,17,Color3.fromRGB(181,184,182))
-	local supportB=text(welcome,"Uma nova história começa no clube.",416,1100,30,15,Color3.fromRGB(145,149,146))
+	start.Position=UDim2.fromOffset(550,308)
+	capsule.label.Text="Start"
+	local supportA=text(welcome,"CL 27 — CLUB LEGACY SPORTS™",390,1100,24,15,Color3.fromRGB(156,155,157))
+	local supportB=text(welcome,"Uma nova história começa no clube.",418,1100,24,14,Color3.fromRGB(145,144,146))
+	supportA.Name="WelcomeCredito"
+	supportB.Name="WelcomeApoio"
 	local cut=UI.new("Frame",{Name="CorteCinematografico",BackgroundColor3=Color3.new(0,0,0),
 		BorderSizePixel=0,Size=UDim2.fromScale(1,1),BackgroundTransparency=1,ZIndex=20},shield)
 	local passage=UI.new("Frame",{Name="PassagemArroxeada",BackgroundColor3=Color3.fromRGB(51,46,78),
@@ -117,19 +127,34 @@ function Visuals.new(playerGui)
 		local topLeft,bottomRight=GuiService:GetGuiInset()
 		local available=size-topLeft-bottomRight-Vector2.new(32,32)
 		scale.Scale=math.max(.05,math.min(available.X/1600,available.Y/900))
-		-- Keep the actual interactive button at least 112 x 48 physical pixels,
-		-- even when the surrounding 1600 x 900 composition is scaled down.
-		start.Size=UDim2.fromOffset(math.max(184,112/scale.Scale),math.max(58,48/scale.Scale))
-		local buttonScale=start.Size.Y.Offset/56
-		capsule.disc.Size=UDim2.fromOffset(34*buttonScale,34*buttonScale)
-		capsule.disc.Position=UDim2.new(0,7*buttonScale,.5,-17*buttonScale)
-		capsule.key.TextSize=17*buttonScale
-		capsule.label.TextSize=math.max(17,14/scale.Scale)
-		capsule.label.Position=UDim2.fromOffset(47*buttonScale,0)
-		capsule.label.Size=UDim2.new(1,-52*buttonScale,1,0)
-		local supportY=math.max(386,302+start.Size.Y.Offset/2+20)
+		local safeWidth=size.X-topLeft.X-bottomRight.X
+		welcomeScale.Scale=math.max(.05,math.min(safeWidth/1600,size.Y/900))
+		welcomeCanvas.Position=UDim2.fromOffset(topLeft.X+safeWidth/2,size.Y/2)
+		local s=welcomeScale.Scale
+		local w,h=math.max(146,104/s),math.max(52,30/s)
+		-- A 48 px transparent target surrounds a 30 px visual on compact
+		-- phones. Accessibility no longer changes the visible capsule ratio.
+		start.Size=UDim2.fromOffset(math.max(w,112/s),math.max(h,48/s))
+		capsule.surface.Size=UDim2.fromOffset(w,h)
+		local discSize=math.min(h-8/s,math.max(h*.58,22/s))
+		local inset=(h-discSize)/2
+		capsule.disc.Size=UDim2.fromOffset(discSize,discSize)
+		capsule.disc.Position=UDim2.new(0,inset,.5,-discSize/2)
+		capsule.key.TextSize=math.max(16,13/s)
+		capsule.label.TextSize=math.max(18,14/s)
+		local textLeft=inset+discSize+7/s
+		capsule.label.Position=UDim2.fromOffset(textLeft,0)
+		capsule.label.Size=UDim2.new(1,-textLeft-8/s,1,0)
+		capsule.label.TextWrapped=false
+		capsule.border.Thickness=1/s
+		local supportY=math.max(390,308+start.Size.Y.Offset/2+38)
+		local supportHeight=math.max(24,14/s)
+		supportA.TextSize=math.max(15,9/s)
+		supportB.TextSize=math.max(14,9/s)
+		supportA.Size=UDim2.fromOffset(1100,supportHeight)
+		supportB.Size=UDim2.fromOffset(1100,supportHeight)
 		supportA.Position=UDim2.fromOffset(0,supportY)
-		supportB.Position=UDim2.fromOffset(0,supportY+30)
+		supportB.Position=UDim2.fromOffset(0,supportY+math.max(28,18/s))
 		canvas.Position=UDim2.fromOffset(topLeft.X+16+available.X/2,topLeft.Y+16+available.Y/2)
 		loader.Position=UDim2.fromOffset(0,-bottomRight.Y)
 	end
@@ -191,7 +216,9 @@ function Visuals.new(playerGui)
 		message.GroupTransparency=math.clamp(alpha,0,1)
 		local welcomeIn=if t>=16.6 and (snapshot.ready or snapshot.welcomed) then ease(progress(t,16.6,17.15)) else 0
 		welcome.GroupTransparency=1-welcomeIn
-		welcome.Position=UDim2.fromOffset(250,280+(if reduced then 0 else 32*(1-welcomeIn)))
+		welcome.Position=UDim2.fromOffset(250,300+(if reduced then 0 else 24*(1-welcomeIn)))
+		logo.root.Parent=if t>=16.6 then welcomeCanvas else canvas
+		if t>=16.6 then logo.root.Position=UDim2.fromOffset(800,207) end
 		-- Reintroduce the small white CL 27 brand above the welcome title.
 		if t>=16.6 then logo.root.GroupTransparency=1-welcomeIn end
 		line1.Position=UDim2.fromOffset(0,0)
@@ -201,11 +228,11 @@ function Visuals.new(playerGui)
 		if errorMessage then
 			welcome.GroupTransparency=0
 			line1.Visible=false;line2.Visible=false
-			capsule.label.Text="TENTAR"
+			capsule.label.Text="Tentar"
 			logo.root.GroupTransparency=1
 			supportA.Visible=false;supportB.Visible=false
 		else
-			line1.Visible=true;line2.Visible=true;capsule.label.Text="START"
+			line1.Visible=true;line2.Visible=true;capsule.label.Text="Start"
 			supportA.Visible=true;supportB.Visible=true
 		end
 		capsule.fx:SetReducedMotion(reduced or not start.Active)
