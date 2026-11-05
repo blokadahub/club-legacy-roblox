@@ -7,7 +7,10 @@
 - Repositório: `blokadahub/club-legacy-roblox`.
 - Base: `main` em `1361f231e1cdff34307502e28f047361cf96ca94` (inclui o refinamento radioativo do PR #14).
 - Branch independente: `feat/cl27-penalty-stage1`.
-- Commit de implementação: será registrado no fechamento desta entrega; para resolver o HEAD de documentação use `git log -1` ou o HEAD do PR.
+- Commit de implementação: `4c33af33b23ea84a3a8afb4eba3c812df49021d2`. A árvore de fontes é idêntica à compilada localmente (`3b2d3a5419ba2f6d9f0717f1c51c35e0603f239d`). Commits posteriores desta entrega registram somente o fechamento documental; consulte o HEAD no PR.
+- Pull Request: [#15 — cenário de pênaltis, etapa 1](https://github.com/blokadahub/club-legacy-roblox/pull/15).
+- CI do commit de implementação: [41948524077](https://github.com/blokadahub/club-legacy-roblox/actions/runs/41948524077), `completed / success` (evento pull_request). O build por push [41948520004](https://github.com/blokadahub/club-legacy-roblox/actions/runs/41948520004) também passou.
+- Artefato `club-legacy-rbxlx` disponível na execução de CI; compilação, suíte nova e validação XML aprovadas remotamente.
 - Nenhum merge, workflow de publicação ou envio ao Roblox executado nesta sessão.
 - Próxima ação: publicação manual e avaliação pelo usuário. **Não começar gameplay sem autorização expressa posterior.**
 
