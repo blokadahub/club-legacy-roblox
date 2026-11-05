@@ -436,6 +436,9 @@ for _,size in ipairs({Vector2.new(1536,863),Vector2.new(1920,1080),Vector2.new(8
 		and caption.Size.X.Offset+surface.Size.X.Offset>0,
 		"START caption overlaps its X disc or has no horizontal room")
 	visuals:Draw({elapsed=17.8,ready=true,canStart=true},"RealName",false,nil)
+	check(visuals.welcome.WelcomeTitulo.TextSize<=visuals.welcome.WelcomeTitulo.Size.Y.Offset
+		and visuals.welcome.WelcomeSubtitulo.TextSize<=visuals.welcome.WelcomeSubtitulo.Size.Y.Offset,
+		"Title text is taller than its native label and risks vertical clipping")
 	check(visuals.logo.root.GroupTransparency==0 and near(visuals.logo.scale.Scale,.25)
 		and visuals.logo.root.Position.Y.Offset==207,"Welcome must retain the small white brand above its title")
 	if size.X==1536 then

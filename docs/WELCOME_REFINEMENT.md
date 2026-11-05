@@ -18,8 +18,8 @@ Inspeção visual acompanhada de segmentação dos pixels verdes da imagem receb
 | Região | Referência 1536×863 | Aplicação no canvas 1600×900 |
 | --- | --- | --- |
 | Marca superior | centro próximo de (768, 198) | marca própria CL Sports/CL 27 em (800, 207), escala 0,25 |
-| WELCOME | x466–1069, y306–372; centro y339 | linha em y300, caixa de 108, centro y354 |
-| TO THE CLUB | x390–1145, y402–468; centro y435 | segunda linha 100 unidades abaixo, centro y454 |
+| WELCOME | x466–1069, y306–372; centro y339 | linha em y300, caixa de 112, centro y356 |
+| TO THE CLUB | x390–1145, y402–468; centro y435 | segunda linha 100 unidades abaixo, centro y456 |
 | Start | verde x703–835, y557–609; centro y583 | centro (800, 608), superfície de referência 146×52 |
 | Rodapé | abaixo do botão, aproximadamente y664–724 | crédito próprio em y690 e apoio a seguir, sem colidir com o toque |
 | Facetas | junção esquerda perto de 58% da altura; diagonal direita perto de 74% da largura superior | vértices revistos; sete facetas / 14 WedgeParts mantidos |
@@ -45,7 +45,7 @@ A imagem foi reaberta após a implementação para revisar novamente hierarquia,
 - Luau 0.745: 43 fontes aprovadas.
 - Dados: 653 verificações.
 - Smoke: 519 montagens / 381 callbacks / 240 asserções.
-- Estados: 5.915 asserções; abertura: 1.997 asserções.
+- Estados: 5.915 asserções; abertura: 2.003 asserções, incluindo altura de caixa suficiente para o título.
 - Rojo 7.7.1: XML válido, 43 fontes incorporadas sem alteração.
 - `git diff --check`: aprovado.
 

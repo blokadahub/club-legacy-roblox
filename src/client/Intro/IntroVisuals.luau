@@ -96,8 +96,8 @@ function Visuals.new(playerGui)
 	local welcome=group(welcomeCanvas,"BoasVindas",UDim2.fromOffset(1100,560))
 	welcome.Position=UDim2.fromOffset(250,300)
 	welcome.GroupTransparency=1
-	local line1=text(welcome,"WELCOME",0,1100,108,111,WELCOME_GREEN)
-	local line2=text(welcome,"TO THE CLUB",100,1100,108,111,WELCOME_GREEN)
+	local line1=text(welcome,"WELCOME",0,1100,112,111,WELCOME_GREEN)
+	local line2=text(welcome,"TO THE CLUB",100,1100,112,111,WELCOME_GREEN)
 	line1.Name="WelcomeTitulo"
 	line2.Name="WelcomeSubtitulo"
 	line1.Font=Enum.Font.GothamBlack
