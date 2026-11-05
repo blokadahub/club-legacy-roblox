@@ -5,7 +5,10 @@
 **O usuário aprovou o cenário da etapa 1 e autorizou esta correção crítica de personagens/animações. A gameplay da etapa 2 continua não autorizada.** O registro da entrega inicial foi preservado abaixo como histórico; suas descrições de personagens artificiais/estáticos foram substituídas por esta atualização.
 
 - Base aprovada: `main` em `0a9eb4cf42c96b9df74d6c948da52b3cb76061b8`, merge manual do PR #15.
-- Branch da correção: `fix/cl27-real-arena-avatars`. Commit/PR e CI serão registrados no fechamento desta entrega.
+- Branch da correção: `fix/cl27-real-arena-avatars`.
+- Commit de implementação: `74f07eb1f05ca3004840a80a7167d61e49a7f136`; árvore idêntica à testada localmente: `046cf0ee9214e0227128814b7a14c794d78040cd`.
+- Pull Request: [#16 — avatares reais e animações R15](https://github.com/blokadahub/club-legacy-roblox/pull/16), aberto e sem merge.
+- [CI 41952297810](https://github.com/blokadahub/club-legacy-roblox/actions/runs/41952297810): job Luau + Rojo concluído com sucesso, incluindo testes ampliados e artefato `club-legacy-rbxlx`. Commits posteriores desta entrega registram apenas o fechamento documental; consulte o HEAD no PR.
 - Sem merge ou publicação Roblox nesta correção.
 
 ### Aparência e carregamento
