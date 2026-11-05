@@ -101,6 +101,10 @@ function Rig:SolveLeg(side,frames,pose,target)
 	local delta=a-h
 	local distance=math.clamp(delta.Magnitude,math.abs(l1-l2)+.001,l1+l2-.001)
 	local direction=delta.Unit
+	-- A partially released support target must not lengthen bones during takeoff.
+	local reachable=h+direction*distance
+	target=CFrame.new(target.Position+reachable-a)*target.Rotation
+	a=reachable
 	local front=self.base.LookVector
 	local pole=(front-direction*dot(direction,front)).Unit
 	local along=(l1*l1+distance*distance-l2*l2)/(2*distance)
@@ -120,7 +124,10 @@ function Rig:Apply(state,initial)
 	local pose=table.clone(state.pose)
 	local rootFrame=self.base*CFrame.new(state.root.X,self.height+state.root.Y,state.root.Z)*CFrame.Angles(0,0,math.rad(state.roll))
 	local frames=self:FK(rootFrame,pose)
-	if state.grounded then
+	local weight=state.ikWeight
+	if weight==nil then weight=if state.grounded then 1 else 0 end
+	if weight>0 then
+		local original=table.clone(pose)
 		local targets={Left=self:FootTarget("Left",state.left),Right=self:FootTarget("Right",state.right,state.footAngle)}
 		-- Lower pelvis when required by stride/proportions, keeping support feet planted.
 		local correction=0
@@ -132,11 +139,20 @@ function Rig:Apply(state,initial)
 			local vertical=math.sqrt(math.max(.01,reach*reach-horizontal))
 			correction=math.min(correction,delta.Y+vertical)
 		end
-		rootFrame+=Vector3.new(0,correction,0)
+		rootFrame+=Vector3.new(0,correction*weight,0)
 		frames=self:FK(rootFrame,pose)
 		for _,side in ipairs({"Left","Right"}) do self:SolveLeg(side,frames,pose,targets[side]) end
+		if weight<1 then
+			for _,side in ipairs({"Left","Right"}) do
+				for _,joint in ipairs({"Hip","Knee","Ankle"}) do
+					local name=side..joint
+					pose[name]=(original[name] or CFrame.identity):Lerp(pose[name],weight)
+				end
+			end
+		end
 		frames=self:FK(rootFrame,pose)
-	else
+	end
+	if weight<1 then
 		-- Keep body above the plane during landing/get-up; ignore decorative accessories.
 		local minimum=math.huge
 		for part,frame in pairs(frames) do if part~=self.root then minimum=math.min(minimum,bottom(frame,part.Size)) end end

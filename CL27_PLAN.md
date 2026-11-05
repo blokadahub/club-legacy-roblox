@@ -47,3 +47,7 @@ Prévia modular no Workspace integrada exclusivamente a Aprenda a Jogar → Aren
 ## Correção de personagens/animações — 04/11/2026
 
 Cenário da etapa 1 aprovado pelo usuário. Correção em `fix/cl27-real-arena-avatars`: substituir somente os atores artificiais por dois clones R15 da HumanoidDescription da conta local. Helper oficial compartilhado com o loader do lobby; retargeting e coreografia próprios de futebol, Animator/idle tracks quando fornecidos pelo avatar, prévias voluntárias sem física da bola/IA/potência. Cenário/câmera/iluminação/bola preservados. Ver estado e limites atuais em `docs/PENALTY_PROGRESS.md`. Isso não inicia a gameplay da etapa 2.
+
+## Refinamento de corrida e defesas — 04/11/2026
+
+Após teste do PR #16 pelo usuário, corrigir somente braços/cotovelos/pulsos e sincronização da corrida; seis sequências defensivas próprias, incluindo a variação opcional com passo prévio. Catálogo em PenaltySaves, apoio/voo com peso contínuo, seletor compacto de prévias. Cenário, bola, câmera, luz, avatar real e navegação preservados. Auditoria em `docs/PENALTY_ANIMATION_REFINEMENT.md`; etapa 2 continua bloqueada.
