@@ -13,6 +13,7 @@ root = Path(__file__).resolve().parent.parent
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--runtime", required=True)
 parser.add_argument("--intro", action="store_true", help="Run opening timeline/integration tests using the same narrow stubs")
+parser.add_argument("--penalty", action="store_true", help="Check arena layout, static R15 poses and scene lifecycle with matrix API doubles")
 args = parser.parse_args()
 prelude = (root / "tools/runtime-smoke.luau").read_text().split("-- MODULES", 1)[0]
 setup = r'''
@@ -132,6 +133,8 @@ services.UserInputService.GamepadEnabled = true
 services.Lighting = Instance.new('Lighting')
 services.RunService = {RenderStepped = signal(), Heartbeat = signal()}
 '''
+if args.penalty:
+    setup += (root / "tools/penalty-stubs.luau").read_text()
 paths = sorted((root / "src/shared").glob("*.luau"))
 paths += [root / f"src/client/{name}.luau" for name in ("Scope", "Rig", "UI", "SettingsIcons", "Soundtrack", "MenuAvatar", "OuterGlowSweep", "HomeShowcase", "RadialGlow", "HomeHUD", "SettingsHUD", "TransitionFX", "App")]
 paths += sorted((root / "src/client/Screens").glob("*.luau"))
@@ -176,7 +179,7 @@ for path in paths:
     parts.append(f"do local node = Instance.new('ModuleScript'); node.Name = '{name}'; node.Parent = folders['{parent}']; node:SetAttribute('ModulePath', '{relative}'); moduleNodes['{relative}'] = node end\n")
     parts.append(f"factories['{relative}'] = function(script)\n{path.read_text()}\nend\n")
 parts.append("require = function(node) assert(typeof(node) == 'Instance' and node:IsA('ModuleScript')); local path = node:GetAttribute('ModulePath'); if cache[path] == nil then cache[path] = assert(factories[path], 'Missing factory: ' .. tostring(path))(node) end; return cache[path] end\n")
-spec = (root / ("tools/intro.spec.luau" if args.intro else "tools/app-states.spec.luau")).read_text()
+spec = (root / ("tools/penalty.spec.luau" if args.penalty else "tools/intro.spec.luau" if args.intro else "tools/app-states.spec.luau")).read_text()
 with tempfile.TemporaryDirectory(prefix="cl27-app-") as folder:
     generated = Path(folder) / "app-check.luau"
     generated.write_text(prelude + setup + "\n".join(parts) + spec)

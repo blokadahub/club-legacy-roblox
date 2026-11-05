@@ -266,4 +266,7 @@ function MenuAvatar:Destroy()
 	table.clear(self.joints)
 end
 
+MenuAvatar.createFallbackBall = soccerBall
+MenuAvatar.cloneImportedBall = importedBall
+
 return MenuAvatar

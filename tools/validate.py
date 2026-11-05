@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 ROUTES = (
     "HomeInterior", "Overview", "Squad", "Tactics",
     "Assignments", "Calendar", "Transfers", "Finance", "Development",
-    "Competitions", "Customization", "Settings", "Clubs", "Kits",
+    "Competitions", "Customization", "Settings", "Clubs", "Kits", "PenaltyArena",
 )
 
 
@@ -80,7 +80,7 @@ def validate_sources() -> list[Path]:
             require((ROOT / f"src/client/Screens/{route}.luau").is_file(), f"Tela ausente: {route}")
     require("HomeTraining" not in app_text, "HomeTraining nao pode permanecer no App.")
     scene_text = (ROOT / "src/client/Scene.luau").read_text()
-    require("function Scene:_training" not in scene_text, "Geometria 3D de treinamento deve permanecer removida.")
+    require("PenaltyScene" in scene_text and "PenaltyArena" in app_text, "Arena de pênaltis não integrada.")
     # These Lighting properties are restricted in live LocalScripts despite being
     # serialized successfully by Rojo and accepted by the Luau compiler.
     for restricted in ("LightingStyle", "PrioritizeLightingQuality"):
@@ -91,7 +91,7 @@ def validate_sources() -> list[Path]:
                 f"Propriedade Lighting protegida no cliente: {restricted}. Configure em default.project.json, não em Scene.luau.")
     for doc in ("AGENTS.md", "CL27_PLAN.md", "CL27_PROGRESS.md"):
         require((ROOT / doc).is_file(), f"Documento obrigatório ausente: {doc}")
-    print(f"Estrutura: {len(sources)} fontes, 14 rotas, mapeamento Rojo e require locais verificados.")
+    print(f"Estrutura: {len(sources)} fontes, 15 rotas, mapeamento Rojo e require locais verificados.")
     return sources
 
 

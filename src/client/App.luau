@@ -14,8 +14,8 @@ local HomeHUD=require(script.Parent.HomeHUD)
 local SettingsHUD=require(script.Parent.SettingsHUD)
 local TransitionFX=require(script.Parent.TransitionFX)
 local App={}
-App.routes={"HomeInterior","Overview","Squad","Tactics","Assignments","Calendar","Transfers","Finance","Development","Competitions","Customization","Settings","Clubs","Kits"}
-local labels={HomeInterior="Menu • galeria",Overview="Visão geral",Squad="Elenco",Tactics="Táticas",Assignments="Atribuições",Calendar="Calendário",Transfers="Transferências",Finance="Finanças",Development="Desenvolvimento",Competitions="Competições",Customization="Personalização",Settings="Configurações",Clubs="Seleção de clubes",Kits="Seleção de uniformes"}
+App.routes={"HomeInterior","Overview","Squad","Tactics","Assignments","Calendar","Transfers","Finance","Development","Competitions","Customization","Settings","Clubs","Kits","PenaltyArena"}
+local labels={HomeInterior="Menu • galeria",Overview="Visão geral",Squad="Elenco",Tactics="Táticas",Assignments="Atribuições",Calendar="Calendário",Transfers="Transferências",Finance="Finanças",Development="Desenvolvimento",Competitions="Competições",Customization="Personalização",Settings="Configurações",Clubs="Seleção de clubes",Kits="Seleção de uniformes",PenaltyArena="Arena de Treino"}
 local screens={}
 for _,id in ipairs(App.routes) do
 	screens[id]=require(script.Parent.Screens[if id=="HomeInterior" then "Home" else id])
@@ -148,6 +148,11 @@ function App.start(options)
 			GuiService.SelectedObject=homeHud:GetSelectedButton()
 			return
 		end
+		if state.screen=="PenaltyArena" then
+			local hud=playerGui:FindFirstChild("CL27_PenaltyHUD")
+			GuiService.SelectedObject=hud and hud:FindFirstChild("VoltarDaArena")
+			return
+		end
 		if state.screen=="Clubs" then
 			GuiService.SelectedObject=tunnelBack
 			return
@@ -177,6 +182,7 @@ function App.start(options)
 		UI.text(panel,"CENTRAL DO CLUBE",28,20,470,44,28,Theme.white,Enum.Font.GothamBold)
 		UI.button(panel,"×",564,20,55,45,closeTray,trayScope,{quiet=true,textSize=30})
 		for i,id in ipairs(App.routes) do
+			if id=="PenaltyArena" then continue end
 			local col=if i>8 then 1 else 0
 			local row=(i-1)%8
 			UI.button(panel,labels[id],28+col*306,90+row*69,284,51,function() closeTray();go(id) end,trayScope,{selected=id==state.screen,quiet=true,textSize=17})
@@ -215,7 +221,7 @@ function App.start(options)
 		tunnelBackGui.Enabled=(state.screen=="Clubs")
 		-- A UI de Settings fica em outro ScreenGui, nunca sob Transicao.
 		settingsHud:SetVisible(state.screen=="Settings")
-		local wanted=if state.screen=="HomeInterior" then "Interior" elseif state.screen=="Kits" then "Kits" elseif state.screen=="Clubs" then "Tunnel" else "Arena"
+		local wanted=if state.screen=="HomeInterior" then "Interior" elseif state.screen=="Kits" then "Kits" elseif state.screen=="Clubs" then "Tunnel" elseif state.screen=="PenaltyArena" then "Penalty" else "Arena"
 		homeHud:SetVisible(wanted=="Interior" and not introLocked)
 		if wanted~=mode then scene:Show(wanted,Data.clubs[state.homeClub],Data.clubs[state.awayClub],state.homeKit,state.awayKit);mode=wanted
 		else scene:UpdateClubs(Data.clubs[state.homeClub],Data.clubs[state.awayClub],state.homeKit,state.awayKit) end
@@ -238,7 +244,7 @@ function App.start(options)
 			end
 			UI.line(backdrop,760,890,1560,135,UI.accent,1).BackgroundTransparency=.9
 		end
-		local ctx={state=state,scope=pageScope,go=go,rerender=rerender,notify=notify,scene=scene}
+		local ctx={state=state,scope=pageScope,go=go,rerender=rerender,notify=notify,scene=scene,playerGui=playerGui}
 		-- A HOME é desenhada no ScreenGui independente CL27_HomeHUD, não aqui.
 		-- O ScreenGui do menu não depende da cena 3D para inicializar.
 		if wanted~="Interior" and state.screen~="Settings" and state.screen~="Clubs" then
@@ -246,7 +252,7 @@ function App.start(options)
 		end
 		-- A tela inicial da referência possui só cinco opções e os ícones decorativos.
 		-- O rodapé de navegação continua disponível nas outras páginas.
-		if wanted~="Interior" and state.screen~="Settings" and state.screen~="Clubs" then
+		if wanted~="Interior" and state.screen~="Settings" and state.screen~="Clubs" and state.screen~="PenaltyArena" then
 			local footer=UI.frame(page,0,839,1600,61,Theme.background,.3)
 			UI.line(footer,44,0,1556,0,Theme.muted,1).BackgroundTransparency=.8
 			UI.button(footer,"≡  CENTRAL",44,10,165,40,toggleTray,pageScope,{quiet=true,textSize=14})
@@ -267,6 +273,7 @@ function App.start(options)
 	-- de jogo. Navegacao entre paineis internos que nao sao esses modos nao
 	-- apresenta carregamento artificial.
 	local function shouldLoad(from: string, to: string): boolean
+		if from=="PenaltyArena" or to=="PenaltyArena" then return false end
 		local critical = {
 			HomeInterior=true, Settings=true, Clubs=true, Kits=true,
 		}
@@ -299,7 +306,7 @@ function App.start(options)
 		local needsLoader=shouldLoad(original,id)
 		local function handoff()
 			if not lifetime.alive then return end
-			if not back then table.insert(history,original) end
+			if not back and id~="PenaltyArena" then table.insert(history,original) end
 			state.screen=id
 			-- O indicador continua por cima mesmo se uma tela falhar.
 			local ok, errorMessage=xpcall(render,function(err)
@@ -307,8 +314,15 @@ function App.start(options)
 			end)
 			if not ok then
 				warn("[CL27] Erro ao abrir "..tostring(id)..": "..tostring(errorMessage))
-				settingsHud:SetVisible(id=="Settings")
-				homeHud:SetVisible(id=="HomeInterior")
+				if id=="PenaltyArena" then
+					state.screen="HomeInterior"
+					mode=nil
+					local recovered=pcall(render)
+					if recovered then notify("Não foi possível abrir a arena. Tente novamente.");ok=true end
+				else
+					settingsHud:SetVisible(id=="Settings")
+					homeHud:SetVisible(id=="HomeInterior")
+				end
 			end
 			return ok
 		end
@@ -354,8 +368,7 @@ function App.start(options)
 		if index==2 or index==3 then
 			go("Clubs")
 		elseif index==4 then
-			-- Treinamentos desativados ate nova atualizacao.
-			return
+			if lesson==4 then go("PenaltyArena") end
 		elseif index==1 then
 			notify("Notícias do CL: novidades em desenvolvimento.")
 		elseif index==5 then
@@ -368,9 +381,9 @@ function App.start(options)
 	lifetime:Connect(UserInputService.InputBegan,function(input,processed)
 		if busy or introLocked or processed or UserInputService:GetFocusedTextBox() then return end
 		if input.KeyCode==Enum.KeyCode.M or input.KeyCode==Enum.KeyCode.ButtonY then
-			if state.screen~="Clubs" then toggleTray() end
+			if state.screen~="Clubs" and state.screen~="PenaltyArena" then toggleTray() end
 		elseif input.KeyCode==Enum.KeyCode.B or input.KeyCode==Enum.KeyCode.ButtonB then
-			if tray then closeTray() elseif not busy then go(table.remove(history) or "HomeInterior",true) end
+			if tray then closeTray() elseif state.screen=="PenaltyArena" then go("HomeInterior",true) elseif not busy then go(table.remove(history) or "HomeInterior",true) end
 		end
 	end)
 	lifetime:Connect(gui.Destroying,function()

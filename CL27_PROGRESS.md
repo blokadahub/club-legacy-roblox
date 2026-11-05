@@ -173,3 +173,10 @@ Não restou falha reproduzível nas verificações executadas após as correçõ
 - Ajuste solicitado após a avaliação do PR #9: exposição de 0,16 para 0,02, Brightness de 1,15 para 1,0, ambiente ligeiramente reduzido e preenchimento neutro de 1,6 para 1,3. Neons, geometria, câmera, interface e controles preservados.
 - Névoa com correntes laterais opostas de 0,65–1,05 studs/s, rotação de 2–4°/s, leve ascensão, fade e renovação em 14–18 segundos. A camada estática ficou mais discreta para expor a animação. Simulação nativa, sem novos loops por frame, sem emissão de luz e com os mesmos limites de partículas/luzes/sombras.
 - Base main `498da656c0d0083d0c31388ac2b8c1e43ce4edcd` preservada em `backup/pre-tunnel-dimmer-motion-20261103-498da65`; trabalho em `fix/tunnel-dimmer-moving-fog`. Testes de estados ampliados: **5.907 asserções** aprovadas nos três perfis. A animação configurada ainda requer inspeção visual no Roblox; Studio/Player indisponíveis.
+
+## Pênaltis — entrega da etapa 1 (04/11/2026, Fortaleza)
+
+- Base `1361f231e1cdff34307502e28f047361cf96ca94`; branch `feat/cl27-penalty-stage1`. Campo, baliza, rede leve, arquibancadas azuis, luz diurna, câmera fixa, bola independente do lobby e dois R15 em pose estática.
+- Aprenda a Jogar → Arena de Treino abre diretamente a prévia. Retorno por toque, B do controle ou tecla B. Kick Off/Jogo Rápido preservado; nenhum atalho novo na Central.
+- Validações locais aprovadas: 47 fontes, 15 rotas, 653 verificações de dados, 519 montagens/381 callbacks/240 asserções de UI, 5.933 estados, 2.003 introdução, 27.237 arena; Rojo 7.7.1/XML idêntico. São APIs substituídas, não execução/render Roblox.
+- Sem merge ou publicação automática. Etapa 2 e etapa 3 não iniciadas. Aguardar avaliação do usuário e autorização expressa. Registro completo e passos de publicação em [PENALTY_PROGRESS.md](docs/PENALTY_PROGRESS.md).

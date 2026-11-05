@@ -13,7 +13,7 @@ local SECTIONS = {
 	{title = "NOTÍCIAS DO CL", subtitle = "Acompanhe novidades e atualizações do Club Legacy.", action = "Ver notícias", symbol = "news"},
 	{title = "CLUBS", subtitle = "Escolha seu clube e prepare a próxima partida.", action = "Entrar em Clubs", symbol = "clubs"},
 	{title = "JOGO RÁPIDO", subtitle = "Selecione as equipes e entre no clima de jogo.", action = "Selecionar equipes", symbol = "quick"},
-	{title = "APRENDA A JOGAR", subtitle = "Modos indisponíveis temporariamente. Aguarde uma atualização.", action = "EM ATUALIZAÇÃO", symbol = "learn"},
+	{title = "APRENDA A JOGAR", subtitle = "Selecione Arena de Treino no menu para entrar nas cobranças de pênalti.", action = "Arena de Treino", symbol = "learn"},
 	{title = "UPGRADE", subtitle = "Descubra a identidade e as próximas novidades do CL 27.", action = "Ver melhorias", symbol = "upgrade"},
 }
 local function item(className: string, parent: Instance, props)
@@ -194,14 +194,12 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 		title.Text = section.title
 		subtitle.Text = section.subtitle
 		actionText.Text = section.action
-		local disabled = index == 4
-		action.Active = not disabled
-		action.Selectable = not disabled
-		capsule.surface.BackgroundColor3 = if disabled then Color3.fromRGB(105, 112, 114) else GREEN
-		disc.Visible = not disabled
-		actionText.Position = if disabled then UDim2.fromScale(0, 0) else UDim2.new(0, 47, 0, 0)
-		actionText.Size = if disabled then UDim2.fromScale(1, 1) else UDim2.new(1, -52, 1, 0)
-		capsuleFX:SetReducedMotion(isReduced or disabled)
+		action.Active,action.Selectable=true,true
+		capsule.surface.BackgroundColor3=GREEN
+		disc.Visible=true
+		actionText.Position=UDim2.new(0,47,0,0)
+		actionText.Size=UDim2.new(1,-52,1,0)
+		capsuleFX:SetReducedMotion(isReduced)
 		mini.Visible = index == 5
 	end
 	local function tweenFade(goal: number, duration: number)
@@ -239,7 +237,7 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 	end
 	function self:SetReducedMotion(enabled: boolean)
 		isReduced = enabled
-		capsuleFX:SetReducedMotion(enabled or selected == 4)
+		capsuleFX:SetReducedMotion(enabled)
 		if enabled then
 			if fadeTween then fadeTween:Cancel() end
 			stage.GroupTransparency = 0
@@ -256,10 +254,10 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 		stage:Destroy()
 	end
 	action.Activated:Connect(function()
-		if alive and selected > 0 and selected ~= 4 then actionCallback(selected, lesson) end
+		if alive and selected > 0 then actionCallback(selected, if selected == 4 then 4 else lesson) end
 	end)
 	action.MouseEnter:Connect(function()
-		if alive and selected ~= 4 then
+		if alive then
 			if hoverTween then hoverTween:Cancel() end
 			hoverTween=TweenService:Create(capsule.surface, TweenInfo.new(0.16), {
 				BackgroundColor3 = UI.actionHover,
@@ -268,7 +266,7 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 		end
 	end)
 	action.MouseLeave:Connect(function()
-		if alive and selected ~= 4 then
+		if alive then
 			if hoverTween then hoverTween:Cancel() end
 			hoverTween=TweenService:Create(capsule.surface, TweenInfo.new(0.2), {BackgroundColor3 = GREEN})
 			hoverTween:Play()

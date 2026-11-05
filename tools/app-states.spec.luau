@@ -220,8 +220,8 @@ advance(0.52)
 check(clubOption.TextTransparency == 0 and glow.GroupTransparency == 1
 	and pulse.GroupTransparency == 1 and not wipe.Visible and not UI.inputLocked,
 	"Selecao branca deve permanecer SEM glow verde depois do impacto")
-check(not primary.Active and not radioactive(primarySurface.BackgroundColor3),
-	"Tween de hover atrasado não pode recolorir uma ação desativada de verde")
+check(primary.Active and radioactive(primarySurface.BackgroundColor3),
+	"Aprenda deve preservar a ação verde e seu efeito")
 check(homeList:FindFirstChild("Opcao_5").Position.Y.Offset > 400,
 	"Upgrade deve descer quando Aprenda a Jogar expande")
 local core = glow:FindFirstChild("CamadaRadial_14")
@@ -256,27 +256,50 @@ manager.InputEnded:Fire({UserInputType = Enum.UserInputType.Touch})
 advance(0.32)
 check(manager.TextTransparency == 0.32 and kickOff.TextTransparency == 0,
 	"Soltar toque deve devolver foco branco somente ao botão selecionado")
--- Aprenda a Jogar exibe itens inativos ate a proxima atualizacao.
+-- Arena selection enters directly: no second mode/confirmation or loader.
 clubOption.Activated:Fire()
 advance(0.69)
 check(showcase:FindFirstChild("TituloCentral").Text == "APRENDA A JOGAR"
-	and primary:FindFirstChild("TextoAcao",true).Text == "EM ATUALIZAÇÃO",
-	"Aprenda precisa informar seu estado indisponivel")
-check(not primary.Selectable and not primary.Active,
-	"CTA central deve estar desativado")
-for i = 1, 4 do
-	local entry = lessons:FindFirstChild("SubOpcao_" .. tostring(i))
-	check(entry ~= nil and not entry.Selectable and not entry.Active,
-		"Subopcao nao pode receber toque nem foco")
-	entry.Activated:Fire()
+	and primary:FindFirstChild("TextoAcao",true).Text == "Arena de Treino",
+	"Aprenda precisa apresentar a arena disponível")
+check(primary.Selectable and primary.Active, "CTA da arena deve manter foco e toque")
+for i = 1, 3 do
+	local entry=lessons:FindFirstChild("SubOpcao_"..i)
+	check(not entry.Selectable and not entry.Active,"Modos ainda ausentes devem permanecer inativos")
 end
+local arenaEntry=lessons:FindFirstChild("SubOpcao_4")
+check(arenaEntry.Selectable and arenaEntry.Active,"Arena de Treino deve estar disponível")
+for cycle=1,3 do
+	arenaEntry.Activated:Fire()
+	check(handle.state.screen=="PenaltyArena" and services.lastScene.mode=="Penalty"
+		and not homeHud.Enabled and not wipe.Visible and not UI.inputLocked,
+		"Selecionar arena deve montar diretamente a prévia sem tela intermediária")
+	local arenaHUD=playerGui:FindFirstChild("CL27_PenaltyHUD")
+	check(arenaHUD and arenaHUD:FindFirstChild("VoltarDaArena").Size.Y.Offset>=54,
+		"Retorno deve ter alvo de toque independente do canvas")
+	check(services.GuiService.SelectedObject==arenaHUD:FindFirstChild("VoltarDaArena"),
+		"Controle precisa receber foco no retorno")
+	-- A hidden lobby event must not navigate while arena is open.
+	arenaEntry.Activated:Fire()
+	check(handle.state.screen=="PenaltyArena","Evento oculto mudou a rota")
+	if cycle==2 then key(Enum.KeyCode.ButtonB) else arenaHUD:FindFirstChild("VoltarDaArena").Activated:Fire() end
+	check(handle.state.screen=="HomeInterior" and services.lastScene.mode=="Interior"
+		and homeHud.Enabled and not playerGui:FindFirstChild("CL27_PenaltyHUD") and not UI.inputLocked,
+		"Retorno deve remover HUD da arena e restaurar lobby e controles")
+end
+-- Construction failure must recover the lobby and release navigation locks.
+services.failNextSceneShow=true
+arenaEntry.Activated:Fire()
+check(handle.state.screen=="HomeInterior" and homeHud.Enabled and not UI.inputLocked,
+	"Falha da arena deve restaurar lobby e liberar navegação")
+check(services.GuiService.SelectedObject==homeList:FindFirstChild("Opcao_4"),
+	"Recuperação deve restaurar foco no Aprenda")
+-- Central capsule is the same Arena choice, never a second start confirmation.
 primary.Activated:Fire()
-check(handle.state.screen == "HomeInterior" and handle.state.homeLesson == nil
-	and not wipe.Visible and not UI.inputLocked,
-	"Aprenda nao pode mudar de cena ou iniciar carregamento")
-advance(0.55)
-check(showcase:FindFirstChild("TituloCentral").Text == "APRENDA A JOGAR",
-	"Conteudo deve permanecer estatico")
+check(handle.state.screen=="PenaltyArena","Cápsula Arena não abre a mesma rota")
+key(Enum.KeyCode.B)
+check(handle.state.screen=="HomeInterior","Teclado deve retornar ao lobby")
+
 kickOff.Activated:Fire()
 advance(0.55)
 check(showcase:FindFirstChild("TituloCentral").Text == "JOGO RÁPIDO"
@@ -832,13 +855,14 @@ local mobileLessons = mobileList:FindFirstChild("SubmenuAprenda")
 check(mobileLessons.Visible and mobileLessons.Size.X.Scale == 1
 	and mobileList.CanvasPosition.Y > 0,
 	"Submenu deve caber na largura do celular e posicionar a rolagem corretamente")
-local disabledLesson = mobileLessons:FindFirstChild("SubOpcao_4")
-check(not disabledLesson.Selectable and not disabledLesson.Active,
-	"Submenu movel deve desativar as opcoes de treinamento")
-disabledLesson.Activated:Fire()
-check(mobile.state.homeLesson == nil and mobile.state.screen == "HomeInterior"
-	and not mobile.state.menuInputLocked,
-	"Submenu movel nao pode abrir o modo de treino")
+local mobileArena = mobileLessons:FindFirstChild("SubOpcao_4")
+check(mobileArena.Selectable and mobileArena.Active,"Arena móvel deve aceitar toque")
+mobileArena.Activated:Fire()
+check(mobile.state.screen=="PenaltyArena" and not mobile.state.menuInputLocked,
+	"Toque na arena deve entrar imediatamente")
+playerGui:FindFirstChild("CL27_PenaltyHUD"):FindFirstChild("VoltarDaArena").Activated:Fire()
+check(mobile.state.screen=="HomeInterior" and not playerGui:FindFirstChild("CL27_PenaltyHUD"),
+	"Retorno móvel deve descartar HUD e restaurar lobby")
 advance(0.55)
 mobileList:FindFirstChild("Opcao_5").Activated:Fire()
 advance(0.55)

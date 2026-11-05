@@ -9,6 +9,8 @@ local MenuAvatar = require(script.Parent.MenuAvatar)
 local TunnelScene = require(script.Parent.Environments.TunnelScene)
 local TunnelGeometry = require(script.Parent.Environments.TunnelGeometry)
 local TunnelLighting = require(script.Parent.Environments.TunnelLighting)
+local PenaltyScene = require(script.Parent.Environments.PenaltyScene)
+local PenaltyLayout = require(script.Parent.Environments.PenaltyLayout)
 local Scene = {}
 Scene.__index = Scene
 
@@ -193,7 +195,7 @@ function Scene.new(settings)
 		local fittedHeight = self.canvasHeight or camera.ViewportSize.Y
 		local viewportHeight = math.max(1, camera.ViewportSize.Y)
 		camera.FieldOfView = math.clamp(math.deg(2 * math.atan(math.tan(math.rad(referenceFov / 2)) * viewportHeight / math.max(1, fittedHeight))), 1, 120)
-		local strength = (self.mode == "Tunnel" or self.settings.reducedMotion) and 0 or 1
+		local strength = (self.mode == "Tunnel" or self.mode == "Penalty" or self.settings.reducedMotion) and 0 or 1
 		local drift = Vector3.new(math.sin(self.elapsed * 0.16) * 0.065, math.sin(self.elapsed * 0.2) * 0.027, 0) * strength
 		camera.CFrame = CFrame.lookAt(self.cameraPosition + drift, self.cameraTarget + drift * 0.3)
 		camera.Focus = CFrame.new(self.cameraTarget)
@@ -214,6 +216,19 @@ function Scene:_light(mode)
 	for _, tween in ipairs(self.lightTweens) do tween:Cancel() end
 	table.clear(self.lightTweens)
 	Lighting.GlobalShadows, Lighting.ShadowSoftness = true, 0.35
+	if mode == "Penalty" then
+		local target={}
+		for key,value in pairs(PenaltyLayout.Environment) do
+			target[key]=if type(value)=="table" then Color3.fromRGB(table.unpack(value)) else value
+		end
+		-- Clear daylight is applied synchronously beneath the existing transition.
+		for key,value in pairs(target) do Lighting[key]=value end
+		Lighting.FogStart,Lighting.FogEnd=10000,100000
+		self.atmosphere.Parent=nil
+		self.rays.Enabled=false
+		self.grade.TintColor=Color3.new(1,1,1)
+		return
+	end
 	local interior = mode == "Interior"
 	local tunnel = mode == "Tunnel"
 	-- O controlador principal continua sendo o unico dono da Camera/Lighting.
@@ -337,12 +352,18 @@ function Scene:Show(mode, homeClub, awayClub, homeKitIndex, awayKitIndex)
 	end
 	if self.menuAvatar then self.menuAvatar:Destroy(); self.menuAvatar = nil end
 	if self.tunnel then self.tunnel:Destroy(); self.tunnel = nil end
+	if self.penalty then self.penalty:Destroy(); self.penalty = nil end
 	self.mode, self.clubText = mode, nil
 	table.clear(self.actors)
 	self.settingsNeon = nil
 	table.clear(self.settingsRings)
 	self.folder:ClearAllChildren()
-	if mode == "Tunnel" then
+	if mode == "Penalty" then
+		self.penalty=PenaltyScene.new(self.folder,self.settings)
+		self.cameraPosition=Vector3.new(table.unpack(PenaltyLayout.Camera.position))
+		self.cameraTarget=Vector3.new(table.unpack(PenaltyLayout.Camera.target))
+		self.fov=PenaltyLayout.Camera.fov
+	elseif mode == "Tunnel" then
 		local quality = if self.settings.quality == "Baixa" then "Low" elseif self.settings.quality == "Alta" then "High" else "Medium"
 		local success, result = pcall(function()
 			return TunnelScene.new({
@@ -432,9 +453,13 @@ function Scene:ApplySettings(settings)
 	-- LightingStyle e PrioritizeLightingQuality são propriedades protegidas
 	-- (RobloxScriptSecurity) e só devem ser definidas no arquivo Rojo.
 	Lighting.GlobalShadows = not low
-	self.bloom.Enabled = not low
+	self.bloom.Enabled = not low and self.mode ~= "Penalty"
 	self.bloom.Intensity = if self.mode == "Tunnel" then TunnelLighting.Post.BloomIntensity else (self.mode == "Interior" and 0.06 or (high and 0.2 or 0.1))
-	if self.tunnel then
+	if self.penalty then
+		self.penalty:ApplySettings(self.settings)
+		self.bloom.Intensity=0
+		self.grade.Contrast,self.grade.Saturation=0.015,-0.025
+	elseif self.tunnel then
 		local tunnelQuality = if quality == "Baixa" then "Low" elseif quality == "Alta" then "High" else "Medium"
 		self.tunnel:ApplyQuality(tunnelQuality)
 		self.bloom.Size,self.bloom.Threshold = TunnelLighting.Post.BloomSize,TunnelLighting.Post.BloomThreshold
@@ -467,6 +492,7 @@ end
 function Scene:Destroy()
 	self:SetSettingsAtmosphere(false)
 	if self.tunnel then self.tunnel:Destroy(); self.tunnel = nil end
+	if self.penalty then self.penalty:Destroy(); self.penalty = nil end
 	if self.menuAvatar then self.menuAvatar:Destroy(); self.menuAvatar = nil end
 	if self.connection then self.connection:Disconnect() end
 	for _, tween in ipairs(self.lightTweens) do tween:Cancel() end

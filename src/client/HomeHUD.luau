@@ -220,7 +220,7 @@ function HomeHUD.start(playerGui: Instance, state)
 	end
 
 	local showcase = HomeShowcase.new(root, function(index, lesson)
-		if locked() then return end
+		if locked() or not gui.Enabled then return end
 		if navigatePrimary then navigatePrimary(index, lesson) end
 	end, reducedMotion)
 	local function glowWidth(index: number): number
@@ -261,6 +261,7 @@ function HomeHUD.start(playerGui: Instance, state)
 		GroupTransparency = if current == 4 then 0 else 1,
 		Visible = current == 4, ZIndex = 7,
 	})
+	local lessonButtons = {}
 	for i, name in ipairs(lessons) do
 		local button = element("TextButton", learnGroup, {
 			Name = "SubOpcao_" .. tostring(i), Text = name,
@@ -271,15 +272,37 @@ function HomeHUD.start(playerGui: Instance, state)
 			Position = UDim2.fromOffset(20, (i - 1) * 34),
 			Size = UDim2.new(1, -24, 0, 32),
 			BackgroundTransparency = 1, AutoButtonColor = false,
-			Selectable = false, Active = false, ZIndex = 8,
+			Selectable = i == 4, Active = i == 4, ZIndex = 8,
 		})
+		lessonButtons[i]=button
+		if i==4 then
+			button.TextTransparency=0.10
+			table.insert(connections,button.Activated:Connect(function()
+				if locked() or current~=4 or not gui.Enabled then return end
+				if navigatePrimary then navigatePrimary(4,4) end
+			end))
+			for _,signal in ipairs({button.MouseEnter,button.SelectionGained}) do
+				table.insert(connections,signal:Connect(function()
+					if locked() then return end
+					animate(button,{TextTransparency=0,TextColor3=WHITE},0.18)
+				end))
+			end
+			for _,signal in ipairs({button.MouseLeave,button.SelectionLost}) do
+				table.insert(connections,signal:Connect(function()
+					animate(button,{TextTransparency=0.10,TextColor3=GRAY},0.18)
+				end))
+			end
+		end
 	end
 	element("Frame", learnGroup, {
 		Name = "LinhaSubmenu", Position = UDim2.fromOffset(5, 3),
 		Size = UDim2.fromOffset(2, 126), BackgroundColor3 = Color3.fromRGB(75, 121, 102),
 		BackgroundTransparency = 0.3, BorderSizePixel = 0, ZIndex = 7,
 	})
-	-- Sem indicador de selecao para opcoes inativas.
+	-- Only Arena is available. Main selection glow and capsule sweep stay unchanged.
+	rows[4].button.NextSelectionDown=lessonButtons[4]
+	lessonButtons[4].NextSelectionUp=rows[4].button
+	lessonButtons[4].NextSelectionDown=rows[5].button
 
 	-- Impacto único: ao clicar, a opção branca ganha luz intensa,
 	-- depois a aura some totalmente em 0,62 s. Sem glow permanente.
