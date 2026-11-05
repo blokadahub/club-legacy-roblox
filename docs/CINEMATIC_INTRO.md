@@ -74,6 +74,16 @@ O alvo mantém mínimo físico 112×48 px, enquanto a superfície visível pode 
 | .github/workflows/build.yml | Executa também os testes da abertura antes de construir/upload do artefato habitual. |
 | README.md, CL27_PLAN.md, CL27_PROGRESS.md | Instruções, arquitetura e evidências atualizadas. |
 
+### Cyber Click do lobby
+
+O efeito de seleção `135026594552200` usa três vozes locais reutilizáveis em volume 0,75. O HUD prefere uma voz carregada, mas não descarta a entrada se todas ainda reportarem IsLoaded=false: o comando é enviado a Sound:Play sem espera do script. A reprodução efetivamente audível continua dependendo da disponibilidade e permissão do asset no Roblox.
+
+O preload observa os estados do callback, tenta no máximo duas vezes, aguarda 0,5 s entre tentativas e cancela cada tentativa após três segundos. Falhas de fetch ou Play são registradas em Output e nos atributos `FetchStatus`, `LoadError`, `PlaybackError`, `PlayRequests` e `PreloadAttempts` do folder `CL27_LobbySelectionAudio` em SoundService. Isso não cria mensagens técnicas na interface do jogador. Uma falha do áudio não impede seleção/navegação.
+
+Entradas ocultas/bloqueadas e foco automático permanecem silenciosos; um clique já iniciado pode terminar ao trocar de tela, em vez de ser interrompido no mesmo evento. O descarte do HUD cancela tarefas, destrói o folder e suas três vozes. Não há som substituto, fila do script ou reprodução de seleções por callbacks Loaded.
+
+Referências técnicas: [ContentProvider.PreloadAsync](https://create.roblox.com/docs/reference/engine/classes/ContentProvider#PreloadAsync) e [Sound](https://create.roblox.com/docs/reference/engine/classes/Sound). Os testes verificam comandos/estados, não a saída de áudio do dispositivo. Uma resposta de Asset Delivery a uma consulta externa sem autenticação não prova qual permissão a experiência publicada possui.
+
 A marca CL Sports usa monograma geométrico CL dentro de círculo nativo com SPORTS em GothamBold. CL 27 é desenhado com traços nativos inclinados; não usa emojis, glifos improvisados, imagens EA nem assets externos. A identidade é uma composição própria, não reprodução da tipografia proprietária. Facetas usam enquadramento cover; conteúdo usa fit com margens e inset. O START tem mínimo real de 112×48 px inclusive em celulares. Movimento reduzido elimina o giro, a entrada lateral e o zoom, preservando o cronograma e acesso ao lobby.
 
 O relógio da timeline é os.clock; Heartbeat apenas solicita a amostra do instante atual. A varredura CL usa o mesmo tempo durante a abertura e retorna ao relógio normal após ela. Nenhuma sequência acumulativa de task.wait. Interpolações são calculadas por tempo absoluto com TweenService:GetValue; não há tweens pendentes de fases anteriores na abertura.

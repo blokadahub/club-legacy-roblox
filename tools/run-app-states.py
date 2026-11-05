@@ -123,6 +123,7 @@ services.Workspace = workspace
 services.SoundService = Instance.new('SoundService')
 function methods:Play()
     assert(self.ClassName == 'Sound')
+    if services.menuPlayError and self.Name:match('^CyberClick_') then error('Injected Cyber Click playback failure') end
     self.IsPlaying = true
     self:SetAttribute('PlayCount',(self:GetAttribute('PlayCount') or 0)+1)
 end
