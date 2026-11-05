@@ -62,7 +62,8 @@ function Settings.mount(root: Instance, ctx)
 		Size = UDim2.fromOffset(120, 48),
 		Selectable = true, ZIndex = 6,
 	})
-	scope:Connect(close.Activated, function()
+	scope:Connect(close.Activated, function(input)
+		if ctx.playClick then ctx.playClick(input) end
 		ctx.go(if state.homeEnvironment == "Training" then "HomeTraining" else "HomeInterior")
 	end)
 
@@ -108,7 +109,8 @@ function Settings.mount(root: Instance, ctx)
 		element("UIScale", image, {Scale = 1.1})
 		cards[i] = {card = card, title = title, iconParts = iconParts}
 
-		scope:Connect(card.Activated, function()
+		scope:Connect(card.Activated, function(input)
+			if ctx.playClick then ctx.playClick(input) end
 			selected = i
 			focus = i
 			state.settingsCard = i
