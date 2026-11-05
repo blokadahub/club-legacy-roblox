@@ -217,3 +217,10 @@ Não restou falha reproduzível nas verificações executadas após as correçõ
 - Controles temporários em linha de 48 px e largura 296–334 px; seleção/execução individual e bloqueio de sobreposição. Aparência real, cenário, câmera/luz, bola e navegação preservados.
 - Suítes locais aprovadas: 51 fontes/15 rotas, 653 dados, UI 519 montagens/381 callbacks/240 asserções, App 5.933, intro 2.003, arena 365.840. Rojo/XML idênticos. Amostragem principal 60 Hz e proporções adicionais 30 Hz, além de reprojeções cinemáticas inspecionadas; não houve execução/render Roblox.
 - Sem merge/publicação; etapa 2 não iniciada. Relatório completo em `docs/PENALTY_ANIMATION_REFINEMENT.md`.
+
+## Som de clique em Configurações — 05/11/2026
+
+- A tela de Personalizar/Configurações reproduz `rbxassetid://135026594552200` com volume 0,75 ao ativar cada um dos oito cartões e o botão VOLTAR por mouse ou toque, inclusive ao repetir o mesmo cartão.
+- Um conjunto local de seis vozes permite cliques rápidos com sobreposição. O pré-carregamento não bloqueia a interface; a fonte precisa estar autorizada para a experiência Roblox para ser audível.
+- Foco do controle, navegação por teclado e hover não tocam som. O menu alternativo de contingência recebe a mesma resposta sonora.
+- Mudanças limitadas a `SettingsHUD.luau` e `Screens/Settings.luau`; introdução, sons do lobby, cores, animações, navegação e gameplay preservados. Teste de áudio real em Roblox pendente.
