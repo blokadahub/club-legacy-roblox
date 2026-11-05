@@ -287,6 +287,9 @@ check(actualApp.state.homeFocus==1 and revealedNews.TextTransparency==0
 	and playerGui.CL27_HomeHUD:FindFirstChild("Opcao_3",true).TextTransparency==.32,
 	"Completed opening must reveal Notícias do CL as the only white selection")
 check(services.GuiService.SelectedObject==revealedNews,"Opening did not hand gamepad focus to Notícias do CL")
+local playsAfterReveal=#audioLog
+revealedNews.SelectionGained:Fire()
+check(#audioLog==playsAfterReveal,"Automatic focus after the opening played Cyber Click")
 check(playerGui.CL27_HomeHUD:FindFirstChild("TituloCentral",true).Text=="NOTÍCIAS DO CL",
 	"Opening revealed content from a different lobby selection")
 check(#audioLog==logBefore+4 and audioLog[#audioLog].name=="CL27SoundtrackLocal","Music not released exactly once")
@@ -462,14 +465,14 @@ for _,size in ipairs({Vector2.new(1536,863),Vector2.new(1920,1080),Vector2.new(8
 		local w,h=surface.Size.X.Offset*fitted,surface.Size.Y.Offset*fitted
 		check(x>=-1 and x<=w+1 and y>=-1 and y<=h+1,"START sweep left the outer capsule perimeter under UIScale")
 		minX=math.min(minX,x);maxX=math.max(maxX,x);minY=math.min(minY,y);maxY=math.max(maxY,y)
-		check(near(sample.LinhaBranca.Size.Y.Offset*fitted,2.4)
-			and near(sample.GlowMedio.Size.Y.Offset*fitted,9.6)
-			and near(sample.HaloExternoSuave.Size.Y.Offset*fitted,20),"Contour thickness lost physical pixels under UIScale")
+		check(near(sample.LinhaBranca.Size.Y.Offset,2.25)
+			and near(sample.GlowMedio.Size.Y.Offset,8.4)
+			and near(sample.HaloExternoSuave.Size.Y.Offset,16),"Classic contour thickness must match the original canvas values")
 		mask[i]=sample.GroupTransparency
 		if sample.GroupTransparency<.98 then lit+=1 end
 	end
-	check(minX<0 and minY<0 and maxX>surface.Size.X.Offset*fitted and maxY>surface.Size.Y.Offset*fitted,
-		"Sweep must wrap the whole capsule just outside its green surface")
+	check(minX>=0 and minY>=0 and maxX<surface.Size.X.Offset*fitted and maxY<surface.Size.Y.Offset*fitted,
+		"Classic sweep must follow the inset perimeter inside its green surface")
 	check(#mask==78 and lit>=3 and lit<=28,"START glow must illuminate a short continuous portion of its border")
 	visuals:Draw({elapsed=18.2,ready=true,canStart=true},"RealName",false,nil)
 	local moved=false

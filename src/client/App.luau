@@ -145,7 +145,7 @@ function App.start(options)
 	local function focusPage(preferredOrdinal)
 		if not UserInputService.GamepadEnabled or not page then return end
 		if state.screen=="HomeInterior" then
-			GuiService.SelectedObject=homeHud:GetSelectedButton()
+			homeHud:FocusSelected()
 			return
 		end
 		if state.screen=="PenaltyArena" then

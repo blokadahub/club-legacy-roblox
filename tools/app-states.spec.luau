@@ -137,9 +137,9 @@ check(ctaSweep and ctaPiece and ctaPiece:IsA("CanvasGroup")
 	and ctaPiece:FindFirstChild("GlowMedio")
 	and ctaPiece:FindFirstChild("LinhaBranca"),
 	"Botao X deve manter Outer Glow Sweep branco-menta sem pontos em fila")
-check(ctaPiece:FindFirstChild("LinhaBranca").Size.Y.Offset == 2.4
-	and ctaPiece:FindFirstChild("GlowMedio").Size.Y.Offset == 9.6,
-	"Capsula X precisa de brilho com mais contraste, preservando o indicador CL")
+check(ctaPiece:FindFirstChild("LinhaBranca").Size.Y.Offset == 2.25
+	and ctaPiece:FindFirstChild("GlowMedio").Size.Y.Offset == 8.4,
+	"Capsula X deve recuperar o contorno anterior à revisão radioativa")
 check(primary:FindFirstChild("CobraNeonCapsula") == nil
 	and primary:FindFirstChild("ReflexoAnimado") == nil,
 	"Reflexo atravessando o botao e luz cobra devem permanecer removidos")
@@ -167,6 +167,62 @@ check(firstPillPiece.GroupTransparency ~= beforePillGlow,
 	"Varredura deve deslocar luminosidade pela capsula sem flashes de borda inteira")
 check(ctaPiece.Position.Y.Offset > 30 and ctaPiece.Position.X.Offset < 65,
 	"Varredura da capsula precisa comecar junto a curva inferior esquerda")
+
+-- The requested Cyber Click responds immediately, independently of the
+-- visual tween and soundtrack. Narrow stubs count Play calls, not audibility.
+local selectionAudio=services.SoundService:FindFirstChild("CL27_LobbySelectionAudio")
+local voices=selectionAudio:GetChildren()
+local function clickCount()
+	local total=0
+	for _,voice in ipairs(voices) do total+=voice:GetAttribute("PlayCount") or 0 end
+	return total
+end
+check(#voices==3,"Selection feedback must reuse a bounded voice pool")
+for _,voice in ipairs(voices) do
+	check(voice.SoundId=="rbxassetid://135026594552200" and voice.Volume==.35 and not voice.Looped
+		and not voice.PlayOnRemove,"Cyber Click must use the supplied asset as a local one-shot")
+end
+check(clickCount()==0,"Lobby construction must not play selection audio")
+homeList.Opcao_1.SelectionGained:Fire()
+check(clickCount()==0,"Automatic controller focus must remain silent")
+for i=1,5 do
+	local before=clickCount()
+	homeList:FindFirstChild("Opcao_"..i).Activated:Fire()
+	check(clickCount()==before+1,"Every white main button must play immediately on activation")
+end
+homeList.Opcao_2.MouseEnter:Fire()
+local hoveredClicks=clickCount()
+homeList.Opcao_2.SelectionGained:Fire()
+check(clickCount()==hoveredClicks,"Mouse and controller focus on the same button must not duplicate feedback")
+homeList.Opcao_2.MouseLeave:Fire()
+homeList.Opcao_3.SelectionGained:Fire()
+check(clickCount()==hoveredClicks+1,"Controller navigation must play selection feedback")
+local touch={UserInputType=Enum.UserInputType.Touch}
+local beforeTouch=clickCount()
+homeList.Opcao_1.InputBegan:Fire(touch)
+check(clickCount()==beforeTouch+1,"Touch feedback must start on press, without waiting for release")
+homeList.Opcao_1.InputEnded:Fire(touch)
+homeList.Opcao_1.Activated:Fire(touch)
+check(clickCount()==beforeTouch+1,"One touch must not play twice on Activated")
+local rapid=clickCount()
+for i=1,9 do homeList:FindFirstChild("Opcao_"..((i-1)%5+1)).Activated:Fire() end
+check(clickCount()==rapid+9 and #selectionAudio:GetChildren()==3,"Rapid selection must not wait, drop ready clicks or create more Sounds")
+handle.state.menuInputLocked=true
+homeList.Opcao_1.Activated:Fire()
+homeList.Opcao_4.MouseEnter:Fire()
+check(clickCount()==rapid+9,"Locked menu played audio")
+handle.state.menuInputLocked=false
+homeHud.Enabled=false
+homeList.Opcao_1.SelectionGained:Fire()
+check(clickCount()==rapid+9,"Hidden menu played audio")
+homeHud.Enabled=true
+for _,voice in ipairs(voices) do voice.IsLoaded=false end
+homeList.Opcao_5.Activated:Fire()
+check(clickCount()==rapid+9 and handle.state.homeFocus==5,"Missing audio must not block selection")
+for _,voice in ipairs(voices) do voice.IsLoaded=true;voice.Loaded:Fire() end
+advance(.7)
+check(clickCount()==rapid+9,"Late asset load replayed an obsolete click")
+homeList.Opcao_1.Activated:Fire();advance(.7)
 
 local clubOption = homeList:FindFirstChild("Opcao_4")
 local kickOff = homeList:FindFirstChild("Opcao_3")
@@ -263,14 +319,19 @@ check(showcase:FindFirstChild("TituloCentral").Text == "APRENDA A JOGAR"
 	and primary:FindFirstChild("TextoAcao",true).Text == "Arena de Treino",
 	"Aprenda precisa apresentar a arena disponível")
 check(primary.Selectable and primary.Active, "CTA da arena deve manter foco e toque")
+local disabledClicks=clickCount()
 for i = 1, 3 do
 	local entry=lessons:FindFirstChild("SubOpcao_"..i)
 	check(not entry.Selectable and not entry.Active,"Modos ainda ausentes devem permanecer inativos")
+	entry.MouseEnter:Fire();entry.Activated:Fire()
 end
+check(clickCount()==disabledClicks,"Disabled lesson buttons must stay silent")
 local arenaEntry=lessons:FindFirstChild("SubOpcao_4")
 check(arenaEntry.Selectable and arenaEntry.Active,"Arena de Treino deve estar disponível")
 for cycle=1,3 do
+	local beforeArena=clickCount()
 	arenaEntry.Activated:Fire()
+	check(clickCount()==beforeArena+1,"White Arena choice must play Cyber Click before navigation")
 	check(handle.state.screen=="PenaltyArena" and services.lastScene.mode=="Penalty"
 		and not homeHud.Enabled and not wipe.Visible and not UI.inputLocked,
 		"Selecionar arena deve montar diretamente a prévia sem tela intermediária")
@@ -618,6 +679,7 @@ handle.go("Calendar")
 advance(0.02)
 local scene = services.lastScene
 handle.destroy()
+check(not services.SoundService:FindFirstChild("CL27_LobbySelectionAudio"),"Lobby selection sounds leaked after App destruction")
 advance(2)
 check(scene.destroyed and gui.Destroyed and settingsGui.Destroyed and transitionGui.Destroyed,
 	"Disposal must destroy scene, principal UI, Settings HUD and transition overlay")

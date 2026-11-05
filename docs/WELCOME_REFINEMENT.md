@@ -1,5 +1,7 @@
 # Revisão de boas-vindas — três etapas
 
+Registro histórico do PR #14. A pedido do usuário em 05/11, o contorno reforçado descrito abaixo foi desfeito: `OuterGlowSweep.luau` voltou integralmente à versão anterior, com núcleo/halos de 2,25/8,4/16 unidades do canvas e as cores/opacidades originais. O layout fino e a paleta #5cff33 continuam. Estado atual em [CINEMATIC_INTRO.md](CINEMATIC_INTRO.md).
+
 Base: `d871018c94f975210de626ea2805ff52eec69045`, após o merge do PR #13.
 Referência: imagem recebida de 1536×863. Fonte: canvas nativo Roblox 1600×900.
 
