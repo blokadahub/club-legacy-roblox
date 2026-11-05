@@ -77,6 +77,36 @@ advance(.01)
 check(scene.model:GetAttribute("AvatarStatus")=="Ready","Avatar não carregou: "..tostring(scene.model:GetAttribute("AvatarMessage")))
 check(queryCount==1 and createCount==1,"Cópias não compartilharam uma única aparência")
 check(avatarHUD.PreviaAnimacoes.Kick.Active and avatarHUD.EstadoAvatar.Text=="","HUD não refletiu avatar pronto")
+local selector=avatarHUD.PreviaAnimacoes
+check(selector.Size.X.Offset==334 and selector.Size.Y.Offset==48 and selector.AnchorPoint.X==1,"Controles não permanecem compactos no canto")
+local MotionUI=require(moduleNodes["src/client/Environments/PenaltyMotion.luau"])
+local dispatched=nil
+local originalPreview=scene.PreviewAction
+scene.PreviewAction=function(_,action) dispatched=action;return false end
+for i,action in ipairs(MotionUI.SaveOrder) do
+	check(selector.VerDefesa:GetAttribute("PreviewAction")==action,"Seletor não permite avaliar "..action)
+	selector.VerDefesa.Activated:Fire();check(dispatched==action,"Botão não executa a defesa selecionada")
+	if i<#MotionUI.SaveOrder then selector.DefesaProxima.Activated:Fire() end
+end
+selector.DefesaProxima.Activated:Fire()
+check(selector.VerDefesa:GetAttribute("PreviewAction")==MotionUI.SaveOrder[1],"Seletor não retorna à primeira defesa")
+selector.DefesaAnterior.Activated:Fire()
+check(selector.VerDefesa:GetAttribute("PreviewAction")==MotionUI.SaveOrder[6],"Seleção anterior falhou")
+scene.PreviewAction=originalPreview
+scene.model:SetAttribute("PreviewAction","HighSave")
+check(not selector.Kick.Active,"Chute deve aguardar a prévia em execução")
+check(not selector.VerDefesa.Active,"Defesas não podem ser sobrepostas pelo HUD")
+check(selector.DefesaAnterior.Active and selector.DefesaProxima.Active,"Seleção deve continuar disponível durante a prévia")
+scene.model:SetAttribute("PreviewAction",nil)
+check(selector.Kick.Active and selector.VerDefesa.Active,"HUD não liberou comandos após a recuperação")
+local oldViewport=workspace.CurrentCamera.ViewportSize
+for _,width in ipairs({320,640,960}) do
+	workspace.CurrentCamera.ViewportSize=Vector2.new(width,360)
+	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Fire()
+	check(selector.Size.X.Offset<=width-24 and selector.Size.Y.Offset==48,"Toolbar encobre/corta tela móvel")
+	check(selector.DefesaAnterior.Size.X.Offset>=44 and selector.DefesaProxima.Size.Y.Offset>=44,"Setas móveis pequenas demais")
+end
+workspace.CurrentCamera.ViewportSize=oldViewport
 hudScope:Destroy();hudRoot:Destroy()
 local fallback=scene.ball
 check(fallback~=originalBall and originalBall.Parent==lobby,"Arena moveu a bola original do lobby")
@@ -98,12 +128,21 @@ local Motion=require(moduleNodes["src/client/Environments/PenaltyMotion.luau"])
 local AvatarRig=require(moduleNodes["src/client/Environments/PenaltyRig.luau"])
 local maxFrameMove=0
 local maxFrameContext=""
+local saveMetrics={}
+local armPhaseChecks=0
+local maxJointMove=0
+local maxJointContext=""
+local armMetrics={minForward=math.huge,maxUp=-math.huge,minElbow=math.huge,maxElbow=-math.huge}
 for _,rig in ipairs(scene.actors.rigs) do
 	local restC0={}
 	for name,joint in pairs(rig.joints) do restC0[name]=joint.C0 end
-	for _,action in ipairs({"Idle","Kick","DiveLeft","DiveRight"}) do
-		local duration=if action=="Kick" then Motion.KickDuration elseif action=="Idle" then 7 else Motion.DiveDuration
+	local actions={"Idle","Kick"};for _,action in ipairs(Motion.SaveOrder) do table.insert(actions,action) end
+	for _,action in ipairs(actions) do
+		local duration=if action=="Idle" then 7 else Motion.duration(action)
 		local previous=nil
+		local previousFrames=nil
+		local previousState=nil
+		local metrics={maxX=0,maxY=-math.huge,minY=math.huge,maxRoll=0,handHeight=-math.huge}
 		for sample=0,math.floor(duration*60) do
 			local t=sample/60
 			local state=Motion.sample(rig.role,t,action=="Idle" and nil or action,t,rig.scale,rig.width,rig.distance)
@@ -113,9 +152,64 @@ for _,rig in ipairs(scene.actors.rigs) do
 				check(joint.Transform.Position.Magnitude<.012,"IK esticou articulação: "..name.." "..joint.Transform.Position.Magnitude)
 			end
 			local frames=rig.frames
+			if rig.role=="keeper" and action~="Kick" and Motion.duration(action) then
+				metrics.maxX=math.max(metrics.maxX,math.abs(state.root.X))
+				metrics.maxY=math.max(metrics.maxY,state.root.Y)
+				metrics.minY=math.min(metrics.minY,state.root.Y)
+				metrics.maxRoll=math.max(metrics.maxRoll,math.abs(state.roll))
+				local peak=if action=="LowLeft" then .95 elseif action=="LowRight" then .88 else nil
+				if peak and math.abs(t-peak)<.009 then
+					for _,side in ipairs({"Left","Right"}) do
+						check(frames[rig.model:FindFirstChild(side.."Hand")].Position.Y<1.1,"Rasteira não direcionou ambas as mãos à região inferior")
+					end
+				end
+				for _,side in ipairs({"Left","Right"}) do metrics.handHeight=math.max(metrics.handHeight,frames[rig.model:FindFirstChild(side.."Hand")].Position.Y) end
+			end
+			if rig.role=="striker" and action=="Kick" and t>=.65 and t<=1.45 then
+				local forward=rig.base.LookVector
+				for _,side in ipairs({"Left","Right"}) do
+					local elbow,wrist=rig.joints[side.."Elbow"],rig.joints[side.."Wrist"]
+					local e=(frames[elbow.Part0]*elbow.C0).Position
+					local w=(frames[wrist.Part0]*wrist.C0).Position
+					local direction=(w-e).Unit
+					armMetrics.minForward=math.min(armMetrics.minForward,direction:Dot(forward))
+					armMetrics.maxUp=math.max(armMetrics.maxUp,direction.Y)
+					local bend=math.deg(math.acos(math.clamp(elbow.Transform:VectorToWorldSpace(Vector3.new(0,-1,0)):Dot(Vector3.new(0,-1,0)),-1,1)))
+					armMetrics.minElbow=math.min(armMetrics.minElbow,bend);armMetrics.maxElbow=math.max(armMetrics.maxElbow,bend)
+					check(bend>=70 and bend<=100,"Flexão de corrida fora de 70–100 graus")
+					check(direction:Dot(forward)>.65 and direction.Y<.18,"Antebraço deixou de apontar à frente/baixo")
+				end
+				if previousState then
+					local nextState=Motion.sample("striker",t,"Kick",t+.001,rig.scale,rig.width,rig.distance)
+					local pastState=Motion.sample("striker",t,"Kick",t-.001,rig.scale,rig.width,rig.distance)
+					local rightStep=nextState.right.Z-pastState.right.Z
+					local leftStep=nextState.left.Z-pastState.left.Z
+					local l=state.pose.LeftShoulder:VectorToWorldSpace(Vector3.new(0,-1,0)).Z
+					local r=state.pose.RightShoulder:VectorToWorldSpace(Vector3.new(0,-1,0)).Z
+					if rightStep<leftStep-.0002 then check(l<r,"Braço esquerdo não se opõe ao passo direito: "..t.." "..rightStep.." "..leftStep);armPhaseChecks+=1
+					elseif leftStep<rightStep-.0002 then check(r<l,"Braço direito não se opõe ao passo esquerdo: "..t.." "..rightStep.." "..leftStep);armPhaseChecks+=1 end
+				end
+				-- Actual FK hands must stay ahead of their respective shoulders.
+				for _,side in ipairs({"Left","Right"}) do
+					local shoulder=rig.joints[side.."Shoulder"]
+					local origin=(frames[shoulder.Part0]*shoulder.C0).Position
+					local hand=frames[rig.model:FindFirstChild(side.."Hand")].Position
+					check((hand-origin):Dot(forward)>0,"Mão da corrida foi projetada para trás")
+				end
+			end
 			for part,frame in pairs(frames) do
 				check(frame.Position.X==frame.Position.X and math.abs(frame.Position.Y)<30,"Pose não finita")
 				if part~=rig.root then check(AvatarRig.bottom(frame,part.Size)>=.025,"Corpo atravessou gramado: "..rig.role.." "..action.." "..t.." "..part.Name) end
+			end
+			if rig.role=="striker" and action=="Kick" or rig.role=="keeper" and action~="Idle" then
+				local torso=rig.model:FindFirstChild("UpperTorso")
+				for _,side in ipairs({"Left","Right"}) do
+					local elbow,wrist=rig.joints[side.."Elbow"],rig.joints[side.."Wrist"]
+					local e=(frames[elbow.Part0]*elbow.C0).Position
+					local w=(frames[wrist.Part0]*wrist.C0).Position
+					local point=frames[torso]:PointToObjectSpace((e+w)/2)
+					check(not (math.abs(point.X)<torso.Size.X*.47 and math.abs(point.Y)<torso.Size.Y*.47 and math.abs(point.Z)<torso.Size.Z*.47),"Antebraço atravessou tronco: "..action.." "..t.." "..side)
+				end
 			end
 			if state.grounded then
 				for _,side in ipairs({"Left","Right"}) do
@@ -126,9 +220,35 @@ for _,rig in ipairs(scene.actors.rigs) do
 			end
 			if previous then local movement=(rig.root.CFrame.Position-previous).Magnitude;if movement>maxFrameMove then maxFrameMove=movement;maxFrameContext=rig.role.." "..action.." "..t.." deltaY="..(rig.root.CFrame.Position.Y-previous.Y).." deltaZ="..(rig.root.CFrame.Position.Z-previous.Z) end end
 			previous=rig.root.CFrame.Position
+			if previousFrames then
+				for part,frame in pairs(frames) do
+					if previousFrames[part] then
+						local movement=(frame.Position-previousFrames[part].Position).Magnitude
+						if movement>maxJointMove then maxJointMove=movement;maxJointContext=rig.role.." "..action.." "..t.." "..part.Name end
+					end
+				end
+			end
+			previousState=state
+			previousFrames=frames
 		end
+		if rig.role=="keeper" and action~="Kick" and Motion.duration(action) then saveMetrics[action]=metrics end
 	end
 end
+check(armPhaseChecks>=40,"Passadas insuficientes para auditar oposição dos braços")
+print("Joint maximum displacement",maxJointMove,maxJointContext)
+check(maxJointMove<.60,"Salto de articulação entre quadros: "..maxJointContext)
+print("Running arms",armMetrics.minForward,armMetrics.maxUp,armMetrics.minElbow,armMetrics.maxElbow)
+check(#Motion.SaveOrder==6,"Catálogo de defesas deve incluir seis variações")
+for _,action in ipairs(Motion.SaveOrder) do check(saveMetrics[action]~=nil,"Defesa não foi amostrada: "..action) end
+check(saveMetrics.LowLeft.maxRoll>83 and saveMetrics.LowRight.maxRoll<84,"Rasteiras não diferem na aterrissagem")
+check(saveMetrics.LowLeft.minY<-1.8 and saveMetrics.LowRight.minY<-1.8,"Rasteiras não abaixam o corpo")
+check(saveMetrics.MidSave.maxY>saveMetrics.LowLeft.maxY+.4,"Meia altura repete a trajetória rasteira")
+check(saveMetrics.HighSave.maxY>1 and saveMetrics.HighSave.handHeight>saveMetrics.MidSave.handHeight+2,"Alta não demonstra alcance superior")
+check(saveMetrics.HighSave.maxRoll<40,"Defesa alta ficou acrobática")
+check(saveMetrics.CentralSave.maxX<.2 and saveMetrics.CentralSave.minY<-.5 and saveMetrics.CentralSave.maxRoll<5,"Central foi transformada em mergulho")
+local stepped=Motion.sample("keeper",.58,"ShuffleSave",.58,1,.4,10)
+check(stepped.root.X>1.2 and stepped.ikWeight>.99,"Sexta defesa não tem deslocamento anterior ao mergulho")
+for action,m in pairs(saveMetrics) do print("SAVE",action,m.maxX,m.maxY,m.minY,m.maxRoll,m.handHeight) end
 check(maxFrameMove<.30,"Movimento descontínuo: "..maxFrameContext)
 print("Motion maximum root frame displacement",maxFrameMove,maxFrameContext)
 check(scene:PreviewAction("Kick") and not scene:PreviewAction("DiveLeft"),"Prévia deve bloquear sobreposição")
@@ -181,6 +301,16 @@ check(right:FindFirstChildOfClass("Shirt").ShirtTemplate=="account-shirt","Inst�
 check(#reentry.actors.rigs[1].tracks==1 and #reentry.actors.rigs[2].tracks==1,"Animator não carregou idle próprio")
 check(reentry:PreviewAction("DiveLeft"),"Mergulho esquerdo indisponível")
 for _=1,40 do services.RunService.PreSimulation:Fire(1/60) end
+for _=1,300 do services.RunService.PreSimulation:Fire(1/60) end
+for _,action in ipairs(Motion.SaveOrder) do
+	check(reentry:PreviewAction(action),"Coordenador não aceita "..action)
+	check(not reentry:PreviewAction("Kick"),"Ações defensivas se sobrepõem")
+	for _=1,math.ceil(Motion.duration(action)/.65*60)+2 do services.RunService.PreSimulation:Fire(1/60) end
+	check(reentry.actors.action==nil,"Defesa não recuperou a espera: "..action)
+end
+check(not reentry:PreviewAction("InvalidAction"),"Comando desconhecido aceito")
+check(reentry:PreviewAction("HighSave"),"Alta não reentra após recuperar")
+for _=1,40 do services.RunService.PreSimulation:Fire(1/60) end
 local animationConnection=reentry.actors.connection
 reentry:Destroy();services.RunService.PreSimulation:Fire(1/60)
 check(not animationConnection.Connected,"Saída no meio do mergulho vazou loop")
@@ -232,9 +362,11 @@ for _,proportions in ipairs({{.75,1.15},{1.4,.9}}) do
 	end
 	local actor=AvatarRig.new(model,"striker",Layout.Striker,Layout.Ball)
 	local originalSize=actor.feet.Left.part.Size
-	for sample=0,384 do
-		local t=sample/60
-		local state=Motion.sample("striker",t,"Kick",t,actor.scale,actor.width,actor.distance)
+	local stressActions={"Kick"};for _,action in ipairs(Motion.SaveOrder) do table.insert(stressActions,action) end
+	for _,action in ipairs(stressActions) do
+	for sample=0,math.floor(Motion.duration(action)*30) do
+		local t=sample/30
+		local state=Motion.sample(if action=="Kick" then "striker" else "keeper",t,action,t,actor.scale,actor.width,actor.distance)
 		actor:Apply(state,false)
 		for _,side in ipairs({"Left","Right"}) do
 			local foot=actor.feet[side].part
@@ -242,6 +374,7 @@ for _,proportions in ipairs({{.75,1.15},{1.4,.9}}) do
 		end
 		for _,joint in pairs(actor.joints) do check(joint.Transform.Position.Magnitude<.012,"Proporções esticaram articulação") end
 		for part,frame in pairs(actor.frames) do if part~=actor.root then check(AvatarRig.bottom(frame,part.Size)>=.025,"Corpo proporcional atravessou gramado: "..t.." "..part.Name) end end
+	end
 	end
 	check(actor.feet.Left.part.Size==originalSize,"Animação redimensionou o avatar")
 	actor:Destroy()

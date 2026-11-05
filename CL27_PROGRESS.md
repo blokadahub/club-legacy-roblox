@@ -189,3 +189,12 @@ Não restou falha reproduzível nas verificações executadas após as correçõ
 - Comparação da base comprova preservação de Layout, Scene, App, servidor, projeto Rojo e corpos de Build/MountBall. Nenhuma mudança na luz/câmera/gramado/gol/rede/arquibancadas/bola.
 - Validação local: 50 fontes/15 rotas, 653 dados, 519 montagens/381 callbacks/240 UI, 5.933 estados, 2.003 intro e 225.601 arena aprovados; Rojo/XML idênticos. Testes são doubles de APIs, não Roblox real. Auditoria completa, falhas exercitadas e pendências visuais em `docs/PENALTY_PROGRESS.md`.
 - Sem merge ou publicação. Correção aguarda avaliação visual no jogo; etapa 2 continua dependendo de autorização expressa.
+
+## Refinamento dos braços e seis defesas (04/11/2026)
+
+- Base `4eb70e0` (PR #16 publicado/testado pelo usuário); branch `fix/cl27-natural-run-save-variants`.
+- Cotovelos da corrida corrigidos para flexão à frente (79–91° no fixture), ombros moderados em oposição aos passos e pulsos relaxados; ajuste progressivo de equilíbrio no chute.
+- Seis defesas distintas: duas rasteiras, meia altura, alta, central e passo + mergulho. Trajetórias, braços/pernas e recuperações próprios, com transição gradual do apoio IK.
+- Controles temporários em linha de 48 px e largura 296–334 px; seleção/execução individual e bloqueio de sobreposição. Aparência real, cenário, câmera/luz, bola e navegação preservados.
+- Suítes locais aprovadas: 51 fontes/15 rotas, 653 dados, UI 519 montagens/381 callbacks/240 asserções, App 5.933, intro 2.003, arena 365.840. Rojo/XML idênticos. Amostragem principal 60 Hz e proporções adicionais 30 Hz, além de reprojeções cinemáticas inspecionadas; não houve execução/render Roblox.
+- Sem merge/publicação; etapa 2 não iniciada. Relatório completo em `docs/PENALTY_ANIMATION_REFINEMENT.md`.

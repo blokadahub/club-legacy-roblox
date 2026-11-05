@@ -1,6 +1,19 @@
 # CL 27 — pênaltis: progresso e continuidade
 
-## Correção atual — avatares reais e animações R15 (04/11/2026)
+## Atualização atual — braços do cobrador e seis defesas (04/11/2026)
+
+O usuário publicou/testou o PR #16 e confirmou o carregamento dos avatares. Este refinamento corrige braços/mãos na corrida e acrescenta seis defesas com sequências próprias, selecionáveis em controles móveis compactos. **Continua sendo animação da etapa 1, sem gameplay da etapa 2.**
+
+- Base aprovada: `4eb70e055d9d2462f7c934f70b2a4298cf90a876`.
+- Branch: `fix/cl27-natural-run-save-variants`.
+- Implementação: `4bfd7fefb1acdf4605fe9c00939dbcd008daed21`; árvore `351e09982198adbce66f5803241ed0267e8cb6db`, idêntica à compilada localmente.
+- Pull Request: [#17 — corrida e seis defesas](https://github.com/blokadahub/club-legacy-roblox/pull/17), aberto e sem merge.
+- [CI 41956409033](https://github.com/blokadahub/club-legacy-roblox/actions/runs/41956409033): `completed / success`, incluindo a suíte ampliada e artefato `club-legacy-rbxlx`. O fechamento documental posterior está no HEAD do PR.
+- Auditoria temporal, critérios, resultados, arquivos e limites: [PENALTY_ANIMATION_REFINEMENT.md](PENALTY_ANIMATION_REFINEMENT.md).
+- Sem merge ou publicação automática nesta sessão; aguardar avaliação visual do usuário.
+
+
+## Registro anterior — avatares reais e animações R15 (04/11/2026)
 
 **O usuário aprovou o cenário da etapa 1 e autorizou esta correção crítica de personagens/animações. A gameplay da etapa 2 continua não autorizada.** O registro da entrega inicial foi preservado abaixo como histórico; suas descrições de personagens artificiais/estáticos foram substituídas por esta atualização.
 

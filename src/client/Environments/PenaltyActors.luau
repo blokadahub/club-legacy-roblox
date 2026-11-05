@@ -66,8 +66,8 @@ function Actors:Step(dt)
 	if self.action then
 		local activeRig=self.rigs[if self.action=="Kick" then 1 else 2]
 		self.actionTime+=math.clamp(dt,0,.1)*math.clamp(activeRig.scale,.65,1.2)
-		local duration=if self.action=="Kick" then Motion.KickDuration else Motion.DiveDuration
-		if self.actionTime>=duration then self.action=nil;self.actionTime=0 end
+		local duration=Motion.duration(self.action)
+		if self.actionTime>=duration then self.action=nil;self.actionTime=0;self.parent:SetAttribute("PreviewAction",nil) end
 	end
 	for _,rig in ipairs(self.rigs) do
 		local clock=if self.settings.reducedMotion and not self.action then 0 else self.elapsed
@@ -76,8 +76,10 @@ function Actors:Step(dt)
 end
 function Actors:Preview(action)
 	if not self.alive or #self.rigs~=2 or self.action then return false end
-	if action~="Kick" and action~="DiveLeft" and action~="DiveRight" then return false end
+	action=Motion.resolve(action)
+	if not Motion.duration(action) then return false end
 	self.action,self.actionTime=action,0
+	self.parent:SetAttribute("PreviewAction",action)
 	return true
 end
 function Actors:ApplySettings(settings) self.settings=settings or self.settings end
