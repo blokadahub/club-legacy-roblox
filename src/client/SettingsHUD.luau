@@ -4,13 +4,15 @@
 local Workspace = game:GetService("Workspace")
 local GuiService = game:GetService("GuiService")
 local TweenService = game:GetService("TweenService")
+local SoundService = game:GetService("SoundService")
+local ContentProvider = game:GetService("ContentProvider")
 local UI = require(script.Parent.UI)
 local Scope = require(script.Parent.Scope)
 local SettingsScreen = require(script.Parent.Screens.Settings)
 
 local SettingsHUD = {}
 
-local function fallback(root: Instance, scope, navigate)
+local function fallback(root: Instance, scope, navigate, playClick)
 	-- Segurança: se uma propriedade de UI falhar no dispositivo, ainda haverá
 	-- um menu visual utilizável e um botão para retornar ao lobby.
 	local grid = UI.new("Frame", {
@@ -44,7 +46,8 @@ local function fallback(root: Instance, scope, navigate)
 		}, grid)
 		UI.new("UICorner", {CornerRadius = UDim.new(0, 8)}, card)
 		table.insert(cards, card)
-		scope:Connect(card.Activated, function()
+		scope:Connect(card.Activated, function(input)
+			playClick(input)
 			active = index
 			update()
 		end)
@@ -57,13 +60,64 @@ local function fallback(root: Instance, scope, navigate)
 		Font = Enum.Font.GothamBold, TextSize = 19,
 		TextColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 1,
 	}, root)
-	scope:Connect(back.Activated, function() navigate("HomeInterior") end)
+	scope:Connect(back.Activated, function(input)
+		playClick(input)
+		navigate("HomeInterior")
+	end)
 end
 
 function SettingsHUD.start(playerGui: Instance, state)
 	local alive = true
 	local scope = Scope.new()
 	local navigate = function(_route: string) end
+
+	-- Audio local exclusivo da tela de Configuracoes. A intro e o lobby
+	-- conservam seus efeitos e controladores independentes.
+	local clickFolder = UI.new("Folder", {Name = "CL27_SettingsClickAudio"}, SoundService)
+	scope:Add(clickFolder)
+	local clickVoices = {}
+	for i = 1, 6 do
+		clickVoices[i] = UI.new("Sound", {
+			Name = "CyberClick_" .. tostring(i),
+			SoundId = "rbxassetid://135026594552200",
+			Volume = 0.75,
+			Looped = false,
+			PlayOnRemove = false,
+		}, clickFolder)
+	end
+	-- Pre-carregar sem bloquear a abertura do menu.
+	task.defer(function()
+		local ok, err = pcall(function()
+			ContentProvider:PreloadAsync(clickVoices)
+		end)
+		if alive and not ok then
+			warn("[CL27 Configuracoes] Falha ao carregar Cyber Click: " .. tostring(err))
+		end
+	end)
+	local nextVoice = 0
+	local function playClick(input: InputObject?)
+		if not alive then return end
+		-- Apenas clique/toque: foco, mouse hover, teclado e gamepad ficam silenciosos.
+		if input and input.UserInputType ~= Enum.UserInputType.MouseButton1
+			and input.UserInputType ~= Enum.UserInputType.Touch then return end
+		local chosen = nil
+		for offset = 1, #clickVoices do
+			local index = (nextVoice + offset - 1) % #clickVoices + 1
+			if not clickVoices[index].Playing then chosen = index; break end
+		end
+		-- Um novo clique nao interrompe os anteriores enquanto houver voz livre.
+		if not chosen then chosen = nextVoice % #clickVoices + 1 end
+		nextVoice = chosen
+		local sound = clickVoices[chosen]
+		local ok, err = pcall(function()
+			if sound.Playing then sound:Stop() end
+			sound.TimePosition = 0
+			sound:Play()
+		end)
+		if not ok then
+			warn("[CL27 Configuracoes] Falha ao tocar Cyber Click: " .. tostring(err))
+		end
+	end
 
 	local screen = UI.new("ScreenGui", {
 		Name = "CL27_SettingsHUD", DisplayOrder = 85,
@@ -89,6 +143,7 @@ function SettingsHUD.start(playerGui: Instance, state)
 		SettingsScreen(page, {
 			scope = scope,
 			state = state,
+			playClick = playClick,
 			go = function(route)
 				if alive then navigate(route) end
 			end,
@@ -99,7 +154,7 @@ function SettingsHUD.start(playerGui: Instance, state)
 	if not success then
 		warn("[CL27] Settings HUD principal falhou ao montar: " .. tostring(err))
 		page:ClearAllChildren()
-		fallback(page, scope, function(route) if alive then navigate(route) end end)
+		fallback(page, scope, function(route) if alive then navigate(route) end end, playClick)
 	end
 
 	local cameraConnection: RBXScriptConnection? = nil
