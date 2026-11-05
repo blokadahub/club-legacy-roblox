@@ -50,11 +50,11 @@ Antes do START, uma perda temporária de prontidão posterior às boas-vindas ma
 
 ## Implementação e recursos
 
-### Boas-vindas atualizadas em 04/11/2026
+### Boas-vindas — acabamento e proporções atuais
 
-As duas imagens recebidas orientam a composição: marca própria branca no centro superior, título WELCOME / TO THE CLUB em GothamBlack a 118 unidades e verde 0/239/83, facetas mais escuras e apoio discreto abaixo do START. A cápsula passa a ser o mesmo componente do lobby (`UI.capsule`), com círculo X e varredura localizada branca/menta de 4,8 s por volta. O componente não cria loops; `IntroVisuals:Draw` dirige o efeito, respeita movimento reduzido e bloqueio, e o destrói com a abertura.
+As imagens recebidas orientam a composição: marca própria branca no centro superior, título WELCOME / TO THE CLUB em GothamBlack a 111 unidades e verde 0/239/83, facetas escuras e apoio discreto abaixo do Start. A cápsula é o mesmo componente do lobby (`UI.capsule`), agora em `#5cff33`, com círculo X e varredura externa branca/verde de 4,8 s por volta. O componente não cria loops; `IntroVisuals:Draw` dirige o efeito, respeita movimento reduzido e bloqueio, e o destrói com a abertura.
 
-O alvo mantém mínimo físico 112×48 px; ícone e texto acompanham o tamanho ampliado em telas pequenas. As posições do contorno são calculadas nas unidades locais do canvas para que UIScale não reduza a geometria duas vezes. Ao concluir a abertura, Notícias do CL é a única seleção branca, seu conteúdo já está visível e o controle recebe o mesmo foco. Esta atualização não altera os tempos da tabela nem a liberação de áudio/música. A aparência renderizada ainda requer inspeção no Roblox.
+O alvo mantém mínimo físico 112×48 px, enquanto a superfície visível pode ficar em 104×30 px nos celulares compactos. A varredura mantém núcleo/halos de 2,4/9,6/20 px físicos, calculando a trajetória nas unidades locais do canvas. Ao concluir a abertura, Notícias do CL é a única seleção branca, seu conteúdo já está visível e o controle recebe o mesmo foco. A revisão não altera os tempos da tabela nem a liberação de áudio/música. Medidas, três etapas e limitações em [WELCOME_REFINEMENT.md](WELCOME_REFINEMENT.md). A aparência renderizada ainda requer inspeção no Roblox.
 
 | Arquivo | Responsabilidade |
 | --- | --- |

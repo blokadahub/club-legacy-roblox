@@ -6,7 +6,7 @@ local Workspace = game:GetService("Workspace")
 local UI = require(script.Parent.UI)
 
 local Showcase = {}
-local GREEN = Color3.fromRGB(129, 223, 135)
+local GREEN = UI.actionGreen
 local WHITE = Color3.fromRGB(236, 240, 239)
 local MUTED = Color3.fromRGB(189, 201, 200)
 local SECTIONS = {
@@ -119,7 +119,7 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 	item("UISizeConstraint", action, {
 		MinSize = Vector2.new(206, 44), MaxSize = Vector2.new(340, 56),
 	})
-	local border, disc, actionText = capsule.border, capsule.disc, capsule.label
+	local disc, actionText = capsule.disc, capsule.label
 	-- Faixa branca localizada percorre a borda da capsula com halo macio
 	-- e rastro gradual. O botao, o circulo X e o texto ficam imoveis.
 	local capsuleFX = capsule.fx
@@ -180,12 +180,14 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 	watchCamera()
 
 	local selected, lesson, token, fadeTween = 0, nil, 0, nil
+	local hoverTween = nil
 	local isReduced = reducedMotion
 	capsuleFX:SetReducedMotion(reducedMotion)
 	local alive = true
 	local function fill(index: number, lessonIndex: number?)
 		local section = SECTIONS[index]
 		if not section then return end
+		if hoverTween then hoverTween:Cancel();hoverTween=nil end
 		for symbol, image in pairs(symbols) do
 			image.Visible = symbol == section.symbol
 		end
@@ -195,7 +197,7 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 		local disabled = index == 4
 		action.Active = not disabled
 		action.Selectable = not disabled
-		action.BackgroundColor3 = if disabled then Color3.fromRGB(105, 112, 114) else GREEN
+		capsule.surface.BackgroundColor3 = if disabled then Color3.fromRGB(105, 112, 114) else GREEN
 		disc.Visible = not disabled
 		actionText.Position = if disabled then UDim2.fromScale(0, 0) else UDim2.new(0, 47, 0, 0)
 		actionText.Size = if disabled then UDim2.fromScale(1, 1) else UDim2.new(1, -52, 1, 0)
@@ -204,6 +206,7 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 	end
 	local function tweenFade(goal: number, duration: number)
 		if fadeTween then fadeTween:Cancel() end
+		if hoverTween then hoverTween:Cancel() end
 		fadeTween = TweenService:Create(stage, TweenInfo.new(duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
 			GroupTransparency = goal,
 		})
@@ -233,7 +236,6 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 	function self:Step(elapsed: number)
 		if not alive or isReduced then return end
 		capsuleFX:Step(elapsed)
-		border.Transparency = 0.82
 	end
 	function self:SetReducedMotion(enabled: boolean)
 		isReduced = enabled
@@ -247,6 +249,7 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 		if not alive then return end
 		alive = false
 		if fadeTween then fadeTween:Cancel() end
+		if hoverTween then hoverTween:Cancel() end
 		if viewportConnection then viewportConnection:Disconnect() end
 		if cameraConnection then cameraConnection:Disconnect() end
 		capsuleFX:Destroy()
@@ -257,14 +260,18 @@ function Showcase.new(parent: Instance, actionCallback: (number, number?) -> (),
 	end)
 	action.MouseEnter:Connect(function()
 		if alive and selected ~= 4 then
-			TweenService:Create(action, TweenInfo.new(0.16), {
-				BackgroundColor3 = Color3.fromRGB(161, 243, 166),
-			}):Play()
+			if hoverTween then hoverTween:Cancel() end
+			hoverTween=TweenService:Create(capsule.surface, TweenInfo.new(0.16), {
+				BackgroundColor3 = UI.actionHover,
+			})
+			hoverTween:Play()
 		end
 	end)
 	action.MouseLeave:Connect(function()
 		if alive and selected ~= 4 then
-			TweenService:Create(action, TweenInfo.new(0.2), {BackgroundColor3 = GREEN}):Play()
+			if hoverTween then hoverTween:Cancel() end
+			hoverTween=TweenService:Create(capsule.surface, TweenInfo.new(0.2), {BackgroundColor3 = GREEN})
+			hoverTween:Play()
 		end
 	end)
 	return self

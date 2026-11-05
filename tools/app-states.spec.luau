@@ -94,12 +94,29 @@ local showcase = homeRoot:FindFirstChild("ConteudoCentral")
 check(showcase ~= nil and showcase:IsA("CanvasGroup"),
 	"Lobby não criou conteúdo central independente do cenário 3D")
 check(showcase:FindFirstChild("TituloCentral").Text == "NOTÍCIAS DO CL"
-	and showcase:FindFirstChild("AcaoPrincipal"):FindFirstChild("TextoAcao").Text == "Ver notícias",
+	and showcase:FindFirstChild("AcaoPrincipal"):FindFirstChild("TextoAcao",true).Text == "Ver notícias",
 	"Conteúdo central inicial não combina com foco no menu")
 local primary = showcase:FindFirstChild("AcaoPrincipal")
+local primarySurface=primary:FindFirstChild("SuperficieCapsula")
+local function radioactive(color)
+	return math.abs(color.R-92/255)<.00001 and color.G==1 and math.abs(color.B-51/255)<.00001
+end
+check(primarySurface and radioactive(primarySurface.BackgroundColor3),"Todos os CTAs verdes devem usar #5cff33")
+primary.MouseEnter:Fire();advance(.2)
+check(primarySurface.BackgroundColor3.R>92/255 and primarySurface.BackgroundColor3.G==1,
+	"Hover deve clarear a paleta radioativa sem voltar ao verde desbotado")
+primary.MouseLeave:Fire();advance(.25)
+check(radioactive(primarySurface.BackgroundColor3),"MouseLeave deve restaurar #5cff33")
+do
+	local scope=Scope.new()
+	local button=UI.button(gui,"Paleta de ação",0,0,160,48,function() end,scope,{primary=true})
+	check(radioactive(button.BackgroundColor3) and button.BackgroundTransparency==0,
+		"CTAs primários devem exibir a paleta comum sem transparência que apague o verde")
+	scope:Destroy();button:Destroy()
+end
 check(primary ~= nil and primary:IsA("TextButton")
-	and primary:FindFirstChildOfClass("UICorner") ~= nil
-	and primary:FindFirstChild("IconeControle") ~= nil,
+	and primary:FindFirstChild("SuperficieCapsula"):FindFirstChildOfClass("UICorner") ~= nil
+	and primary:FindFirstChild("IconeControle",true) ~= nil,
 	"Ação central precisa ser uma cápsula verde com símbolo de controle")
 check(showcase:FindFirstChild("Logotipos"):FindFirstChild("Simbolo_quick") ~= nil,
 	"Símbolos devem ser próprios, geométricos e independentes da EA")
@@ -113,16 +130,16 @@ check(brand and brand.Text == "CL 27"
 	"Texto CL 27 precisa estar precisamente centralizado na tela")
 check(homeRoot:FindFirstChild("AjudaInferior")==nil,
 	"Instrucoes A Selecionar B Voltar foram solicitadas para remocao")
-local ctaSweep = primary:FindFirstChild("OuterGlowSweepCapsula")
+local ctaSweep = primary:FindFirstChild("OuterGlowSweepCapsula",true)
 local ctaPiece = ctaSweep and ctaSweep:FindFirstChild("SweepBorda_01")
 check(ctaSweep and ctaPiece and ctaPiece:IsA("CanvasGroup")
 	and ctaPiece:FindFirstChild("HaloExternoSuave")
 	and ctaPiece:FindFirstChild("GlowMedio")
 	and ctaPiece:FindFirstChild("LinhaBranca"),
 	"Botao X deve manter Outer Glow Sweep branco-menta sem pontos em fila")
-check(ctaPiece:FindFirstChild("LinhaBranca").Size.Y.Offset == 2.25
-	and ctaPiece:FindFirstChild("GlowMedio").Size.Y.Offset == 8.4,
-	"Capsula X e CL devem compartilhar a nova espessura de brilho")
+check(ctaPiece:FindFirstChild("LinhaBranca").Size.Y.Offset == 2.4
+	and ctaPiece:FindFirstChild("GlowMedio").Size.Y.Offset == 9.6,
+	"Capsula X precisa de brilho com mais contraste, preservando o indicador CL")
 check(primary:FindFirstChild("CobraNeonCapsula") == nil
 	and primary:FindFirstChild("ReflexoAnimado") == nil,
 	"Reflexo atravessando o botao e luz cobra devem permanecer removidos")
@@ -183,6 +200,7 @@ check(pulse ~= nil and pulse:IsA("CanvasGroup")
 	and pulse.GroupTransparency == 1 and glow.GroupTransparency == 1,
 	"Brilho verde deve ficar completamente invisivel antes do clique")
 local yBefore = glow.Position.Y.Offset
+primary.MouseEnter:Fire();advance(.03)
 clubOption.Activated:Fire()
 check(glow.GroupTransparency == 0 and pulse.GroupTransparency < 0.5
 	and not wipe.Visible and not UI.inputLocked and not handle.state.menuInputLocked,
@@ -202,6 +220,8 @@ advance(0.52)
 check(clubOption.TextTransparency == 0 and glow.GroupTransparency == 1
 	and pulse.GroupTransparency == 1 and not wipe.Visible and not UI.inputLocked,
 	"Selecao branca deve permanecer SEM glow verde depois do impacto")
+check(not primary.Active and not radioactive(primarySurface.BackgroundColor3),
+	"Tween de hover atrasado não pode recolorir uma ação desativada de verde")
 check(homeList:FindFirstChild("Opcao_5").Position.Y.Offset > 400,
 	"Upgrade deve descer quando Aprenda a Jogar expande")
 local core = glow:FindFirstChild("CamadaRadial_14")
@@ -240,7 +260,7 @@ check(manager.TextTransparency == 0.32 and kickOff.TextTransparency == 0,
 clubOption.Activated:Fire()
 advance(0.69)
 check(showcase:FindFirstChild("TituloCentral").Text == "APRENDA A JOGAR"
-	and primary:FindFirstChild("TextoAcao").Text == "EM ATUALIZAÇÃO",
+	and primary:FindFirstChild("TextoAcao",true).Text == "EM ATUALIZAÇÃO",
 	"Aprenda precisa informar seu estado indisponivel")
 check(not primary.Selectable and not primary.Active,
 	"CTA central deve estar desativado")

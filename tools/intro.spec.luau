@@ -409,7 +409,7 @@ do
 end
 
 -- Frame sampling across all phases, mobile layouts and reduced motion.
-for _,size in ipairs({Vector2.new(1920,1080),Vector2.new(854,393),Vector2.new(1024,768),Vector2.new(2560,1080),Vector2.new(393,854)}) do
+for _,size in ipairs({Vector2.new(1536,863),Vector2.new(1920,1080),Vector2.new(854,393),Vector2.new(1024,768),Vector2.new(2560,1080),Vector2.new(393,854)}) do
 	local visuals=Visuals.new(playerGui)
 	visuals:Resize(size)
 	local facets=visuals.gui:FindFirstChild("FacetasGeometricas",true)
@@ -418,28 +418,58 @@ for _,size in ipairs({Vector2.new(1920,1080),Vector2.new(854,393),Vector2.new(10
 	local fitted=visuals.start.Parent.Parent:FindFirstChildOfClass("UIScale").Scale
 	check(visuals.start.Size.Y.Offset*fitted>=48-.001
 		and visuals.start.Size.X.Offset*fitted>=112-.001,"Mobile START touch area")
-	local caption=visuals.start:FindFirstChild("TextoAcao")
-	local disc=visuals.start:FindFirstChild("IconeControle")
-	local sweep=visuals.start:FindFirstChild("OuterGlowSweepCapsula")
+	local caption=visuals.start:FindFirstChild("TextoAcao",true)
+	local disc=visuals.start:FindFirstChild("IconeControle",true)
+	local sweep=visuals.start:FindFirstChild("OuterGlowSweepCapsula",true)
+	local surface=visuals.start:FindFirstChild("SuperficieCapsula")
 	check(disc and disc:FindFirstChild("TeclaX").Text=="X"
-		and caption and caption.Text=="START" and sweep,"START must use the lobby X capsule")
-	check(caption.TextSize*fitted>=14-.001 and disc.Size.Y.Offset*fitted>=28,
+		and caption and caption.Text=="Start" and sweep,"START must use the lobby X capsule")
+	check(caption.TextSize*fitted>=14-.001 and disc.Size.Y.Offset*fitted>=22-.001,
 		"Mobile START caption/X became too small")
+	check(visuals.start.BackgroundTransparency==1 and surface.Size.Y.Offset<=visuals.start.Size.Y.Offset
+		and surface.Size.X.Offset<=visuals.start.Size.X.Offset,"Touch area must surround the independent visual surface")
+	check(surface.Size.X.Offset/surface.Size.Y.Offset>=2.7
+		and (fitted>=.65 or surface.Size.Y.Offset*fitted<=34),"Mobile touch minimum made START visibly thick again")
+	local green=surface.BackgroundColor3
+	check(near(green.R,92/255) and near(green.G,1) and near(green.B,51/255),"START must use exactly #5cff33")
 	check(caption.Position.X.Offset>=disc.Position.X.Offset+disc.Size.X.Offset
-		and caption.Size.X.Offset+visuals.start.Size.X.Offset>0,
+		and caption.Size.X.Offset+surface.Size.X.Offset>0,
 		"START caption overlaps its X disc or has no horizontal room")
 	visuals:Draw({elapsed=17.8,ready=true,canStart=true},"RealName",false,nil)
+	check(visuals.welcome.WelcomeTitulo.TextSize<=visuals.welcome.WelcomeTitulo.Size.Y.Offset
+		and visuals.welcome.WelcomeSubtitulo.TextSize<=visuals.welcome.WelcomeSubtitulo.Size.Y.Offset,
+		"Title text is taller than its native label and risks vertical clipping")
 	check(visuals.logo.root.GroupTransparency==0 and near(visuals.logo.scale.Scale,.25)
-		and visuals.logo.root.Position.Y.Offset==210,"Welcome must retain the small white brand above its title")
+		and visuals.logo.root.Position.Y.Offset==207,"Welcome must retain the small white brand above its title")
+	if size.X==1536 then
+		local canvas=visuals.welcome.Parent
+		local function screenY(y) return canvas.Position.Y.Offset+(y-450)*fitted end
+		local top=visuals.welcome.WelcomeTitulo
+		local bottom=visuals.welcome.WelcomeSubtitulo
+		-- Centers measured from the attached 1536x863 screenshot, independent
+		-- of the native font's glyph metrics: brand 198, title 339/435, CTA 583.
+		check(math.abs(screenY(visuals.logo.root.Position.Y.Offset)-198)<=3,"Brand position differs from reference")
+		check(math.abs(screenY(visuals.welcome.Position.Y.Offset+top.Position.Y.Offset+top.Size.Y.Offset/2)-339)<=3
+			and math.abs(screenY(visuals.welcome.Position.Y.Offset+bottom.Position.Y.Offset+bottom.Size.Y.Offset/2)-435)<=3,
+			"Welcome title line centers differ from reference")
+		check(math.abs(screenY(visuals.welcome.Position.Y.Offset+visuals.start.Position.Y.Offset)-583)<=3,"Start position differs from reference")
+	end
 	local lit=0
 	local mask={}
+	local minX,minY,maxX,maxY=math.huge,math.huge,-math.huge,-math.huge
 	for i,sample in ipairs(sweep:GetChildren()) do
-		check(sample.Position.X.Offset>=0 and sample.Position.X.Offset<=visuals.start.Size.X.Offset
-			and sample.Position.Y.Offset>=0 and sample.Position.Y.Offset<=visuals.start.Size.Y.Offset,
-			"START sweep left the local capsule perimeter under UIScale")
+		local x,y=sample.Position.X.Offset*fitted,sample.Position.Y.Offset*fitted
+		local w,h=surface.Size.X.Offset*fitted,surface.Size.Y.Offset*fitted
+		check(x>=-1 and x<=w+1 and y>=-1 and y<=h+1,"START sweep left the outer capsule perimeter under UIScale")
+		minX=math.min(minX,x);maxX=math.max(maxX,x);minY=math.min(minY,y);maxY=math.max(maxY,y)
+		check(near(sample.LinhaBranca.Size.Y.Offset*fitted,2.4)
+			and near(sample.GlowMedio.Size.Y.Offset*fitted,9.6)
+			and near(sample.HaloExternoSuave.Size.Y.Offset*fitted,20),"Contour thickness lost physical pixels under UIScale")
 		mask[i]=sample.GroupTransparency
 		if sample.GroupTransparency<.98 then lit+=1 end
 	end
+	check(minX<0 and minY<0 and maxX>surface.Size.X.Offset*fitted and maxY>surface.Size.Y.Offset*fitted,
+		"Sweep must wrap the whole capsule just outside its green surface")
 	check(#mask==78 and lit>=3 and lit<=28,"START glow must illuminate a short continuous portion of its border")
 	visuals:Draw({elapsed=18.2,ready=true,canStart=true},"RealName",false,nil)
 	local moved=false
@@ -473,6 +503,23 @@ for _,size in ipairs({Vector2.new(1920,1080),Vector2.new(854,393),Vector2.new(10
 	check(sweep.Parent==nil,"START contour survived intro destruction")
 end
 
+-- Roblox top-bar insets must not shrink/shift the reference composition again.
+do
+	local originalInset=services.GuiService.GetGuiInset
+	services.GuiService.GetGuiInset=function() return Vector2.new(0,58),Vector2.new() end
+	local visuals=Visuals.new(playerGui)
+	visuals:Resize(Vector2.new(854,393))
+	visuals:Draw({elapsed=18,ready=true,canStart=true},"RealName",false,nil)
+	local canvas=visuals.welcome.Parent
+	local fitted=canvas:FindFirstChildOfClass("UIScale").Scale
+	check(near(fitted,393/900) and near(canvas.Position.Y.Offset,393/2),"Top bar shrank or shifted the welcome canvas")
+	local credit=visuals.welcome.WelcomeCredito
+	check(credit.TextSize*fitted>=9 and credit.Position.Y.Offset>visuals.start.Position.Y.Offset+visuals.start.Size.Y.Offset/2,
+		"Welcome footer became unreadable or collided with the touch target")
+	visuals:Destroy()
+	services.GuiService.GetGuiInset=originalInset
+end
+
 -- Regression for the actual mobile screenshot: failed lobby must not overlap the
 -- cinematic brand or render an overflowing retry label.
 local failureUI=Visuals.new(playerGui)
@@ -480,10 +527,10 @@ failureUI:Resize(Vector2.new(854,393))
 failureUI:Draw({elapsed=5,ready=false,canStart=false,waiting=false},"RealName",false,
     "Não foi possível preparar o lobby. Tente novamente.")
 check(failureUI.logo.root.GroupTransparency==1,"Failure screen left logo over error")
-check(failureUI.start:FindFirstChild("TextoAcao").Text=="TENTAR" and failureUI.start.Selectable,"Mobile failure button unreadable or disabled")
+check(failureUI.start:FindFirstChild("TextoAcao",true).Text=="Tentar" and failureUI.start.Selectable,"Mobile failure button unreadable or disabled")
 check(failureUI.message.GroupTransparency==0,"Failure message not visible during early intro")
 failureUI:Draw({elapsed=5.1,ready=false,canStart=false,waiting=false},"RealName",false,nil)
-check(failureUI.start:FindFirstChild("TextoAcao").Text=="START","Retry state did not reset")
+check(failureUI.start:FindFirstChild("TextoAcao",true).Text=="Start","Retry state did not reset")
 failureUI:Destroy()
 
 -- Cancellation disconnects Heartbeat and stops effects, with no music unlock.

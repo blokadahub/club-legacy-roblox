@@ -23,7 +23,7 @@ local function triangle(parent, a, b, c, shade)
 		part.CanCollide=false
 		part.CastShadow=false
 		part.Material=Enum.Material.SmoothPlastic
-		part.Color=Color3.fromRGB(shade,shade,shade)
+		part.Color=Color3.fromRGB(shade+2,shade,shade+1)
 		part.Size=Vector3.new(0.01,height,spec[4])
 		part.CFrame=CFrame.fromMatrix(spec[1],spec[2],up,spec[3])
 		part.Parent=parent
@@ -49,13 +49,13 @@ function Background.new(parent)
 	camera.Parent=view
 	view.CurrentCamera=camera
 	local facets={
-		{{0,0},{320,0},{0,610},18},
-		{{320,0},{1400,0},{0,610},22},
-		{{1400,0},{1830,1080},{0,610},25},
-		{{1400,0},{1920,0},{1830,1080},10},
-		{{1920,0},{1920,1080},{1830,1080},27},
-		{{0,610},{1830,1080},{290,1080},20},
-		{{0,610},{290,1080},{0,1080},29},
+		{{0,0},{355,0},{0,626},21},
+		{{355,0},{1422,0},{0,626},19},
+		{{1422,0},{1820,1080},{0,626},15},
+		{{1422,0},{1920,0},{1820,1080},8},
+		{{1920,0},{1920,1080},{1820,1080},27},
+		{{0,626},{1820,1080},{405,1080},18},
+		{{0,626},{405,1080},{0,1080},31},
 	}
 	for _,f in ipairs(facets) do
 		triangle(view,point(f[1][1],f[1][2]),point(f[2][1],f[2][2]),point(f[3][1],f[3][2]),f[4])
