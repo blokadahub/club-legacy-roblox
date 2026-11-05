@@ -1,62 +1,93 @@
 --!nonstrict
-local Rig = require(script.Parent.Parent.Rig)
-local Actors = {}
-local function make(parent,name,kit,position,target,pose)
-	local club={id=name,name="CL 27",kits={kit}}
-	local actor=Rig.create({name=name,number=name=="CobradorR15" and 27 or 1},club,1)
-	actor.Name=name
-	Rig.pose(actor,pose)
-	-- Bake the Motor6D chain before publishing the static model. No frame delay,
-	-- physics settling, T pose flash or animated feet below the turf in stage 1.
-	local welds,motors={},{}
-	for _,node in ipairs(actor:GetDescendants()) do
-		if node:IsA("WeldConstraint") then
-			table.insert(welds,{joint=node,offset=node.Part0.CFrame:ToObjectSpace(node.Part1.CFrame)})
-		elseif node:IsA("Motor6D") then table.insert(motors,node) end
-	end
-	local resolved={[actor.PrimaryPart]=true}
-	for _=1,16 do
-		for _,joint in ipairs(motors) do
-			if resolved[joint.Part0] then
-				joint.Part1.CFrame=joint.Part0.CFrame*joint.C0*joint.C1:Inverse()
-				resolved[joint.Part1]=true
-			end
-		end
-	end
-	for _,data in ipairs(welds) do data.joint.Part1.CFrame=data.joint.Part0.CFrame*data.offset end
-	for _,node in ipairs(actor:GetDescendants()) do
-		if node:IsA("BasePart") then node.Anchored=true;node.CastShadow=true end
-	end
-	actor:PivotTo(CFrame.lookAt(Vector3.new(position[1],0,position[3]),Vector3.new(target[1],0,target[3])))
-	local bottom=math.huge
-	for _,side in ipairs({"LeftFoot","RightFoot","LeftSola","RightSola"}) do
-		local foot=actor:FindFirstChild(side)
-		if foot then
-			for _,x in ipairs({-1,1}) do for _,y in ipairs({-1,1}) do for _,z in ipairs({-1,1}) do
-				local corner=foot.CFrame:PointToWorldSpace(Vector3.new(x*foot.Size.X/2,y*foot.Size.Y/2,z*foot.Size.Z/2))
-				bottom=math.min(bottom,corner.Y)
-			end end end
-		end
-	end
-	actor:PivotTo(actor:GetPivot()+Vector3.new(0,0.035-bottom,0))
-	actor:SetAttribute("PresentationOnly",true)
-	actor.Parent=parent
-	return actor
+local Players=game:GetService("Players")
+local RunService=game:GetService("RunService")
+local Appearance=require(script.Parent.Parent.AvatarAppearance)
+local Rig=require(script.Parent.PenaltyRig)
+local Motion=require(script.Parent.PenaltyMotion)
+local Actors={}
+Actors.__index=Actors
+function Actors.new(parent,layout,settings)
+	local self=setmetatable({parent=parent,layout=layout,settings=settings or {},alive=true,elapsed=0,rigs={}},Actors)
+	self:Load()
+	return self
 end
-function Actors.create(parent,layout)
-	local dark=Color3.fromRGB(28,34,39)
-	local striker=make(parent,"CobradorR15",{
-		name="CL Academy",shirt=Color3.fromRGB(177,224,67),shorts=dark,socks=dark,accent=Color3.fromRGB(92,255,51),
-	},layout.Striker,layout.Ball,"PenaltyStriker")
-	local keeper=make(parent,"GoleiroR15",{
-		name="CL Goalkeeper",shirt=Color3.fromRGB(225,57,113),shorts=Color3.fromRGB(201,40,91),
-		socks=Color3.fromRGB(220,52,108),accent=Color3.fromRGB(248,208,220),
-	},layout.Keeper,layout.Ball,"PenaltyKeeper")
-	for _,side in ipairs({"LeftHand","RightHand"}) do
-		local hand=keeper:FindFirstChild(side)
-		hand.Color=Color3.fromRGB(232,240,230)
-		hand.Size=hand.Size*1.12
+function Actors:Status(status,message)
+	if not self.alive then return end
+	self.parent:SetAttribute("AvatarStatus",status)
+	self.parent:SetAttribute("AvatarMessage",message or "")
+end
+function Actors:Load()
+	if not self.alive or self.loading or #self.rigs>0 then return end
+	self.loading=true
+	self:Status("Loading","Carregando seu avatar Roblox…")
+	local generation=(self.generation or 0)+1
+	self.generation=generation
+	self.timeout=task.delay(15,function()
+		self.timeout=nil
+		if self.alive and self.loading and self.generation==generation then
+			self:Status("Slow","Seu avatar está demorando para carregar. Você pode voltar ao lobby.")
+		end
+	end)
+	self.cancelLoad=Appearance.request(Players.LocalPlayer,function(template,err,warning)
+		if not self.alive or self.generation~=generation then if template then template:Destroy() end;return end
+		self.loading=false
+		if self.timeout then pcall(task.cancel,self.timeout);self.timeout=nil end
+		if not template then self:Status("Error",err);return end
+		local models={template}
+		local ok,problem=pcall(function()
+			models[2]=template:Clone()
+			for i,role in ipairs({"striker","keeper"}) do
+				local model=models[i]
+				model.Name=if i==1 then "CobradorR15" else "GoleiroR15"
+				local position=if i==1 then self.layout.Striker else self.layout.Keeper
+				local rig=Rig.new(model,role,position,self.layout.Ball)
+				table.insert(self.rigs,rig)
+				rig:Apply(Motion.sample(role,0,nil,0,rig.scale,rig.width,rig.distance),true)
+			end
+		end)
+		if not ok then
+			for _,rig in ipairs(self.rigs) do rig:Destroy() end
+			for _,model in ipairs(models) do model:Destroy() end
+			table.clear(self.rigs)
+			Appearance.invalidate(Players.LocalPlayer.UserId)
+			self:Status("Error","Não foi possível preparar seu avatar R15. Tente novamente.")
+			warn("[CL27/PenaltyActors] "..tostring(problem));return
+		end
+		-- Both copies already posed before either enters Workspace: no visible T pose.
+		for _,rig in ipairs(self.rigs) do rig.model.Parent=self.parent end
+		for _,rig in ipairs(self.rigs) do rig:StartTracks() end
+		self.connection=RunService.PreSimulation:Connect(function(dt) self:Step(dt) end)
+		self:Status("Ready",warning)
+	end)
+end
+function Actors:Step(dt)
+	if not self.alive then return end
+	self.elapsed+=math.clamp(dt,0,.1)
+	if self.action then
+		local activeRig=self.rigs[if self.action=="Kick" then 1 else 2]
+		self.actionTime+=math.clamp(dt,0,.1)*math.clamp(activeRig.scale,.65,1.2)
+		local duration=if self.action=="Kick" then Motion.KickDuration else Motion.DiveDuration
+		if self.actionTime>=duration then self.action=nil;self.actionTime=0 end
 	end
-	return striker,keeper
+	for _,rig in ipairs(self.rigs) do
+		local clock=if self.settings.reducedMotion and not self.action then 0 else self.elapsed
+		rig:Apply(Motion.sample(rig.role,clock,self.action,self.actionTime or 0,rig.scale,rig.width,rig.distance),false)
+	end
+end
+function Actors:Preview(action)
+	if not self.alive or #self.rigs~=2 or self.action then return false end
+	if action~="Kick" and action~="DiveLeft" and action~="DiveRight" then return false end
+	self.action,self.actionTime=action,0
+	return true
+end
+function Actors:ApplySettings(settings) self.settings=settings or self.settings end
+function Actors:Destroy()
+	if not self.alive then return end
+	self.alive=false
+	if self.connection then self.connection:Disconnect();self.connection=nil end
+	if self.cancelLoad then self.cancelLoad();self.cancelLoad=nil end
+	if self.timeout then pcall(task.cancel,self.timeout);self.timeout=nil end
+	for _,rig in ipairs(self.rigs) do rig:Destroy() end
+	table.clear(self.rigs)
 end
 return Actors

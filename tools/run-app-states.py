@@ -131,12 +131,13 @@ services.StarterGui = {SetCoreGuiEnabled = function() end}
 services.UserInputService.GetFocusedTextBox = function() return nil end
 services.UserInputService.GamepadEnabled = true
 services.Lighting = Instance.new('Lighting')
+services.ContentProvider = {}
 services.RunService = {RenderStepped = signal(), Heartbeat = signal()}
 '''
 if args.penalty:
     setup += (root / "tools/penalty-stubs.luau").read_text()
 paths = sorted((root / "src/shared").glob("*.luau"))
-paths += [root / f"src/client/{name}.luau" for name in ("Scope", "Rig", "UI", "SettingsIcons", "Soundtrack", "MenuAvatar", "OuterGlowSweep", "HomeShowcase", "RadialGlow", "HomeHUD", "SettingsHUD", "TransitionFX", "App")]
+paths += [root / f"src/client/{name}.luau" for name in ("Scope", "Rig", "UI", "SettingsIcons", "Soundtrack", "AvatarAppearance", "MenuAvatar", "OuterGlowSweep", "HomeShowcase", "RadialGlow", "HomeHUD", "SettingsHUD", "TransitionFX", "App")]
 paths += sorted((root / "src/client/Screens").glob("*.luau"))
 paths += sorted((root / "src/client/Environments").glob("*.luau"))
 if args.intro:
