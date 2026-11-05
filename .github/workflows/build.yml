@@ -41,6 +41,7 @@ jobs:
           python3 tools/run-runtime-smoke.py --runtime .tools/luau/luau
           python3 tools/run-app-states.py --runtime .tools/luau/luau
           python3 tools/run-app-states.py --runtime .tools/luau/luau --intro
+          python3 tools/run-app-states.py --runtime .tools/luau/luau --penalty
 
       - name: Instalar Rojo 7.7.1
         shell: bash

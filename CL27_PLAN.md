@@ -16,7 +16,7 @@ Git clone via shell falhou ao conectar ao proxy. O conector GitHub permite ler e
 1. `ReplicatedStorage.CL27`: tema, dados fictícios coerentes, estado e seleções.
 2. `StarterPlayerScripts.CL27`: App, componentes UI, Scope para descarte, módulos de telas, Scene e Rig.
 3. `ServerScriptService`: desativação de spawn automático; produto sem gameplay.
-4. Workspace local: interior arquitetônico com telão, piso, luzes e atleta; arena escura, túnel de Clubs e apresentação de dois uniformes. A cena de treinamento foi removida.
+4. Workspace local: interior arquitetônico com telão, piso, luzes e atleta; arena escura, túnel de Clubs e apresentação de dois uniformes. A cena legada de treinamento foi removida; a nova prévia de pênaltis é `PenaltyArena`/`Penalty`, descrita em `docs/PENALTY_PROGRESS.md` (etapa 1 apenas).
 5. Canvas 1600×900 ajustado à área segura. Navegação comum por mouse, toque, teclado e seleção de controle; transição cromática azul/esmeralda/turquesa cobre trocas de cena.
 6. Todos os dados de demonstração são locais à sessão. Sem economia, transferências ou partidas reais.
 
@@ -39,3 +39,7 @@ IDs: HomeInterior, Overview, Squad, Tactics, Assignments, Calendar, Transfers, F
 ## Entrega e publicação
 
 Gerar `club-legacy.rbxlx` com Rojo 7.7.1. CI automática somente compila/valida. Open Cloud manual, com destino em variáveis explicitamente configuradas e chave em secret; não executar nesta sessão sem destino confirmado.
+
+## Pênaltis — etapa 1 em 04/11/2026
+
+Prévia modular no Workspace integrada exclusivamente a Aprenda a Jogar → Arena de Treino. Medidas e câmera em PenaltyLayout, R15 estáticos em PenaltyActors, construção e bola independente em PenaltyScene; Scene mantém propriedade única da câmera e iluminação. Entrada direta sem tela intermediária e retorno ao lobby. Gameplay, física da bola e animações de cobrança aguardam autorização expressa do usuário. Estado, testes, limitações e publicação manual em [PENALTY_PROGRESS.md](docs/PENALTY_PROGRESS.md).

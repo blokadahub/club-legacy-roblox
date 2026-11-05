@@ -212,7 +212,18 @@ function Rig.pose(model, mode)
 		LeftHip = CFrame.Angles(0, math.rad(-4), math.rad(-3)),
 		RightHip = CFrame.Angles(math.rad(-3), math.rad(5), math.rad(4)),
 	}
-	if mode == "Presentation" then
+	if mode == "PenaltyStriker" then
+		p = {Waist=CFrame.Angles(0.04,0,0),Neck=CFrame.Angles(-0.04,0,0),
+			LeftShoulder=CFrame.Angles(-0.03,0,-0.08),RightShoulder=CFrame.Angles(0.04,0,0.08),
+			LeftElbow=CFrame.Angles(-0.12,0,0),RightElbow=CFrame.Angles(-0.10,0,0)}
+	elseif mode == "PenaltyKeeper" then
+		p = {Waist=CFrame.Angles(-0.12,0,0),Neck=CFrame.Angles(0.10,0,0),
+			LeftShoulder=CFrame.Angles(-0.35,0,-0.48),RightShoulder=CFrame.Angles(-0.35,0,0.48),
+			LeftElbow=CFrame.Angles(-0.38,0,0),RightElbow=CFrame.Angles(-0.38,0,0),
+			LeftHip=CFrame.Angles(-0.20,0,-0.16),RightHip=CFrame.Angles(-0.20,0,0.16),
+			LeftKnee=CFrame.Angles(0.35,0,0),RightKnee=CFrame.Angles(0.35,0,0),
+			LeftAnkle=CFrame.Angles(-0.15,0,0),RightAnkle=CFrame.Angles(-0.15,0,0)}
+	elseif mode == "Presentation" then
 		p.Waist = CFrame.Angles(0.03, -0.15, -0.02)
 		p.LeftShoulder = CFrame.Angles(-0.22, 0.08, -0.37)
 		p.RightShoulder = CFrame.Angles(0.12, -0.08, 0.46)
