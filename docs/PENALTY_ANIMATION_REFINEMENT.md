@@ -6,7 +6,9 @@ Correção autorizada após o usuário publicar e testar o PR #16. **Não é a e
 
 - Base: `main` em `4eb70e055d9d2462f7c934f70b2a4298cf90a876`.
 - Branch: `fix/cl27-natural-run-save-variants`.
-- Commit, Pull Request e CI: registrar no fechamento desta entrega.
+- Implementação: `4bfd7fefb1acdf4605fe9c00939dbcd008daed21`; árvore `351e09982198adbce66f5803241ed0267e8cb6db`, idêntica à testada localmente.
+- Pull Request: [#17](https://github.com/blokadahub/club-legacy-roblox/pull/17), aberto e sem merge.
+- [CI 41956409033](https://github.com/blokadahub/club-legacy-roblox/actions/runs/41956409033): concluído com sucesso, com testes ampliados e artefato `club-legacy-rbxlx`. Commits posteriores desta entrega registram apenas o fechamento documental; consulte o HEAD no PR.
 - Sem merge ou publicação automática.
 
 ## Corrida do cobrador

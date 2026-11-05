@@ -6,7 +6,9 @@ O usuário publicou/testou o PR #16 e confirmou o carregamento dos avatares. Est
 
 - Base aprovada: `4eb70e055d9d2462f7c934f70b2a4298cf90a876`.
 - Branch: `fix/cl27-natural-run-save-variants`.
-- Registro de commit/PR/CI será acrescentado no fechamento da entrega.
+- Implementação: `4bfd7fefb1acdf4605fe9c00939dbcd008daed21`; árvore `351e09982198adbce66f5803241ed0267e8cb6db`, idêntica à compilada localmente.
+- Pull Request: [#17 — corrida e seis defesas](https://github.com/blokadahub/club-legacy-roblox/pull/17), aberto e sem merge.
+- [CI 41956409033](https://github.com/blokadahub/club-legacy-roblox/actions/runs/41956409033): `completed / success`, incluindo a suíte ampliada e artefato `club-legacy-rbxlx`. O fechamento documental posterior está no HEAD do PR.
 - Auditoria temporal, critérios, resultados, arquivos e limites: [PENALTY_ANIMATION_REFINEMENT.md](PENALTY_ANIMATION_REFINEMENT.md).
 - Sem merge ou publicação automática nesta sessão; aguardar avaliação visual do usuário.
 
