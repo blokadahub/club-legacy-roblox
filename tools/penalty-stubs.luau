@@ -76,3 +76,100 @@ function methods:ScaleTo(scale)
 		end
 	end
 end
+-- Additional official API doubles used by the real-avatar correction suite.
+local vectorIndex=vectorMeta.__index
+vectorMeta.__index=function(self,key)
+	if key=="Dot" then return dot end
+	if key=="Cross" then return cross end
+	if key=="Lerp" then return function(a,b,t) return a+(b-a)*t end end
+	return vectorIndex(self,key)
+end
+local frameIndex=cfMeta.__index
+cfMeta.__index=function(self,key)
+	if key=="Rotation" then return frame(Vector3.zero,self.r) end
+	return frameIndex(self,key)
+end
+function cfMethods:VectorToWorldSpace(v) return rotate(self.r,v) end
+function cfMethods:Lerp(other,t)
+	-- Quaternion slerp: preserve orthonormal rotation during pose blending.
+	local function quat(m)
+		local trace=m[1]+m[5]+m[9]
+		local x,y,z,w
+		if trace>0 then local s=math.sqrt(trace+1)*2;w=.25*s;x=(m[8]-m[6])/s;y=(m[3]-m[7])/s;z=(m[4]-m[2])/s
+		elseif m[1]>m[5] and m[1]>m[9] then local s=math.sqrt(1+m[1]-m[5]-m[9])*2;w=(m[8]-m[6])/s;x=.25*s;y=(m[2]+m[4])/s;z=(m[3]+m[7])/s
+		elseif m[5]>m[9] then local s=math.sqrt(1+m[5]-m[1]-m[9])*2;w=(m[3]-m[7])/s;x=(m[2]+m[4])/s;y=.25*s;z=(m[6]+m[8])/s
+		else local s=math.sqrt(1+m[9]-m[1]-m[5])*2;w=(m[4]-m[2])/s;x=(m[3]+m[7])/s;y=(m[6]+m[8])/s;z=.25*s end
+		return {x,y,z,w}
+	end
+	local a,b=quat(self.r),quat(other.r)
+	local cosine=0
+	for i=1,4 do cosine+=a[i]*b[i] end
+	if cosine<0 then for i=1,4 do b[i]=-b[i] end;cosine=-cosine end
+	local wa,wb=1-t,t
+	if cosine<.9995 then local angle=math.acos(math.clamp(cosine,-1,1));wa=math.sin((1-t)*angle)/math.sin(angle);wb=math.sin(t*angle)/math.sin(angle) end
+	local q,n={},0
+	for i=1,4 do q[i]=a[i]*wa+b[i]*wb;n+=q[i]*q[i] end
+	for i=1,4 do q[i]/=math.sqrt(n) end
+	local x,y,z,w=table.unpack(q)
+	return frame(self.Position:Lerp(other.Position,t),{1-2*y*y-2*z*z,2*x*y-2*z*w,2*x*z+2*y*w,2*x*y+2*z*w,1-2*x*x-2*z*z,2*y*z-2*x*w,2*x*z-2*y*w,2*y*z+2*x*w,1-2*x*x-2*y*y})
+end
+CFrame.fromAxisAngle=function(axis,angle)
+	local x,y,z=axis.X,axis.Y,axis.Z
+	local c,s=math.cos(angle),math.sin(angle);local t=1-c
+	return frame(Vector3.zero,{t*x*x+c,t*x*y-s*z,t*x*z+s*y,t*x*y+s*z,t*y*y+c,t*y*z-s*x,t*x*z-s*y,t*y*z+s*x,t*z*z+c})
+end
+local originalIsA=methods.IsA
+function methods:IsA(className)
+	return originalIsA(self,className) or className=="BaseScript" and (self.ClassName=="Script" or self.ClassName=="LocalScript")
+end
+function methods:Clone()
+	local copies={}
+	local function copy(node)
+		local result=Instance.new(node.ClassName);copies[node]=result
+		for _,child in ipairs(node:GetChildren()) do local c=copy(child);c.Parent=result end
+		return result
+	end
+	local result=copy(self)
+	for source,target in pairs(copies) do
+		for key,value in pairs(source._props) do if key~="Parent" then target[key]=copies[value] or value end end
+		target._attributes=table.clone(source._attributes)
+	end
+	return result
+end
+services.RunService.PreSimulation=signal()
+task.defer=function(callback)
+	local thread=coroutine.create(callback)
+	local job=later(0,function() local ok,err=coroutine.resume(thread);if not ok then error(err) end end)
+	job.thread=thread;return job
+end
+task.spawn=task.defer
+task.wait=function(duration)
+	local thread=coroutine.running()
+	later(duration or .03,function() local ok,err=coroutine.resume(thread);if not ok then error(err) end end)
+	return coroutine.yield()
+end
+services.ContentProvider={PreloadAsync=function(_,items,callback)
+	if services.preloadAvatars then return services.preloadAvatars(items,callback) end
+	callback("fixture",Enum.AssetFetchStatus.Success)
+end}
+function methods:LoadAnimation(animation)
+	assert(self.ClassName=="Animator")
+	if services.trackFailure then error("Injected animation asset denial") end
+	local track=Instance.new("AnimationTrack");track.AnimationId=animation.AnimationId
+	services.loadedTracks=services.loadedTracks or {};table.insert(services.loadedTracks,track)
+	return track
+end
+local originalPlay,originalStop=methods.Play,methods.Stop
+function methods:Play(...)
+	if self.ClassName=="AnimationTrack" then self.IsPlaying=true else return originalPlay(self,...) end
+end
+function methods:Stop(...)
+	if self.ClassName=="AnimationTrack" then self.IsPlaying=false else return originalStop(self,...) end
+end
+
+local originalSetAttribute=methods.SetAttribute
+function methods:SetAttribute(key,value)
+	originalSetAttribute(self,key,value)
+	local event=self._events["Attribute_"..key]
+	if event then event:Fire() end
+end

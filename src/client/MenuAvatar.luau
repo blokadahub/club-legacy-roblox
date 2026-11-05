@@ -6,6 +6,8 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Appearance = require(script.Parent.AvatarAppearance)
+
 local MenuAvatar = {}
 MenuAvatar.__index = MenuAvatar
 
@@ -134,12 +136,7 @@ function MenuAvatar.mount(parent: Instance, groundPosition: Vector3, cameraPosit
 		-- A criação precisa ser assíncrona para não bloquear a interface.
 		local player = self.player
 		if not player or player.UserId <= 0 then return end
-		local success, result = pcall(function()
-			local description = Players:GetHumanoidDescriptionFromUserIdAsync(player.UserId)
-			local model = Players:CreateHumanoidModelFromDescriptionAsync(description, Enum.HumanoidRigType.R15)
-			description:Destroy()
-			return model
-		end)
+		local success, result = pcall(Appearance.create, player.UserId)
 		if not success then
 			warn("[CL27/MenuAvatar] Avatar indisponível: " .. tostring(result))
 			return

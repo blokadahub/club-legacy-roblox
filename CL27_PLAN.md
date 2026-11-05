@@ -43,3 +43,7 @@ Gerar `club-legacy.rbxlx` com Rojo 7.7.1. CI automática somente compila/valida.
 ## Pênaltis — etapa 1 em 04/11/2026
 
 Prévia modular no Workspace integrada exclusivamente a Aprenda a Jogar → Arena de Treino. Medidas e câmera em PenaltyLayout, R15 estáticos em PenaltyActors, construção e bola independente em PenaltyScene; Scene mantém propriedade única da câmera e iluminação. Entrada direta sem tela intermediária e retorno ao lobby. Gameplay, física da bola e animações de cobrança aguardam autorização expressa do usuário. Estado, testes, limitações e publicação manual em [PENALTY_PROGRESS.md](docs/PENALTY_PROGRESS.md).
+
+## Correção de personagens/animações — 04/11/2026
+
+Cenário da etapa 1 aprovado pelo usuário. Correção em `fix/cl27-real-arena-avatars`: substituir somente os atores artificiais por dois clones R15 da HumanoidDescription da conta local. Helper oficial compartilhado com o loader do lobby; retargeting e coreografia próprios de futebol, Animator/idle tracks quando fornecidos pelo avatar, prévias voluntárias sem física da bola/IA/potência. Cenário/câmera/iluminação/bola preservados. Ver estado e limites atuais em `docs/PENALTY_PROGRESS.md`. Isso não inicia a gameplay da etapa 2.

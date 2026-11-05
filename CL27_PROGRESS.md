@@ -180,3 +180,12 @@ Não restou falha reproduzível nas verificações executadas após as correçõ
 - Aprenda a Jogar → Arena de Treino abre diretamente a prévia. Retorno por toque, B do controle ou tecla B. Kick Off/Jogo Rápido preservado; nenhum atalho novo na Central.
 - Validações locais aprovadas: 47 fontes, 15 rotas, 653 verificações de dados, 519 montagens/381 callbacks/240 asserções de UI, 5.933 estados, 2.003 introdução, 27.237 arena; Rojo 7.7.1/XML idêntico. São APIs substituídas, não execução/render Roblox.
 - Sem merge ou publicação automática. Etapa 2 e etapa 3 não iniciadas. Aguardar avaliação do usuário e autorização expressa. Registro completo e passos de publicação em [PENALTY_PROGRESS.md](docs/PENALTY_PROGRESS.md).
+
+## Correção crítica — avatares reais da Arena (04/11/2026)
+
+- Base aprovada `0a9eb4c` (PR #15 integrado pelo usuário); branch `fix/cl27-real-arena-avatars`.
+- Cobrador e goleiro passam a duas instâncias independentes da aparência oficial da conta local, com R15 e cosméticos preservados. Sem uso do construtor geométrico da arena antiga. Loader comum extraído sem alterar a apresentação do lobby.
+- Espera contínua, coreografia própria de corrida/chute/recuperação e mergulho dos dois lados; prévias voluntárias, bola estática e gameplay da etapa 2 ausente. Animator com idle da descrição quando disponível; futebol procedural via Transform, retargeting e apoio por IK.
+- Comparação da base comprova preservação de Layout, Scene, App, servidor, projeto Rojo e corpos de Build/MountBall. Nenhuma mudança na luz/câmera/gramado/gol/rede/arquibancadas/bola.
+- Validação local: 50 fontes/15 rotas, 653 dados, 519 montagens/381 callbacks/240 UI, 5.933 estados, 2.003 intro e 225.601 arena aprovados; Rojo/XML idênticos. Testes são doubles de APIs, não Roblox real. Auditoria completa, falhas exercitadas e pendências visuais em `docs/PENALTY_PROGRESS.md`.
+- Sem merge ou publicação. Correção aguarda avaliação visual no jogo; etapa 2 continua dependendo de autorização expressa.

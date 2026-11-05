@@ -13,12 +13,12 @@ function PenaltyScene.new(parent,settings)
 	self.model:SetAttribute("DevelopmentStage",1)
 	local ok,err=pcall(function()
 		self:Build(settings and settings.quality or "Alta")
-		Actors.create(self.model,Layout)
 		self:MountBall()
 	end)
 	if not ok then self:Destroy();error(err,2) end
-	-- Publish only a complete scene. Scene owns camera/Lighting, never this module.
+	-- Architecture/ball are immediate; real avatars prepare asynchronously off-tree.
 	self.model.Parent=parent
+	self.actors=Actors.new(self.model,Layout,settings)
 	return self
 end
 
@@ -82,13 +82,18 @@ function PenaltyScene:MountBall()
 	if assets then watchAssets(assets) end
 end
 
+function PenaltyScene:PreviewAction(action) return self.actors:Preview(action) end
+function PenaltyScene:RetryAvatars() self.actors:Load() end
+
 function PenaltyScene:ApplySettings(settings)
+	if self.actors then self.actors:ApplySettings(settings) end
 	local quality=settings.quality or "Alta"
 	if self.alive and self.quality~=quality then self:Build(quality) end
 end
 function PenaltyScene:Destroy()
 	if not self.alive then return end
 	self.alive=false
+	if self.actors then self.actors:Destroy();self.actors=nil end
 	for _,connection in ipairs(self.connections) do connection:Disconnect() end
 	table.clear(self.connections)
 	self.model:Destroy()
