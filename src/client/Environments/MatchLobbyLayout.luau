@@ -30,6 +30,16 @@ function L.build()
 		part("Rodape_"..side,{.4,.3,82},{side*15.6,.15,-15},{50,53,53},"Metal")
 	end
 	part("ContraluzAzul",{.08,.06,76},{-14.8,12.6,-14},{48,79,124},"Neon")
+	-- Layered architectural accents: depth without imported assets or extra lights.
+	for i=0,5 do
+		local z=12-i*11
+		part("FrisoParedeEsquerda_"..i,{.09,.055,7.8},{-15.65,8.7,z-3.8},{85,116,107},"Metal")
+		part("FrisoParedeDireita_"..i,{.09,.055,7.8},{15.65,8.7,z-3.8},{109,98,82},"Metal")
+	end
+	for i=0,4 do
+		local z=12-i*14
+		part("JuntaPiso_"..i,{29,.014,.06},{0,.008,z},{55,66,62},"Metal")
+	end
 	-- A flush presentation inlay gives the feet contact without a floating podium.
 	part("AreaDoTecnico",{5.3,.025,4.4},{8.4,.0125,0},{33,34,35})
 	return parts
