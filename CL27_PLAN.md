@@ -1,5 +1,11 @@
 # CL 27 — plano técnico
 
+## Mega atualização — continuação da etapa 02.5, 16/11/2026
+
+Retomar o PR #23 sobre a Etapa 02 existente. Refinar somente apresentação do editor/lobby: contraste de seleção, foco, navegação, banco, superfície do campo e acabamento do corredor. Os modelos e transações táticos continuam intactos. Seis juntas sem sombra mantêm a geometria abaixo do limite já testado; Scene continua dono da câmera e iluminação.
+
+Executor local indisponível nesta retomada: usar o CI existente para Luau/Rojo/regressões e registrar resultados do novo commit. Não declarar execução Roblox nem aprovação visual. Referências 1 e 2 orientam a composição; a terceira não autoriza resultados ou motor de partidas. Ver [auditoria 02.5](docs/VISUAL_POLISH_025.md).
+
 ## Mega atualização — etapa 2 autorizada, 16/11/2026
 
 Base: `feat/cl27-mega-tactics-editor` em `6b353c2`, PR #21 aberto em rascunho. Nova branch `feat/cl27-mega-match-lobby`, PR separado com a etapa 1 como base. Inspeção dos contratos, cenas, avatares, navegação e workflows realizada antes do código.

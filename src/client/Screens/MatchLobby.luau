@@ -29,7 +29,7 @@ return function(root,ctx)
 	local refresh,resize,openDetail,closeDetail
 	local mode,choiceIndex,choices=nil,1,{}
 	local focusBefore=nil
-	local mainButtons,tabButtons,benchCards={},{},{}
+	local mainButtons,tabButtons,benchCards,tabRules={},{},{},{}
 	local function text(parent,value,x,y,w,h,size,color,bold) return Controls.text(parent,value,x,y,w,h,size,color,bold) end
 	local function button(parent,id,label,callback,primary)
 		local b
@@ -63,8 +63,11 @@ return function(root,ctx)
 			elseif entry[2] then ctx.go(entry[2])
 			elseif mode then closeDetail() else ctx.notify("Selecione um titular ou reserva para preparar sua equipe.") end
 		end)
-		b.BackgroundTransparency=if i==1 then .3 else .75
-		if i==1 then b.TextColor3=C.green end
+		b.BackgroundTransparency=1
+		b:SetAttribute("QuietOutline",true);Controls.select(b,false)
+		b.TextColor3=if i==1 then C.white else (UI.highContrast and C.white or C.muted)
+		local rule=UI.frame(b,16,60,178,2,C.green,0)
+		rule.Name="AbaAtiva";rule.Visible=i==1;tabRules[i]=rule
 		tabButtons[i]=b;table.insert(mainButtons,b)
 		Controls.reveal(nav,b,nil,scope)
 	end
@@ -73,13 +76,21 @@ return function(root,ctx)
 	local clubName=text(root,club.name,412,211,775,42,33,C.white,true)
 	local formation=text(root,"",413,253,750,30,19,C.muted)
 	local benchTitle=text(root,"BANCO DE RESERVAS",54,219,242,56,21,C.white,true)
+	local benchRule=UI.frame(root,54,278,242,1,C.border,.4)
 	local bench=scroll(root,"ReservasInscritos")
 	for i=1,5 do
 		local card={}
 		card.button=button(bench,"Reserva_"..i,"",function() selectedBench=i;openDetail("reserve") end)
-		card.name=text(card.button,"",14,8,212,32,22,C.white,true)
-		card.info=text(card.button,"",14,43,212,28,18,C.muted)
-		card.button.BackgroundTransparency=.24
+		card.button:SetAttribute("QuietOutline",true)
+		card.shade=UI.gradient(card.button,{Color3.fromRGB(31,39,36),Color3.fromRGB(14,20,19)},90)
+		card.shade.Name="CardShading"
+		card.name=text(card.button,"",16,8,208,32,22,C.white,true);card.name.Name="NomeReserva"
+		card.info=text(card.button,"",16,43,208,28,18,C.muted);card.info.Name="CondicaoReserva"
+		card.track=UI.frame(card.button,16,78,204,2,C.border,.6)
+		card.track.Name="CondicaoFisica"
+		card.fill=UI.frame(card.track,0,0,204,2,C.green,.25)
+		card.fill.Name="ValorCondicao"
+		card.button.BackgroundTransparency=.08
 		benchCards[i]=card;table.insert(mainButtons,card.button)
 		Controls.reveal(bench,card.button,nil,scope)
 	end
@@ -118,11 +129,14 @@ return function(root,ctx)
 		scope:Add(scene.model:GetAttributeChangedSignal("AvatarStatus"):Connect(function() if scope.alive then avatarStatus() end end))
 		avatarStatus()
 	end
+	local footer=UI.frame(root,38,734,1182,166,C.ink,.1);footer.Name="BaseAcoes"
+	UI.new("UIGradient",{Rotation=90,Transparency=NumberSequence.new({
+		NumberSequenceKeypoint.new(0,1),NumberSequenceKeypoint.new(.35,.12),NumberSequenceKeypoint.new(1,0)})},footer)
 	local status=text(root,"",54,760,1140,44,22,C.green,true);status.Name="EstadoEscalacao"
 	local confirm=button(root,"ConfirmarEscalacao","CONFIRMAR ESCALAÇÃO",function()
 		local ok,reason=session:confirm()
 		refresh()
-		if ok then ctx.notify("Escalação confirmada nesta sessão. Partidas chegam na Etapa 03.")
+		if ok then ctx.notify("Escalação confirmada nesta sessão.")
 		else status.Text=reason;status.TextColor3=C.warning end
 	end,true)
 	local cancel=button(root,"CancelarEscalacao","CANCELAR",function() session:cancel();refresh() end)
@@ -131,11 +145,12 @@ return function(root,ctx)
 	end)
 	local home=button(root,"SairPrePartida","VOLTAR",function() ctx.go("HomeInterior") end)
 	for _,b in ipairs({confirm,cancel,central,home}) do table.insert(mainButtons,b) end
-	local future=text(root,"PARTIDAS\nDisponíveis na Etapa 03",1244,811,300,66,19,C.muted)
+	local future=text(root,"SIMULAÇÃO DE PARTIDAS\nEm desenvolvimento",1244,811,300,66,19,C.muted)
 	-- Contextual sheet leaves the real avatar visible; no new scene or portraits.
 	local overlay=UI.frame(root,38,202,1182,590,C.ink,.02)
 	overlay.Name="FichaPrePartida";overlay.Visible=false;overlay.Active=true
 	UI.stroke(overlay,C.border,.15,1)
+	local sheetRule=UI.frame(overlay,24,0,1134,2,C.green,.3);sheetRule.Name="ReguaFicha"
 	local body=scroll(overlay,"DetalhesRolaveis")
 	local title=text(body,"",24,16,1086,60,34,C.white,true);title.Name="AtletaSelecionado"
 	local details=text(body,"",24,86,1086,138,24,C.muted);details.Name="DadosSelecionados"
@@ -180,6 +195,7 @@ return function(root,ctx)
 		end
 	end
 	openDetail=function(nextMode)
+		if nextMode=="starter" then selectedBench=nil end
 		if not mode then focusBefore=GuiService.SelectedObject end
 		mode=nextMode;overlay.Visible=true;body.CanvasPosition=Vector2.new()
 		makeChoices()
@@ -193,7 +209,7 @@ return function(root,ctx)
 		refresh()
 	end
 	refresh=function()
-		pitch:update(session.tactic,selected)
+		pitch:update(session.tactic,if selectedBench then nil else selected)
 		for _,card in ipairs(pitch.cards) do
 			local b=card.button
 			b.NextSelectionLeft=b.NextSelectionLeft or benchCards[1].button
@@ -207,7 +223,14 @@ return function(root,ctx)
 			card.name.Text=if p then p.shortName else "VAGA LIVRE"
 			card.info.Text=if p then p.position.."  •  "..tostring(p.fitness).."%" else "Selecionar atleta"
 			card.button:SetAttribute("PlayerId",p and p.id or nil)
-			card.button.BackgroundColor3=if selectedBench==i then Color3.fromRGB(37,49,40) else C.panel
+			local chosen=selectedBench==i
+			card.button.BackgroundColor3=if chosen then C.white else Color3.new(1,1,1)
+			card.shade.Enabled=not chosen
+			card.name.TextColor3=if chosen then C.ink else C.white
+			card.info.TextColor3=if chosen then C.panel elseif UI.highContrast then C.white else C.muted
+			card.fill.BackgroundColor3=if chosen then Color3.fromRGB(39,102,62) else C.green
+			card.fill.Size=UDim2.new(math.clamp(p and p.fitness or 0,0,100)/100,0,1,0)
+			Controls.select(card.button,chosen)
 		end
 		local valid,reason=Registration.validate(session.tactic,session.benchIds,Data.players)
 		status.Text=if not valid then reason elseif session:dirty() then "ALTERAÇÕES PENDENTES • confirme ou cancele"
@@ -223,7 +246,7 @@ return function(root,ctx)
 			proposal.NextSelectionUp=if operation.Visible then operation else candidate
 			if help then
 				title.Text="PREPARE SUA EQUIPE"
-				details.Text="1. Selecione um titular para consultar sua função e propor uma troca compatível.\n2. Selecione um reserva para mudar sua inscrição ou colocá-lo no time.\n3. Confirme a escalação para salvar os 16 atletas nesta sessão.\n\nTáticas e Elenco compartilham a mesma equipe confirmada. Sair descarta alterações pendentes. Seu avatar representa o técnico; os atletas são fictícios. O motor de partidas chega na Etapa 03."
+				details.Text="1. Selecione um titular para consultar sua função e propor uma troca compatível.\n2. Selecione um reserva para mudar sua inscrição ou colocá-lo no time.\n3. Confirme a escalação para salvar os 16 atletas nesta sessão.\n\nTáticas e Elenco compartilham a mesma equipe confirmada. Sair descarta alterações pendentes. Seu avatar representa o técnico; os atletas são fictícios. A simulação de partidas está em desenvolvimento."
 			else
 				local p=if mode=="starter" then T.player(Data.players,session.tactic.positions[selected].playerId) else T.player(Data.players,session.benchIds[selectedBench])
 				title.Text=if p then p.name else "INSCRIÇÃO DE RESERVA"
@@ -249,7 +272,10 @@ return function(root,ctx)
 		heading.TextSize=math.max(24,font);subtitle.Visible=not compact
 		nav.Position=UDim2.fromOffset(54,132);nav.Size=UDim2.fromOffset(1140,h)
 		local tabW=math.max(210,84/math.max(.2,scale))
-		for i,b in ipairs(tabButtons) do b.Position=UDim2.fromOffset((i-1)*(tabW+8),0);b.Size=UDim2.fromOffset(tabW,h);b.TextSize=font end
+		for i,b in ipairs(tabButtons) do
+			b.Position=UDim2.fromOffset((i-1)*(tabW+8),0);b.Size=UDim2.fromOffset(tabW,h);b.TextSize=font
+			tabRules[i].Position=UDim2.fromOffset(16,h-3);tabRules[i].Size=UDim2.fromOffset(tabW-32,2)
+		end
 		nav.CanvasSize=UDim2.fromOffset(#tabButtons*(tabW+8),0)
 		local headingY=math.max(214,140+h)
 		benchTitle.Position=UDim2.fromOffset(54,headingY);benchTitle.TextSize=font;benchTitle.Size=UDim2.fromOffset(242,compact and 88 or 56)
@@ -264,14 +290,18 @@ return function(root,ctx)
 		local statusHeight=math.max(54,font*2.5)
 		local statusY=actionY-statusHeight-8
 		status.Position=UDim2.fromOffset(54,statusY);status.Size=UDim2.fromOffset(1140,statusHeight);status.TextSize=font
+		footer.Position=UDim2.fromOffset(38,statusY-18);footer.Size=UDim2.fromOffset(1182,900-statusY+18)
 		future.Position=UDim2.fromOffset(1244,848);future.Size=UDim2.fromOffset(300,44);future.TextSize=16;future.Visible=not compact
 		local y=headingY+90;local available=math.max(220,statusY-10-y)
+		benchRule.Position=UDim2.fromOffset(54,y-6);benchRule.Visible=not compact
 		bench.Position=UDim2.fromOffset(54,y);bench.Size=UDim2.fromOffset(242,available)
-		local row=if compact then math.max(h+10,font*3+30) else available/5
+		local row=if compact then math.max(h+10,font*3.3+40) else available/5
 		for i,card in ipairs(benchCards) do
 			card.button.Position=UDim2.fromOffset(0,(i-1)*row);card.button.Size=UDim2.fromOffset(236,row-6)
-			card.name.Size=UDim2.fromOffset(208,row*(compact and .59 or .5));card.name.TextSize=font
-			card.info.Position=UDim2.fromOffset(14,row*(compact and .65 or .58));card.info.Size=UDim2.fromOffset(208,row*.3);card.info.TextSize=font
+			local nameHeight=font*(compact and 2.2 or 1.3)
+			card.name.Size=UDim2.fromOffset(208,nameHeight);card.name.TextSize=font
+			card.info.Position=UDim2.fromOffset(16,12+nameHeight);card.info.Size=UDim2.fromOffset(208,font*1.3);card.info.TextSize=font
+			card.track.Position=UDim2.fromOffset(16,row-11)
 		end
 		bench.CanvasSize=UDim2.fromOffset(0,5*row)
 		pitchScroll.Position=UDim2.fromOffset(316,y-15);pitchScroll.Size=UDim2.fromOffset(896,available+15)

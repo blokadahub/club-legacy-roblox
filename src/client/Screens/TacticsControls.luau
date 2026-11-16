@@ -6,8 +6,23 @@ Controls.colors={ink=Color3.fromRGB(10,13,14),panel=Color3.fromRGB(23,28,29),
 	white=Color3.fromRGB(241,244,239),muted=Color3.fromRGB(174,184,180),
 	green=Color3.fromRGB(155,225,110),border=Color3.fromRGB(64,76,68),warning=Color3.fromRGB(224,197,139)}
 local C=Controls.colors
+-- Keep confirmed selection distinct from transient mouse/gamepad focus.
+local function outline(button)
+	local edge=button:FindFirstChild("ControlOutline")
+	if not edge then return end
+	local selected=button:GetAttribute("TacticalSelected")==true
+	local focused=button:GetAttribute("TacticalFocused")==true
+	edge.Color=if selected or focused then C.green else C.border
+	edge.Thickness=if selected or focused then 2 else 1
+	edge.Transparency=if selected or focused then 0 else (button:GetAttribute("QuietOutline") and .85 or .25)
+end
+function Controls.select(button,selected)
+	button:SetAttribute("TacticalSelected",selected==true)
+	outline(button)
+end
 function Controls.text(parent,value,x,y,w,h,size,color,bold)
-	local label=UI.text(parent,value,x,y,w,h,size,color or C.white,if bold then Enum.Font.GothamBold else Enum.Font.GothamMedium)
+	local ink=if UI.highContrast and color==C.muted then C.white else (color or C.white)
+	local label=UI.text(parent,value,x,y,w,h,size,ink,if bold then Enum.Font.GothamBold else Enum.Font.GothamMedium)
 	label.TextTruncate=Enum.TextTruncate.None
 	label.TextWrapped=true
 	return label
@@ -16,12 +31,15 @@ function Controls.button(parent,name,callback,scope,primary)
 	local b=UI.new("TextButton",{Name=name,Text="",BackgroundColor3=if primary then C.green else C.panel,
 		BackgroundTransparency=0,BorderSizePixel=0,AutoButtonColor=false,Selectable=true,Active=true},parent)
 	UI.new("UICorner",{CornerRadius=UDim.new(0,8)},b)
-	local edge=UI.stroke(b,C.border,.25,1)
-	local function focus(on) edge.Color=if on then C.green else C.border;edge.Thickness=if on then 2 else 1 end
-	scope:Connect(b.MouseEnter,function() focus(true) end)
-	scope:Connect(b.MouseLeave,function() focus(false) end)
-	scope:Connect(b.SelectionGained,function() focus(true) end)
-	scope:Connect(b.SelectionLost,function() focus(false) end)
+	local edge=UI.stroke(b,C.border,.25,1);edge.Name="ControlOutline"
+	local hovered,gamepadFocus=false,false
+	local function focus()
+		b:SetAttribute("TacticalFocused",hovered or gamepadFocus);outline(b)
+	end
+	scope:Connect(b.MouseEnter,function() hovered=true;focus() end)
+	scope:Connect(b.MouseLeave,function() hovered=false;focus() end)
+	scope:Connect(b.SelectionGained,function() gamepadFocus=true;focus() end)
+	scope:Connect(b.SelectionLost,function() gamepadFocus=false;focus() end)
 	scope:Connect(b.Activated,callback)
 	return b,edge
 end

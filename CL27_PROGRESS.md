@@ -1,5 +1,15 @@
 # CL 27 — progresso verificável
 
+## Mega atualização — refinamento 02.5, retomada de 16/11/2026
+
+- Continuação do PR #23 / `feat/cl27-visual-polish-025`, a partir de `cc0c223`; PRs #21/#22 preservados.
+- Corrigido gradiente escuro no cartão selecionado, persistência do contorno e coexistência do foco mouse/gamepad. Mesmo acabamento e alto contraste no editor e lobby.
+- Abas transparentes, reservas com condição física do elenco, destaque exclusivo entre reserva/titular e base discreta de leitura para as ações. Campo preserva a silhueta trapezoidal e deixa o túnel visível.
+- Corredor recebe seis juntas sem sombra e escurecimento progressivo dos painéis; 65 descritores, quatro emissores, um R15. O limite existente de menos de 70 peças não foi relaxado.
+- Adicionadas verificações de contraste declarado/foco e posicionamento das barras/juntas. A execução do novo commit depende do CI; resultado real será registrado na descrição do PR.
+- Executor local indisponível. As imagens recebidas foram revistas, mas não houve releitura do TXT, execução/captura Roblox, teste físico Android/gamepad ou medição de FPS.
+- Sem mudanças de contratos táticos, persistência, câmera, aparência, áudio ou workflows; sem merge, publicação ou etapa 3. [Auditoria, arquivos e roteiro](docs/VISUAL_POLISH_025.md).
+
 ## Mega atualização — lobby pré-partida (16/11/2026, Fortaleza)
 
 - Continuação autorizada da etapa 1, base `6b353c2`, PR #21 aberto/em rascunho. Branch separada `feat/cl27-mega-match-lobby`; nenhuma modificação na branch anterior ou na main.
