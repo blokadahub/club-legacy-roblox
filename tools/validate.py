@@ -17,7 +17,7 @@ import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parent.parent
 ROUTES = (
-    "HomeInterior", "Overview", "Squad", "Tactics",
+    "HomeInterior", "MatchLobby", "Overview", "Squad", "Tactics",
     "Assignments", "Calendar", "Transfers", "Finance", "Development",
     "Competitions", "Customization", "Settings", "Clubs", "Kits", "PenaltyArena",
 )
@@ -91,7 +91,7 @@ def validate_sources() -> list[Path]:
                 f"Propriedade Lighting protegida no cliente: {restricted}. Configure em default.project.json, não em Scene.luau.")
     for doc in ("AGENTS.md", "CL27_PLAN.md", "CL27_PROGRESS.md"):
         require((ROOT / doc).is_file(), f"Documento obrigatório ausente: {doc}")
-    print(f"Estrutura: {len(sources)} fontes, 15 rotas, mapeamento Rojo e require locais verificados.")
+    print(f"Estrutura: {len(sources)} fontes, {len(ROUTES)} rotas, mapeamento Rojo e require locais verificados.")
     return sources
 
 

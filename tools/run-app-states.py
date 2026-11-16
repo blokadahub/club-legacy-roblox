@@ -187,6 +187,10 @@ for path in paths:
     parts.append(f"factories['{relative}'] = function(script)\n{path.read_text()}\nend\n")
 parts.append("require = function(node) assert(typeof(node) == 'Instance' and node:IsA('ModuleScript')); local path = node:GetAttribute('ModulePath'); if cache[path] == nil then cache[path] = assert(factories[path], 'Missing factory: ' .. tostring(path))(node) end; return cache[path] end\n")
 spec = (root / ("tools/penalty.spec.luau" if args.penalty else "tools/intro.spec.luau" if args.intro else "tools/app-states.spec.luau")).read_text()
+if args.penalty:
+    spec += "\n" + (root / "tools/match-lobby-scene.spec.luau").read_text()
+elif not args.intro:
+    spec += "\n" + (root / "tools/match-lobby-app.spec.luau").read_text()
 with tempfile.TemporaryDirectory(prefix="cl27-app-") as folder:
     generated = Path(folder) / "app-check.luau"
     generated.write_text(prelude + setup + "\n".join(parts) + spec)

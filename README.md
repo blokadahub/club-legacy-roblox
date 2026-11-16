@@ -1,6 +1,6 @@
 # CL 27 — Club Legacy 27
 
-Projeto para **Roblox**, escrito em **Luau** e compilado com **Rojo 7.7.1**, em transformação para um simulador de técnico e administração de clubes contra IA. A primeira etapa da mega atualização implementa o editor tático com validação e salvamento na sessão. Partidas, motor de futebol 2D, transferências reais e campeonatos ainda não estão implementados. As apresentações existentes permanecem disponíveis. Identidade, clubes, escudos, atletas e uniformes são originais, construídos com recursos nativos.
+Projeto para **Roblox**, escrito em **Luau** e compilado com **Rojo 7.7.1**, em transformação para um simulador de técnico e administração de clubes contra IA. A primeira etapa implementa o editor tático; a segunda acrescenta o lobby pré-partida 3D, inscrição de 16 atletas e confirmação da escalação na sessão. Partidas, motor de futebol 2D, transferências reais e campeonatos ainda não estão implementados. As apresentações existentes permanecem disponíveis. Identidade, clubes, escudos, atletas e uniformes são originais, construídos com recursos nativos.
 
 ## Apresentações
 
@@ -35,6 +35,12 @@ O canvas continua 1600×900. Controles e campo são roláveis; em telas compacta
 
 ## Abrir e executar
 
+**Etapa 02 — Central → Pré-partida:** confira os onze titulares da tática salva e os cinco reservas inscritos. Selecione um titular para consultar função/instrução e escolher um reserva compatível. Selecione um reserva para mudar sua inscrição ou propor sua entrada no time. **Confirmar escalação** grava os 16 na memória da sessão; **Cancelar alterações** restaura a lista. Navegar descarta propostas pendentes. Táticas e Elenco usam os mesmos titulares confirmados; o elenco global de 22 atletas é preservado.
+
+Em celulares compactos, o campo mostra as onze posições abreviadas. Toque em **Ver titulares** e use **Outro titular** na ficha para percorrer todos, consultar funções e propor trocas com alvos maiores. Reservas, abas e ficha rolam quando necessário. O personagem da direita é uma cópia R15 da aparência da conta, identificada como técnico, separada dos atletas fictícios. Um uniforme CL-27 simples é aplicado apenas em corpos compatíveis; roupas em camadas e corpos texturizados preservam a aparência da conta.
+
+O lobby não inicia partidas. A confirmação fica pronta para integração posterior; salvar outra tática exige confirmar a preparação novamente. [Arquitetura, arquivos, evidências e roteiro de validação Roblox](docs/MATCH_LOBBY.md). **Sem aprovação visual definitiva, merge ou publicação nesta etapa.**
+
 Baixe `club-legacy-rbxlx` na aba **Actions**, extraia `club-legacy.rbxlx`, abra no Roblox Studio e use **Play**. A interface é montada pelo LocalScript no cliente; a visualização de edição sem Play não representa os menus.
 
 Compilação local, com ferramentas instaladas:
@@ -45,6 +51,7 @@ python3 tools/run-data.py --runtime /caminho/luau
 python3 tools/run-runtime-smoke.py --runtime /caminho/luau
 python3 tools/run-app-states.py --runtime /caminho/luau
 python3 tools/run-app-states.py --runtime /caminho/luau --intro
+python3 tools/run-app-states.py --runtime /caminho/luau --penalty
 rojo build default.project.json --output club-legacy.rbxlx
 python3 tools/validate.py --place club-legacy.rbxlx
 ```

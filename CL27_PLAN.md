@@ -1,5 +1,15 @@
 # CL 27 — plano técnico
 
+## Mega atualização — etapa 2 autorizada, 16/11/2026
+
+Base: `feat/cl27-mega-tactics-editor` em `6b353c2`, PR #21 aberto em rascunho. Nova branch `feat/cl27-mega-match-lobby`, PR separado com a etapa 1 como base. Inspeção dos contratos, cenas, avatares, navegação e workflows realizada antes do código.
+
+Contrato incremental, documentado antes da implementação: `state.tacticalPlan.active` continua sendo a única tática confirmada. `state.matchPreparation` acrescentará os cinco IDs de reservas inscritos e um recibo de confirmação, nunca uma segunda formação ativa. Um rascunho local permite trocar titulares/reservas e alterar inscrições; confirmação valida os 16 e grava as duas partes atomicamente. Alterar a tática depois invalida o recibo de preparação. O elenco global de 22 atletas permanece intacto. Mudanças pendentes são descartadas ao sair, como no editor.
+
+Scene continua único dono da câmera e Lighting; o novo ambiente entrega geometria, parâmetros e uma cópia independente R15 pelo cache AvatarAppearance. Sem alterações no Character, bootstrap, ambientes antigos, áudio ou workflows. Reutilizar UI, Scope, projeção de campo e distribuição tática. Referência 2: reservas à esquerda, campo central em perspectiva, avatar inteiro à direita e túnel real ao fundo; em telas compactas, ampliar alvos com rolagem/painel contextual, mantendo as três regiões.
+
+Testes de regras, transações, interfaces, navegação e ciclo de vida entram nos runners existentes. Aceite visual, aparência real, toque/controle e desempenho dependem de execução no Roblox; não substituir por captura de mockup. Nenhuma partida, resultado, publicação ou etapa 3.
+
 ## Mega atualização — etapa 1, 16/11/2026
 
 Direção aprovada: simulador de técnico e gestão futebolística contra IA. Nesta etapa, reconstruir exclusivamente Táticas, preservando introdução, lobby, túnel, treino, avatares, áudio e inicialização. As telas demonstrativas antigas continuam disponíveis; não representam sistemas de gestão já implementados.

@@ -31,6 +31,7 @@ parts.append("require = function(node) assert(typeof(node) == 'Instance' and nod
 harness = (root / "tools/runtime-smoke.luau").read_text()
 source = harness.replace("-- MODULES", "\n".join(parts))
 source += "\n" + (root / "tools/tactics.spec.luau").read_text()
+source += "\n" + (root / "tools/match-lobby.spec.luau").read_text()
 with tempfile.TemporaryDirectory(prefix="cl27-runtime-") as folder:
     generated = Path(folder) / "runtime-check.luau"
     generated.write_text(source)

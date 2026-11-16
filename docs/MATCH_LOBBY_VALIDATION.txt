@@ -1,0 +1,57 @@
+CL-27 / Etapa 02 — evidências locais, 16/11/2026 (Fortaleza)
+Luau 0.745 / Rojo 7.7.1. APIs Roblox substituídas; sem Studio/Player.
+Base da etapa 1: 6b353c2c2858052cf6b3f83ddd751a7a01fc26c9
+
+[compile]
+Estrutura: 63 fontes, 16 rotas, mapeamento Rojo e require locais verificados.
+Sintaxe: compilador oficial aprovou 63 fontes Luau.
+
+[data]
+Dados: 653 verificações aprovadas; 8 clubes, 22 atletas, 3 formações.
+
+[smoke]
+PASS route HomeInterior: 7 callbacks
+PASS route MatchLobby: 31 callbacks
+PASS route Overview: 4 callbacks
+PASS route Squad: 25 callbacks
+PASS route Tactics: 29 callbacks
+PASS route Assignments: 31 callbacks
+PASS route Calendar: 33 callbacks
+PASS route Transfers: 30 callbacks
+PASS route Finance: 6 callbacks
+PASS route Development: 27 callbacks
+PASS route Competitions: 10 callbacks
+PASS route Customization: 7 callbacks
+PASS route Settings: 9 callbacks
+PASS route Clubs: 12 callbacks
+PASS route Kits: 8 callbacks
+PASS runtime smoke: 592 mounts, 432 callbacks, 209 assertions. STUBS ONLY; no Roblox render/API certification.
+PASS Tactics: 110072 assertions; domain, transactions, collision bounds, real UI callbacks and cleanup. API doubles only.
+PASS Match lobby rules/UI: 1489 assertions; registration, swaps, transactions, real callbacks, disposal. API doubles only.
+
+[app]
+PASS Tunnel Low: 238 parts, 28 lights, 0 shadows, 4 fog emitters, particle bound 20, 24 floor responses
+PASS Tunnel Medium: 334 parts, 32 lights, 0 shadows, 6 fog emitters, particle bound 42, 24 floor responses
+PASS Tunnel High: 366 parts, 40 lights, 2 shadows, 6 fog emitters, particle bound 48, 24 floor responses
+PASS App phases: 6076 assertions; virtual-clock stubs only, no Roblox capture/easing certification.
+PASS Match lobby App: 243 assertions; route, locks, editor roundtrip, eight viewport sizes. API doubles only.
+
+[intro]
+PASS Intro: 2034 assertions; complete timeline/integration with API doubles, no Roblox render/audio certification.
+
+[scene]
+PASS Penalty Baixa: 1145 architecture parts, one continuous ground collider
+PASS Penalty Média: 1688 architecture parts, one continuous ground collider
+PASS Penalty Alta: 1688 architecture parts, one continuous ground collider
+PASS Penalty: 365840 assertions; numeric/matrix/API doubles only, no Roblox visual or performance certification.
+Match lobby numeric avatar bounds	0.7990365968720441	0.9540436885657352	0.32173646211440987	0.8540506335070155
+PASS Match lobby scene: 103 assertions; R15 API fixtures, failures, cache, projection, lighting and disposal. Not Roblox rendering.
+
+[place]
+Estrutura: 63 fontes, 16 rotas, mapeamento Rojo e require locais verificados.
+Artefato: XML válido; 63 fontes incorporadas sem alteração; serviços conferidos.
+
+Todos os comandos retornaram exit code 0.
+Testes negativos injetam falhas de cena/aparência, incluindo rig sem pés e timeout.
+Os avisos desses casos são esperados; não indicam erro em produção observado.
+Nenhum resultado acima certifica fidelidade visual, física, rede, áudio, toque ou FPS no Roblox.
