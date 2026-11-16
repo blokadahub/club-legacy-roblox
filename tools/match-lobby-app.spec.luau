@@ -47,6 +47,13 @@ for _,size in ipairs({{1600,900},{1920,1080},{2560,1080},{1024,768},{854,393},{7
 	local field=node("CampoPrePartida")
 	check(field.Position.X.Offset>=296 and field.Position.X.Offset+field.Size.X.Offset<=1220,"Field covers bench/avatar")
 	check(field.Position.Y.Offset+field.Size.Y.Offset<=node("EstadoEscalacao").Position.Y.Offset,"Field overlaps footer")
+	for i=1,5 do
+		local card=node("Reserva_"..i)
+		local condition=card:FindFirstChild("CondicaoReserva")
+		local track=card:FindFirstChild("CondicaoFisica")
+		check(condition.Position.Y.Offset+condition.Size.Y.Offset<=track.Position.Y.Offset,"Condition text overlaps fitness bar")
+		check(track.Position.Y.Offset+track.Size.Y.Offset<=card.Size.Y.Offset,"Fitness bar escapes reserve card")
+	end
 	local bench=node("ReservasInscritos")
 	node("Reserva_5").SelectionGained:Fire()
 	check(bench.CanvasPosition.Y>=0,"Invalid reserve scroll")

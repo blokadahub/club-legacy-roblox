@@ -18,6 +18,8 @@ function View.create(parent,scope,onSelect)
 		card.button,card.edge=Controls.button(host,"Posicao_"..i,function() if card.slotId then onSelect(card.slotId) end end,scope)
 		card.button.AnchorPoint=Vector2.new(.5,.5)
 		card.button.Size=UDim2.fromOffset(Layout.cardWidth,Layout.cardHeight)
+		card.shade=UI.gradient(card.button,{Color3.fromRGB(37,47,44),Color3.fromRGB(14,20,20)},90)
+		card.shade.Name="CardShading"
 		card.label=Controls.text(card.button,"",8,3,126,21,18,C.green,true)
 		card.role=Controls.text(card.button,"",6,24,130,42,18,C.white,true)
 		card.behavior=Controls.text(card.button,"",6,68,130,21,17,C.muted)
@@ -39,9 +41,13 @@ function View.create(parent,scope,onSelect)
 			card.label.Text=s.label
 			card.role.Text=Catalog.roles[entry.roleId].label
 			card.behavior.Text=Catalog.behaviors[entry.behaviorId].label
-			card.button.BackgroundColor3=if s.id==selected then Color3.fromRGB(40,55,39) else C.panel
-			card.edge.Color=if s.id==selected then C.green else C.border
-			card.edge.Transparency=if s.id==selected then 0 else .25
+			local focused=s.id==selected
+			card.button.BackgroundColor3=if focused then C.white else Color3.new(1,1,1)
+			card.shade.Enabled=not focused
+			card.label.TextColor3=if focused then Color3.fromRGB(39,102,62) else C.green
+			card.role.TextColor3=if focused then C.ink else C.white
+			card.behavior.TextColor3=if focused then C.panel elseif UI.highContrast then C.white else C.muted
+			Controls.select(card.button,focused)
 			local p=positions[s.id]
 			local goal=UDim2.fromOffset(p.x,p.y)
 			-- Shape switches are immediate: interpolating across slots could cross cards.

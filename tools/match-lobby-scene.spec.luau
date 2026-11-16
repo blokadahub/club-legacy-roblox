@@ -87,6 +87,19 @@ end
 check(minX>.77 and maxX<.98 and minY>.20 and maxY<.87,"Full avatar outside right presentation region")
 print("Match lobby numeric avatar bounds",minX,maxX,minY,maxY)
 check(#Layout.build()<70 and #lobby.lights==4,"Excessive geometry or lights")
+local joints=0
+for _,descriptor in ipairs(Layout.build()) do
+	if descriptor.name:match("^JuntaPiso_") then
+		joints+=1
+		local part=lobby.model:FindFirstChild(descriptor.name)
+		check(part and not part.CastShadow,"Floor seam casts an unnecessary dynamic shadow")
+		check(near(part.Position.Y-part.Size.Y/2,0),"Floor seam floats or is coplanar with the floor")
+		check(part.Position.Z+part.Size.Z/2< -2.2,"Floor seam intersects the presentation inlay")
+		check(part.Position.Z-part.Size.Z/2> -59.8 and part.Size.X<29.6,"Floor seam crosses corridor perimeter")
+	end
+end
+check(joints==6,"Missing floor depth cues")
+
 local oldStep=lobby.avatar.step
 services.RunService.PreSimulation:Fire(.1)
 check(lobby.avatar.joints.Waist.Transform~=nil,"Subtle idle absent")

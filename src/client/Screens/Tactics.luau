@@ -232,12 +232,14 @@ return function(root,ctx)
 		teamScroll.Visible=tab=="team";playerScroll.Visible=tab=="player"
 		save.NextSelectionUp=if tab=="team" then rows[#rows].button else behaviorRow.button
 		cancel.NextSelectionUp=save.NextSelectionUp
-		teamTab.BackgroundColor3=if tab=="team" then Color3.fromRGB(46,61,41) else C.panel
-		playerTab.BackgroundColor3=if tab=="player" then Color3.fromRGB(46,61,41) else C.panel
-		withBall.BackgroundColor3=if phase=="with_ball" then Color3.fromRGB(46,61,41) else C.panel
-		withoutBall.BackgroundColor3=if phase=="without_ball" then Color3.fromRGB(46,61,41) else C.panel
-		withLabel.TextColor3=if phase=="with_ball" then C.green else C.muted
-		withoutLabel.TextColor3=if phase=="without_ball" then C.green else C.muted
+		teamTab.BackgroundColor3=if tab=="team" then Color3.fromRGB(35,47,37) else C.ink
+		playerTab.BackgroundColor3=if tab=="player" then Color3.fromRGB(35,47,37) else C.ink
+		withBall.BackgroundColor3=if phase=="with_ball" then Color3.fromRGB(35,47,37) else C.ink
+		withoutBall.BackgroundColor3=if phase=="without_ball" then Color3.fromRGB(35,47,37) else C.ink
+		Controls.select(teamTab,tab=="team");Controls.select(playerTab,tab=="player")
+		Controls.select(withBall,phase=="with_ball");Controls.select(withoutBall,phase=="without_ball")
+		withLabel.TextColor3=if phase=="with_ball" then C.green elseif UI.highContrast then C.white else C.muted
+		withoutLabel.TextColor3=if phase=="without_ball" then C.green elseif UI.highContrast then C.white else C.muted
 		if lastTab~=tab then lastTab=tab;playerScroll.CanvasPosition=Vector2.new(0,0) end
 		local e=draft.positions[selected]
 		local p=Model.player(roster,e.playerId)
