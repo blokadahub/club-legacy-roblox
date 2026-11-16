@@ -12,16 +12,29 @@ local compactLabels={gk="G",lcb="ZE",rcb="ZD",cb="Z",lb="LE",rb="LD",dm="V",ldm=
 function V.create(parent,scope,roster,onSelect)
 	local C=Controls.colors
 	local host=UI.frame(parent,0,0,Layout.width,Layout.height,C.ink,1)
-	Pitch.draw(host,12,28,896,440,{stripeA=Color3.fromRGB(27,31,32),stripeB=Color3.fromRGB(23,27,28),line=Color3.fromRGB(83,96,93)})
+	-- A restrained broadcast-style tactical surface, without extra textures or assets.
+	local surround=UI.frame(host,0,13,920,476,Color3.fromRGB(9,14,16),0)
+	UI.new("UICorner",{CornerRadius=UDim.new(0,12)},surround)
+	UI.stroke(surround,Color3.fromRGB(78,111,93),.55,1)
+	local topRule=UI.frame(surround,26,0,868,2,C.green,.38)
+	local pitchSurface=Pitch.draw(host,12,28,896,440,{stripeA=Color3.fromRGB(27,38,34),stripeB=Color3.fromRGB(20,30,28),line=Color3.fromRGB(113,150,127)})
+	pitchSurface.Name="CampoTaticoCinematografico"
+	local caption=Controls.text(host,"CL 27  /  ORGANIZAÇÃO TÁTICA",27,3,600,24,15,C.muted,true)
+	caption.TextXAlignment=Enum.TextXAlignment.Left
 	local cards={}
 	for i=1,11 do
 		local card={}
 		card.button,card.edge=Controls.button(host,"Titular_"..i,function() if card.slotId then onSelect(card.slotId) end end,scope)
 		card.button.Size=UDim2.fromOffset(Layout.cardWidth,Layout.cardHeight)
-		card.button.AnchorPoint=Vector2.new(.5,.5);card.button.BackgroundTransparency=.12
-		card.name=Controls.text(card.button,"",6,4,130,23,18,C.white,true)
-		card.role=Controls.text(card.button,"",6,28,130,39,17,C.muted)
-		card.position=Controls.text(card.button,"",6,68,130,21,18,C.green,true)
+		card.button.AnchorPoint=Vector2.new(.5,.5);card.button.BackgroundTransparency=.06
+		UI.new("UIGradient",{Rotation=90,Color=ColorSequence.new({
+			ColorSequenceKeypoint.new(0,Color3.fromRGB(37,47,44)),
+			ColorSequenceKeypoint.new(1,Color3.fromRGB(14,20,20))})},card.button)
+		card.accent=UI.frame(card.button,6,6,4,Layout.cardHeight-12,C.green,.15)
+		UI.new("UICorner",{CornerRadius=UDim.new(1,0)},card.accent)
+		card.name=Controls.text(card.button,"",15,4,Layout.cardWidth-22,23,18,C.white,true)
+		card.role=Controls.text(card.button,"",15,28,Layout.cardWidth-22,39,17,C.muted)
+		card.position=Controls.text(card.button,"",15,68,Layout.cardWidth-22,21,18,C.green,true)
 		for _,label in ipairs({card.name,card.role,card.position}) do label.TextXAlignment=Enum.TextXAlignment.Center end
 		cards[i]=card
 	end
@@ -29,8 +42,9 @@ function V.create(parent,scope,roster,onSelect)
 	function view:compact(enabled,physicalScale)
 		for _,card in ipairs(cards) do
 			card.name.Visible=not enabled;card.role.Visible=not enabled
-			card.position.Position=UDim2.fromOffset(6,enabled and 0 or 68)
-			card.position.Size=UDim2.fromOffset(130,enabled and Layout.cardHeight or 21)
+			card.position.Position=UDim2.fromOffset(15,enabled and 0 or 68)
+			card.position.Size=UDim2.fromOffset(Layout.cardWidth-22,enabled and Layout.cardHeight or 21)
+			card.accent.Visible=not enabled
 			card.position.TextSize=if enabled then math.max(18,12/physicalScale) else 18
 			card.position.Text=if enabled then compactLabels[card.slotId] else card.fullPosition
 		end
@@ -54,6 +68,8 @@ function V.create(parent,scope,roster,onSelect)
 			card.role.TextColor3=if focused then C.panel else C.muted
 			card.position.TextColor3=if focused then Color3.fromRGB(39,102,62) else C.green
 			card.edge.Color=if focused then C.green else C.border
+			card.edge.Thickness=if focused then 2 else 1
+			card.accent.BackgroundColor3=if focused then Color3.fromRGB(29,87,49) else C.green
 		end
 		for i,slot in ipairs(formation.slots) do
 			local a=points[slot.id]
