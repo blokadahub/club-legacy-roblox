@@ -1,5 +1,17 @@
 # CL 27 — plano técnico
 
+## Mega atualização — etapa 1, 16/11/2026
+
+Direção aprovada: simulador de técnico e gestão futebolística contra IA. Nesta etapa, reconstruir exclusivamente Táticas, preservando introdução, lobby, túnel, treino, avatares, áudio e inicialização. As telas demonstrativas antigas continuam disponíveis; não representam sistemas de gestão já implementados.
+
+Contrato incremental: catálogo e regras táticas puros em `src/shared`; transação rascunho/ativo separada; projeção e controles em `Screens`. `state.tacticalPlan.active` será a fonte confirmada, com IDs estáveis e âncoras normalizadas para o futuro motor 2D. `state.formation` e `Data.formations` permanecem como contrato legado; a tela Elenco passa a consumir a escalação confirmada quando ela existir. Nenhum módulo deve confundir índice no elenco com ID de atleta.
+
+Compatibilidade documentada antes da implementação: os antigos ajustes imediatos de `state.tactics` serão importados na primeira abertura; depois, editar não muda a tática ativa. Salvar valida e confirma somente na memória da sessão. Cancelar ou sair descarta o rascunho. A antiga formação 3–5–2 será preservada como opção adicional às quatro solicitadas. Não há migração de DataStore porque o projeto não possui persistência.
+
+Referência 1: cabeçalho horizontal, predefinição clara à esquerda, controles abaixo, campo escuro em perspectiva à direita, cartões de função e comportamento, fases acima e balanço tático abaixo. Grafismos originais, sem assets das referências. Em telas compactas, áreas roláveis preservam proporções e alvos de toque. Referências 2 e 3 ficam reservadas às próximas etapas.
+
+Validação: compilador Luau 0.745, Rojo 7.7.1, suítes existentes e testes de domínio/transação/layout/interação. Resultado visual, legibilidade, toque e controle físicos continuam pendentes de Studio/Player. Não publicar nem iniciar a etapa 2.
+
 ## Abertura cinematográfica
 
 O bootstrap único agora monta IntroController antes de carregar App. Timeline monotônica preserva os marcos da referência e aguarda START; o lobby existente é preparado em segundo plano com navegação e música bloqueadas. O indicador de TransitionFX é compartilhado sem Cover inicial; só após a revelação Soundtrack.create/release libera a playlist. Fundo de facetas independente, marca própria e três efeitos autorizados. Arquitetura, tempos e limites em [CINEMATIC_INTRO.md](docs/CINEMATIC_INTRO.md).
