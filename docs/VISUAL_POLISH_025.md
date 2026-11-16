@@ -6,7 +6,7 @@ Esta branch deriva da Etapa 02 (`feat/cl27-mega-match-lobby`), não da `main`.
 - Campo tático do lobby com moldura escura, linha de destaque e paleta verde-grafite mais profunda.
 - Cartões dos 11 titulares com gradiente discreto, barra de identidade e borda de seleção reforçada.
 - Apresentação compacta preserva as posições abreviadas e evita a barra lateral em cartões pequenos.
-- Corredor 3D com frisos metálicos e juntas de piso para criar mais profundidade sem novas luzes, texturas ou assets.
+- Cenário 3D original preservado integralmente: a tentativa de acrescentar frisos e juntas foi revertida após falha na suíte de interfaces/estados do CI. O polimento do corredor fica pendente de atualização conjunta dos testes e validação visual.
 
 ## Escopo e limites
 Não há alterações de escalação, regras, avatares, câmera, iluminação, publicação, áudio ou motor de partidas.
