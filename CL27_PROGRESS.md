@@ -1,5 +1,17 @@
 # CL 27 — progresso verificável
 
+## Mega atualização — editor de táticas (16/11/2026, Fortaleza)
+
+- Base main `ad0fd15f285b09fdde5e336e8d45ca3fdaf72e48`; branch `feat/cl27-mega-tactics-editor`. Inspecionados AGENTS, plano, progresso, README, Rojo, App/UI/Scope/Scene, Tactics/Pitch, aparência, dados e workflows antes das alterações.
+- Direção atualizada para simulador de técnico/administração. Etapa 1 implementa somente o editor: quatro formações solicitadas mais 3–5–2 preservada, matching de onze atletas, funções/instruções coerentes, cinco estratégias coletivas, fases distintas e indicadores determinísticos.
+- Rascunho separado da tática ativa; salvar valida/copia, cancelar restaura, navegação abandona rascunho. Sem persistência entre sessões. Elenco consome titulares/reservas confirmados, inclusive o terceiro zagueiro do 5–4–1.
+- Composição baseada na referência 1: predefinição clara à esquerda, campo em perspectiva à direita, controles por abas, fase acima, indicadores abaixo e salvar verde. Cartões/controles reutilizados; sem rerender do App nas edições. Em telas compactas, campo ampliado uniformemente e rolável. Orientação paisagem restaurada ao sair.
+- Testes locais aprovados: 57 fontes/15 rotas; 653 dados; 529 montagens/401 callbacks/200 asserções de smoke; 110.072 de táticas; 6.076 de App; 2.034 de introdução; 365.840 de arena. Luau 0.745 e Rojo 7.7.1 com checksums conferidos; XML contém as 57 fontes idênticas, bootstraps únicos; diff sem erros de whitespace.
+- Novos testes exercitam extremos táticos, todas as funções, colisões/amostras de transição, indisponibilidade do elenco, validação negativa, confirmação/cancelamento, navegação/locks e descarte. Alvos calculados e foco conferidos em oito resoluções de 568×320 a 2560×1080.
+- Introdução, túnel, HomeHUD, Arena, avatares, áudio, UI/Scope compartilhados, servidor, Rojo e workflows preservados. Apenas App/Pitch/Elenco recebem adaptações incrementais para Táticas.
+- **Não houve execução/captura Roblox, aprovação visual, medição de FPS, merge ou publicação.** Os testes usam Luau com APIs substituídas. Validação de fonte, foco, rolagem, toque, áudio e aparência no Roblox permanece pendente; etapa 2 não iniciada.
+- Contratos, arquivo a arquivo, composição, limites e roteiro de aceitação em [TACTICS_EDITOR.md](docs/TACTICS_EDITOR.md).
+
 ## Cyber Click silencioso — correção de reprodução — 05/11/2026
 
 - Base main `973ed3700e508e1c64b709b478bb6e774b56d048`; branch `fix/lobby-cyber-click-playback`. A publicação da base foi confirmada no Actions `42055484153`, inclusive o job Open Cloud, ambos aprovados; não se tratava apenas de um PR sem publicação.

@@ -1,6 +1,9 @@
 local UI = require(script.Parent.Parent.UI)
 local Data = require(game:GetService("ReplicatedStorage").CL27.Data)
 local Pitch = require(script.Parent.Pitch)
+local TacticsLayout = require(script.Parent.TacticsLayout)
+local TacticsModel = require(game:GetService("ReplicatedStorage").CL27.TacticsModel)
+local TacticsCatalog = require(game:GetService("ReplicatedStorage").CL27.TacticsCatalog)
 
 local WHITE = Color3.fromRGB(241, 248, 248)
 local MUTED = Color3.fromRGB(149, 176, 187)
@@ -24,15 +27,40 @@ return function(root, ctx)
 	state.formation = math.clamp(state.formation or 1, 1, #Data.formations)
 	local club = Data.clubs[state.homeClub or 1]
 	local formation = Data.formations[state.formation]
+	local fieldPlayers, benchPlayers, starters = {}, {}, {}
+	local tacticalLayout=nil
+	local active = state.tacticalPlan and state.tacticalPlan.active
+	if active and TacticsModel.validate(active, Data.players) then
+		local anchors = TacticsModel.resolve(active, "with_ball")
+		tacticalLayout=TacticsLayout.arrange(TacticsCatalog.formations[active.formationId],anchors,Pitch.project)
+		formation = {name = TacticsCatalog.formations[active.formationId].label, positions = {}}
+		for _, slot in ipairs(TacticsCatalog.formations[active.formationId].slots) do
+			local point = anchors[slot.id]
+			for index, player in ipairs(Data.players) do
+				if player.id == point.playerId then
+					table.insert(fieldPlayers, {index = index, point = point})
+					table.insert(formation.positions, point)
+					starters[index] = true
+					break
+				end
+			end
+		end
+	else
+		for index = 1, math.min(11, #Data.players) do
+			table.insert(fieldPlayers, {index = index, point = formation.positions[index]})
+			starters[index] = true
+		end
+	end
+	for index in ipairs(Data.players) do if not starters[index] then table.insert(benchPlayers, index) end end
 	local rows = {}
 	for _, position in ipairs(formation.positions) do
-		local row = position.y or position[2]
+		local row = if position.row then (position.row - 1) / (TacticsCatalog.formations[active.formationId].rows - 1) else (position.y or position[2])
 		if not table.find(rows, row) then table.insert(rows, row) end
 	end
 	table.sort(rows)
 	local smallestGap = 1
 	for i = 2, #rows do smallestGap = math.min(smallestGap, rows[i] - rows[i - 1]) end
-	local fieldCardHeight = math.min(88, math.floor(smallestGap * 366) - 2)
+	local fieldCardHeight = if tacticalLayout then math.floor(TacticsLayout.cardHeight*366/TacticsLayout.height)-2 else math.min(88, math.floor(smallestGap * 366) - 2)
 	UI.header(root, "GERENCIAMENTO DE EQUIPE", "CENTRAL DO CLUBE", {
 		{ label = "Elenco", selected = true, callback = function() end },
 		{ label = "Táticas", callback = function() ctx.go("Tactics") end },
@@ -134,9 +162,13 @@ return function(root, ctx)
 		name.TextXAlignment = Enum.TextXAlignment.Center
 		return button
 	end
-	for index = 1, math.min(11, #Data.players) do
-		local pos = formation.positions[index]
+	for _, entry in ipairs(fieldPlayers) do
+		local index, pos = entry.index, entry.point
 		local px, py = Pitch.project(pos.x or pos[1], pos.y or pos[2], fieldW, fieldH)
+		if tacticalLayout then
+			local point=tacticalLayout[pos.slotId]
+			px,py=point.x*fieldW/TacticsLayout.width,point.y*fieldH/TacticsLayout.height
+		end
 		card(root, index, fieldX + px - 50.5, fieldY + py - fieldCardHeight / 2, false)
 	end
 	local bench = UI.panel(root, 72, 563, 825, 251, PANEL, 0.13)
@@ -149,8 +181,8 @@ return function(root, ctx)
 		CanvasSize = UDim2.fromOffset(0, math.ceil(math.max(0, #Data.players - 11) / 6) * 98),
 		ScrollingDirection = Enum.ScrollingDirection.Y,
 	}, bench)
-	for index = 12, #Data.players do
-		local slot = index - 12
+	for benchIndex, index in ipairs(benchPlayers) do
+		local slot = benchIndex - 1
 		card(scroll, index, 6 + (slot % 6) * 127, math.floor(slot / 6) * 98, true)
 	end
 	drawInfo(state.selectedPlayer)

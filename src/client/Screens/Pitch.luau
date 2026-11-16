@@ -9,14 +9,14 @@ function Pitch.project(x, y, width, height)
 	return inset + x * (width - inset * 2), y * height
 end
 
-function Pitch.draw(parent, x, y, width, height)
+function Pitch.draw(parent, x, y, width, height, palette)
 	local field = UI.frame(parent, x, y, width, height, Color3.fromRGB(14, 32, 49), 1)
 	field.Name = "CampoEmPerspectiva"
 	local slices = 48
 	for i = 0, slices - 1 do
 		local t = i / slices
 		local inset = width * 0.13 * (1 - t)
-		local color = if math.floor(t * 8) % 2 == 0 then Color3.fromRGB(21, 53, 66) else Color3.fromRGB(19, 46, 61)
+		local color = if math.floor(t * 8) % 2 == 0 then (palette and palette.stripeA or Color3.fromRGB(21, 53, 66)) else (palette and palette.stripeB or Color3.fromRGB(19, 46, 61))
 		UI.frame(field, inset, t * height, width - inset * 2, height / slices + 1, color, 0.2)
 	end
 	local function point(px, py)
@@ -25,7 +25,7 @@ function Pitch.draw(parent, x, y, width, height)
 	local function segment(ax, ay, bx, by, thickness)
 		local x1, y1 = point(ax, ay)
 		local x2, y2 = point(bx, by)
-		local line = UI.line(field, x1, y1, x2, y2, lineColor, thickness or 1)
+		local line = UI.line(field, x1, y1, x2, y2, palette and palette.line or lineColor, thickness or 1)
 		line.BackgroundTransparency = 0.43
 	end
 	local function box(ax, ay, bx, by)

@@ -100,7 +100,7 @@ def compile_syntax(compiler: str, sources: list[Path]) -> None:
     require(executable.is_file(), f"Compilador Luau ausente: {compiler}")
     failures = []
     for source in sources:
-        result = subprocess.run([str(executable), str(source)], capture_output=True, text=True)
+        result = subprocess.run([str(executable), str(source)], capture_output=True, text=True, encoding="utf-8", errors="replace")
         if result.returncode:
             failures.append(f"{source.relative_to(ROOT)}\n{result.stderr or result.stdout}")
     require(not failures, "Falha de compilação sintática Luau:\n" + "\n".join(failures))

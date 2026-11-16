@@ -121,6 +121,10 @@ function methods:IsA(className)
 		or className == "PostEffect" and (name == "BloomEffect" or name == "ColorCorrectionEffect" or name == "SunRaysEffect")
 		or className == "GuiButton" and (name == "TextButton" or name == "ImageButton")
 end
+function methods:GetPropertyChangedSignal(key)
+	if not self._events["Property_"..key] then self._events["Property_"..key]=signal() end
+	return self._events["Property_"..key]
+end
 function methods:GetChildren() return table.clone(self._children) end
 function methods:GetDescendants()
 	local result = {}

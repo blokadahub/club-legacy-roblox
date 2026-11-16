@@ -30,6 +30,7 @@ for path in paths:
 parts.append("require = function(node) assert(typeof(node) == 'Instance' and node:IsA('ModuleScript'), 'Expected ModuleScript'); local path = node:GetAttribute('ModulePath'); if cache[path] == nil then cache[path] = assert(factories[path], 'Missing module factory: ' .. tostring(path))(node) end; return cache[path] end\n")
 harness = (root / "tools/runtime-smoke.luau").read_text()
 source = harness.replace("-- MODULES", "\n".join(parts))
+source += "\n" + (root / "tools/tactics.spec.luau").read_text()
 with tempfile.TemporaryDirectory(prefix="cl27-runtime-") as folder:
     generated = Path(folder) / "runtime-check.luau"
     generated.write_text(source)

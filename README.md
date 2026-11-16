@@ -1,13 +1,13 @@
 # CL 27 — Club Legacy 27
 
-Apresentação interativa de futebol para **Roblox**, escrita em **Luau** e compilada com **Rojo 7.7.1**. Não contém partidas, simulação esportiva ou gameplay. Identidade, clubes, escudos, atletas e uniformes são originais, construídos com recursos nativos.
+Projeto para **Roblox**, escrito em **Luau** e compilado com **Rojo 7.7.1**, em transformação para um simulador de técnico e administração de clubes contra IA. A primeira etapa da mega atualização implementa o editor tático com validação e salvamento na sessão. Partidas, motor de futebol 2D, transferências reais e campeonatos ainda não estão implementados. As apresentações existentes permanecem disponíveis. Identidade, clubes, escudos, atletas e uniformes são originais, construídos com recursos nativos.
 
 ## Apresentações
 
 1. Menu principal na galeria do legado: arquitetura interior, telão, piso, luzes e atleta no Workspace.
 2. Visão Geral.
 3. Elenco: onze titulares em campo de perspectiva, banco rolável e ficha selecionável.
-4. Táticas: três formações e ajustes de apresentação tática.
+4. Táticas: editor com 4–3–3, 4–2–3–1, 4–3–2–1, 5–4–1 e a opção legada 3–5–2; predefinições, duas fases, funções individuais, estratégias coletivas e confirmação/cancelamento.
 5. Atribuições: capitão e responsabilidades.
 6. Calendário: dias reais, navegação de meses e detalhes de compromissos.
 7. Transferências: pesquisa, filtros, perfis e lista de observados.
@@ -24,6 +24,14 @@ Apresentação interativa de futebol para **Roblox**, escrita em **Luau** e comp
 O túnel integrado utiliza os quatro módulos reutilizáveis do PR #7, sem o bootstrap do experimento. Consulte [a integração Clubs](docs/CLUBS_TUNNEL.md) para controles, indicador permanente, restauração e testes. O botão de voltar tem área de toque real de 54 px para Android.
 
 Os dados e preferências permanecem apenas na sessão. A classificação do Circuito Legado reúne oito convidados de três ligas fictícias. As telas compartilham estado, seleções, navegação e animações com descarte de conexões.
+
+## Editor de táticas — mega atualização, etapa 1
+
+Na Central, abra **Táticas**. Selecione uma predefinição, alterne a formação e ajuste construção, pressão, mentalidade, amplitude e linha defensiva. Toque nos cartões do campo para editar função e comportamento. Os seletores de fase mostram organizações distintas; não executam uma partida.
+
+**Salvar alterações** valida onze atletas distintos e compatíveis antes de confirmar. **Cancelar** restaura a tática ativa; sair da tela abandona alterações não salvas. A tela **Elenco** mostra os titulares confirmados, incluindo o terceiro zagueiro do 5–4–1. Tudo fica apenas na sessão atual, sem DataStore.
+
+O canvas continua 1600×900. Controles e campo são roláveis; em telas compactas, o campo é ampliado proporcionalmente para leitura e toque, e pode ser arrastado em ambos os eixos. A navegação por controle revela o item focado. [Contrato, arquivos, testes e validação Roblox pendente](docs/TACTICS_EDITOR.md).
 
 ## Abrir e executar
 

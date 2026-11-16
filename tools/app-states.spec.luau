@@ -943,4 +943,67 @@ check(mobile.state.homeFocus == 5 and mobileList.CanvasPosition.Y == 0,
 mobile.destroy()
 replacement.ViewportSize = Vector2.new(1600, 900)
 
+-- Tactics integration: responsive bounds, native input locks and session ownership.
+playerGui.ScreenOrientation=Enum.ScreenOrientation.Sensor
+local editor=App.start()
+editor.go("Tactics")
+advance(3)
+local canvas=playerGui:FindFirstChild("CL27"):FindFirstChild("Canvas")
+local page=canvas:FindFirstChild("Tactics")
+check(page~=nil and not editor.state.menuInputLocked,"Tactics route did not unlock")
+check(playerGui.ScreenOrientation==Enum.ScreenOrientation.LandscapeSensor,"Editor did not request landscape")
+local function button(name) return assert(page:FindFirstChild(name,true),name) end
+local function activate(name) button(name).Activated:Fire() end
+local initial=editor.state.tacticalPlan.active
+activate("SelecionarFormacao")
+check(editor.state.tacticalPlan.active==initial,"Draft modified session before Save")
+activate("SalvarTatica")
+check(editor.state.tacticalPlan.active.formationId=="4-2-3-1","App save did not confirm formation")
+check(canvas:FindFirstChild("Tactics")==page,"App rebuilt editor on Save")
+local confirmed=editor.state.tacticalPlan.active
+-- Central pauses every editor connection, including Save.
+services.UserInputService.InputBegan:Fire({KeyCode=Enum.KeyCode.ButtonY},false)
+activate("SelecionarFormacao");activate("SalvarTatica")
+check(editor.state.tacticalPlan.active==confirmed,"Editor bypasses Central input lock")
+services.UserInputService.InputBegan:Fire({KeyCode=Enum.KeyCode.ButtonY},false)
+for _,size in ipairs({{1600,900},{1920,1080},{2560,1080},{1024,768},{854,393},{720,360},{640,360},{568,320}}) do
+	replacement.ViewportSize=Vector2.new(size[1],size[2])
+	replacement:GetPropertyChangedSignal("ViewportSize"):Fire()
+	local fitted=canvas:FindFirstChild("UIScale")
+	fitted:GetPropertyChangedSignal("Scale"):Fire()
+	local factor=fitted.Scale
+	for _,name in ipairs({"SalvarTatica","CancelarTatica","FaseComBola","FaseSemBola","AbaEquipe","AbaAtleta","AbrirElenco","Diminuir_width","Diminuir_line"}) do
+		local b=button(name)
+		check(b.Size.X.Offset*factor>=43.99 and b.Size.Y.Offset*factor>=43.99,"Small touch target: "..name)
+	end
+	local controls=button("ControlesColetivos")
+	check(controls.Size.Y.Offset>0,"Negative editor scroll window")
+	local last=button("Estrategia_line")
+	last.SelectionGained:Fire()
+	check(controls.CanvasPosition.Y>0,"Gamepad does not reveal last strategy")
+	local field=button("CampoTaticoRolavel")
+	local right=button("Posicao_rb")
+	right.SelectionGained:Fire()
+	check(field.CanvasPosition.X>=0 and field.CanvasPosition.Y>=0,"Invalid field scroll after focus")
+	local phaseButton=button("FaseSemBola")
+	check(button("AbrirElenco").Position.Y.Offset+button("AbrirElenco").Size.Y.Offset<=phaseButton.Position.Y.Offset,"Header overlaps phase control")
+	activate("Posicao_lb")
+	button("SelecionarComportamento").SelectionGained:Fire()
+	activate("AbaEquipe")
+end
+activate("SelecionarFormacao")
+editor.go("Squad")
+check(editor.state.screen=="Squad" and editor.state.tacticalPlan.active==confirmed,"Navigation committed a draft")
+check(playerGui.ScreenOrientation==Enum.ScreenOrientation.Sensor,"Editor leaked landscape preference")
+editor.go("Tactics")
+page=canvas:FindFirstChild("Tactics")
+activate("SalvarTatica")
+check(editor.state.tacticalPlan.active.formationId=="4-2-3-1","Unsaved formation leaked across routes")
+activate("FaseComBola")
+editor.go("HomeInterior")
+advance(3)
+check(editor.state.screen=="HomeInterior" and not editor.state.menuInputLocked,"Editor broke lobby return")
+editor.destroy()
+replacement.ViewportSize=Vector2.new(1600,900)
+
 print(string.format("PASS App phases: %d assertions; virtual-clock stubs only, no Roblox capture/easing certification.", assertions))

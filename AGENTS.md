@@ -1,6 +1,6 @@
 # CL 27 — instruções essenciais
 
-- Produto: demonstração visual de futebol em Roblox; não desenvolver partidas ou gameplay.
+- Direção do produto: simulador de técnico e administração de clubes em Roblox. Mega atualização, etapa 1: somente editor de táticas funcional; partidas, transferências reais, campeonatos e novos lobbies dependem de etapas autorizadas separadamente.
 - Linguagem de produto: português brasileiro. Ativos, clubes e atletas originais.
 - Leia `CL27_PLAN.md` e `CL27_PROGRESS.md` antes de continuar; registre evidências e pendências.
 - Fonte Rojo: `src/client`, `src/shared`, `src/server`. Apenas um bootstrap cliente.

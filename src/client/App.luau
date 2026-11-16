@@ -235,7 +235,7 @@ function App.start(options)
 		if not neonOK then warn("[CL27] Neon opcional de Settings: "..tostring(neonError)) end
 		-- A galeria de Settings usa a arena 3D existente; sem as fitas
 		-- e sem o véu de UI de outras rotas.
-		if wanted=="Arena" and state.screen~="Settings" then
+		if wanted=="Arena" and state.screen~="Settings" and state.screen~="Tactics" then
 			local backdrop=UI.frame(page,0,0,1600,900,Color3.new(1,1,1),if state.screen=="Clubs" then .72 else .15)
 			UI.gradient(backdrop,{Theme.blue,Color3.fromRGB(6,62,65),Theme.background},26)
 			for i=1,3 do
@@ -261,7 +261,7 @@ function App.start(options)
 				go(target,true)
 			end,pageScope,{quiet=true,textSize=14})
 			UI.button(footer,"⌂  INÍCIO",391,10,130,40,function() go("HomeInterior") end,pageScope,{quiet=true,textSize=14})
-			UI.text(footer,"CL 27  /  APRESENTAÇÃO VISUAL",1240,17,314,25,10,Theme.muted).TextXAlignment=Enum.TextXAlignment.Right
+			UI.text(footer,if state.screen=="Tactics" then "CL 27  /  TÁTICAS DA SESSÃO" else "CL 27  /  APRESENTAÇÃO VISUAL",1240,17,314,25,10,Theme.muted).TextXAlignment=Enum.TextXAlignment.Right
 		end
 		if not busy and not introLocked then focusPage(focusOrdinal) end
 		if not busy and not state.settings.reducedMotion then
