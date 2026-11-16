@@ -295,11 +295,12 @@ return function(root,ctx)
 		local y=headingY+90;local available=math.max(220,statusY-10-y)
 		benchRule.Position=UDim2.fromOffset(54,y-6);benchRule.Visible=not compact
 		bench.Position=UDim2.fromOffset(54,y);bench.Size=UDim2.fromOffset(242,available)
-		local row=if compact then math.max(h+10,font*3+30) else available/5
+		local row=if compact then math.max(h+10,font*3.3+40) else available/5
 		for i,card in ipairs(benchCards) do
 			card.button.Position=UDim2.fromOffset(0,(i-1)*row);card.button.Size=UDim2.fromOffset(236,row-6)
-			card.name.Size=UDim2.fromOffset(208,row*(compact and .54 or .45));card.name.TextSize=font
-			card.info.Position=UDim2.fromOffset(16,row*(compact and .62 or .54));card.info.Size=UDim2.fromOffset(208,font*1.3);card.info.TextSize=font
+			local nameHeight=font*(compact and 2.2 or 1.3)
+			card.name.Size=UDim2.fromOffset(208,nameHeight);card.name.TextSize=font
+			card.info.Position=UDim2.fromOffset(16,12+nameHeight);card.info.Size=UDim2.fromOffset(208,font*1.3);card.info.TextSize=font
 			card.track.Position=UDim2.fromOffset(16,row-11)
 		end
 		bench.CanvasSize=UDim2.fromOffset(0,5*row)

@@ -49,8 +49,10 @@ for _,size in ipairs({{1600,900},{1920,1080},{2560,1080},{1024,768},{854,393},{7
 	check(field.Position.Y.Offset+field.Size.Y.Offset<=node("EstadoEscalacao").Position.Y.Offset,"Field overlaps footer")
 	for i=1,5 do
 		local card=node("Reserva_"..i)
+		local name=card:FindFirstChild("NomeReserva")
 		local condition=card:FindFirstChild("CondicaoReserva")
 		local track=card:FindFirstChild("CondicaoFisica")
+		check(name.Position.Y.Offset+name.Size.Y.Offset<=condition.Position.Y.Offset,"Reserve name overlaps condition")
 		check(condition.Position.Y.Offset+condition.Size.Y.Offset<=track.Position.Y.Offset,"Condition text overlaps fitness bar")
 		check(track.Position.Y.Offset+track.Size.Y.Offset<=card.Size.Y.Offset,"Fitness bar escapes reserve card")
 	end
