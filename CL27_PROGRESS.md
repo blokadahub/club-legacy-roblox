@@ -1,5 +1,19 @@
 # CL 27 — progresso verificável
 
+## Mega atualização — lobby pré-partida (16/11/2026, Fortaleza)
+
+- Continuação autorizada da etapa 1, base `6b353c2`, PR #21 aberto/em rascunho. Branch separada `feat/cl27-mega-match-lobby`; nenhuma modificação na branch anterior ou na main.
+- Inspecionados documentação, contrato tático, App, Scene, UI, Scope, AvatarAppearance, MenuAvatar, Elenco, ambientes e workflows antes do código. Mudança de contrato registrada previamente no plano.
+- Nova rota Central → Pré-partida: reservas à esquerda, campo em perspectiva no centro, avatar real R15 à direita e túnel novo no Workspace. Uma única câmera/Lighting sob Scene; entrada de 0,22 s, instantânea com movimento reduzido.
+- Inscrição separada do elenco global: 11 titulares da tática ativa + 5 reservas disponíveis/distintos. Trocas validadas preservam funções/instruções do slot. Propostas ficam em rascunho; confirmar grava tática/banco atomicamente; cancelar/sair descarta propostas. Tática posterior diferente invalida o recibo de preparação.
+- Aparência oficial via cache existente, cópia independente, acessórios soldados, roupa original somente quando compatível, idle procedural suave, sem animação externa nova. Timeout de 12 s, recuperação explícita, descarte de callback tardio e recursos via Scope. Player.Character não é alterado.
+- Testes locais aprovados: 63 fontes Luau, 16 rotas; 653 verificações de dados; 592 montagens/432 callbacks/209 asserções de smoke; 110.072 de táticas; 1.489 de regras/UI do lobby; 6.076 de App + 243 de integração do lobby; 2.034 de introdução; 365.840 de arena + 103 de cenário/avatar do lobby. Runners existentes incluem novas suítes sem alterar workflows.
+- Luau 0.745 e Rojo 7.7.1: build gerado, XML com as 63 fontes idênticas, bootstraps únicos, diff sem erros. Geometria: 59 peças arquitetônicas, quatro emissores (dois em qualidade baixa), uma única cópia de apresentação R15.
+- Composição revisada por regiões e árvore de GUI; cálculos de oito resoluções e insets assimétricos, limites e alvos de toque. Compacto mantém as onze posições em vista geral e transfere dados/interações para ficha ampliada; não amplia o campo até recortá-lo. Isso é inspeção derivada do código, não captura Roblox.
+- Introdução, HomeHUD, túnel original, Arena/animações, áudio, UI/Scope, editor tático, Data, Rojo, servidor e workflows preservados. Integrações incrementais em App/Scene e operação validada no modelo tático.
+- **Pendente execução no Roblox:** enquadramento da aparência real, fontes/contraste, acessórios/roupas em camadas, toque/gamepad físicos, sombra e contato com o piso, audição e medições de desempenho/memória. Não houve execução/captura Roblox, publicação, merge ou etapa 3.
+- Contratos, manifesto de arquivos, auditoria, evidências e procedimento: [MATCH_LOBBY.md](docs/MATCH_LOBBY.md).
+
 ## Mega atualização — editor de táticas (16/11/2026, Fortaleza)
 
 - Base main `ad0fd15f285b09fdde5e336e8d45ca3fdaf72e48`; branch `feat/cl27-mega-tactics-editor`. Inspecionados AGENTS, plano, progresso, README, Rojo, App/UI/Scope/Scene, Tactics/Pitch, aparência, dados e workflows antes das alterações.

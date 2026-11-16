@@ -14,8 +14,9 @@ local HomeHUD=require(script.Parent.HomeHUD)
 local SettingsHUD=require(script.Parent.SettingsHUD)
 local TransitionFX=require(script.Parent.TransitionFX)
 local App={}
-App.routes={"HomeInterior","Overview","Squad","Tactics","Assignments","Calendar","Transfers","Finance","Development","Competitions","Customization","Settings","Clubs","Kits","PenaltyArena"}
+App.routes={"HomeInterior","MatchLobby","Overview","Squad","Tactics","Assignments","Calendar","Transfers","Finance","Development","Competitions","Customization","Settings","Clubs","Kits","PenaltyArena"}
 local labels={HomeInterior="Menu • galeria",Overview="Visão geral",Squad="Elenco",Tactics="Táticas",Assignments="Atribuições",Calendar="Calendário",Transfers="Transferências",Finance="Finanças",Development="Desenvolvimento",Competitions="Competições",Customization="Personalização",Settings="Configurações",Clubs="Seleção de clubes",Kits="Seleção de uniformes",PenaltyArena="Arena de Treino"}
+labels.MatchLobby="Pré-partida"
 local screens={}
 for _,id in ipairs(App.routes) do
 	screens[id]=require(script.Parent.Screens[if id=="HomeInterior" then "Home" else id])
@@ -63,6 +64,7 @@ function App.start(options)
 		local available=viewport-topLeft-bottomRight-Vector2.new(margin*2,margin*2)
 		scale.Scale=math.max(.1,math.min(available.X/1600,available.Y/900))
 		scene.canvasHeight=900*scale.Scale
+		scene.canvasCenter=topLeft+Vector2.new(margin,margin)+available/2
 		canvas.Position=UDim2.fromOffset(topLeft.X+margin+available.X/2,topLeft.Y+margin+available.Y/2)
 	end
 	local cameraConnection=nil
@@ -221,7 +223,7 @@ function App.start(options)
 		tunnelBackGui.Enabled=(state.screen=="Clubs")
 		-- A UI de Settings fica em outro ScreenGui, nunca sob Transicao.
 		settingsHud:SetVisible(state.screen=="Settings")
-		local wanted=if state.screen=="HomeInterior" then "Interior" elseif state.screen=="Kits" then "Kits" elseif state.screen=="Clubs" then "Tunnel" elseif state.screen=="PenaltyArena" then "Penalty" else "Arena"
+		local wanted=if state.screen=="HomeInterior" then "Interior" elseif state.screen=="MatchLobby" then "MatchLobby" elseif state.screen=="Kits" then "Kits" elseif state.screen=="Clubs" then "Tunnel" elseif state.screen=="PenaltyArena" then "Penalty" else "Arena"
 		homeHud:SetVisible(wanted=="Interior" and not introLocked)
 		if wanted~=mode then scene:Show(wanted,Data.clubs[state.homeClub],Data.clubs[state.awayClub],state.homeKit,state.awayKit);mode=wanted
 		else scene:UpdateClubs(Data.clubs[state.homeClub],Data.clubs[state.awayClub],state.homeKit,state.awayKit) end
@@ -244,7 +246,7 @@ function App.start(options)
 			end
 			UI.line(backdrop,760,890,1560,135,UI.accent,1).BackgroundTransparency=.9
 		end
-		local ctx={state=state,scope=pageScope,go=go,rerender=rerender,notify=notify,scene=scene,playerGui=playerGui}
+		local ctx={state=state,scope=pageScope,go=go,rerender=rerender,notify=notify,scene=scene,playerGui=playerGui,openCentral=toggleTray}
 		-- A HOME é desenhada no ScreenGui independente CL27_HomeHUD, não aqui.
 		-- O ScreenGui do menu não depende da cena 3D para inicializar.
 		if wanted~="Interior" and state.screen~="Settings" and state.screen~="Clubs" then
@@ -252,7 +254,7 @@ function App.start(options)
 		end
 		-- A tela inicial da referência possui só cinco opções e os ícones decorativos.
 		-- O rodapé de navegação continua disponível nas outras páginas.
-		if wanted~="Interior" and state.screen~="Settings" and state.screen~="Clubs" and state.screen~="PenaltyArena" then
+		if wanted~="Interior" and state.screen~="Settings" and state.screen~="Clubs" and state.screen~="PenaltyArena" and state.screen~="MatchLobby" then
 			local footer=UI.frame(page,0,839,1600,61,Theme.background,.3)
 			UI.line(footer,44,0,1556,0,Theme.muted,1).BackgroundTransparency=.8
 			UI.button(footer,"≡  CENTRAL",44,10,165,40,toggleTray,pageScope,{quiet=true,textSize=14})
@@ -273,6 +275,7 @@ function App.start(options)
 	-- de jogo. Navegacao entre paineis internos que nao sao esses modos nao
 	-- apresenta carregamento artificial.
 	local function shouldLoad(from: string, to: string): boolean
+		if from=="MatchLobby" or to=="MatchLobby" then return false end
 		if from=="PenaltyArena" or to=="PenaltyArena" then return false end
 		local critical = {
 			HomeInterior=true, Settings=true, Clubs=true, Kits=true,
@@ -314,11 +317,11 @@ function App.start(options)
 			end)
 			if not ok then
 				warn("[CL27] Erro ao abrir "..tostring(id)..": "..tostring(errorMessage))
-				if id=="PenaltyArena" then
+				if id=="PenaltyArena" or id=="MatchLobby" then
 					state.screen="HomeInterior"
 					mode=nil
 					local recovered=pcall(render)
-					if recovered then notify("Não foi possível abrir a arena. Tente novamente.");ok=true end
+					if recovered then notify(if id=="MatchLobby" then "Não foi possível abrir a preparação. Tente novamente." else "Não foi possível abrir a arena. Tente novamente.");ok=true end
 				else
 					settingsHud:SetVisible(id=="Settings")
 					homeHud:SetVisible(id=="HomeInterior")
@@ -328,6 +331,12 @@ function App.start(options)
 		end
 		if not needsLoader then
 			local ok=handoff()
+			if ok and id=="MatchLobby" and not state.settings.reducedMotion then
+				page.GroupTransparency=1
+				pageScope:Tween(page,{GroupTransparency=0},.22)
+				lifetime:Delay(.22,finishLoading)
+				return
+			end
 			unlockNavigation()
 			if ok then focusPage() end
 			return

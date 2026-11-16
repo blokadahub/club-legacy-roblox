@@ -1,6 +1,6 @@
 # CL 27 — instruções essenciais
 
-- Direção do produto: simulador de técnico e administração de clubes em Roblox. Mega atualização, etapa 1: somente editor de táticas funcional; partidas, transferências reais, campeonatos e novos lobbies dependem de etapas autorizadas separadamente.
+- Direção do produto: simulador de técnico e administração de clubes em Roblox. Etapa 1: editor de táticas. Etapa 2 autorizada: lobby pré-partida integrado, inscrição de 11 titulares e 5 reservas, avatar real R15. Partidas, resultados, transferências e campeonatos continuam fora do escopo; não publicar nem fazer merge na main.
 - Linguagem de produto: português brasileiro. Ativos, clubes e atletas originais.
 - Leia `CL27_PLAN.md` e `CL27_PROGRESS.md` antes de continuar; registre evidências e pendências.
 - Fonte Rojo: `src/client`, `src/shared`, `src/server`. Apenas um bootstrap cliente.

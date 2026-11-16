@@ -128,6 +128,24 @@ function M.setFormation(config,id,roster)
 	config.formationId=id;config.positions=lineup
 	return true
 end
+-- Atomic pre-match replacement; instructions belong to the slot and are preserved.
+function M.replacePlayer(config,slotId,playerId,roster)
+	local valid,err=M.validate(config,roster)
+	if not valid then return false,err end
+	local slot=M.slot(config,slotId)
+	if not slot or not M.compatible(M.player(roster,playerId),slot) then
+		return false,"Atleta indisponível ou incompatível com a posição."
+	end
+	for _,entry in pairs(config.positions) do
+		if entry.playerId==playerId then return false,"Este atleta já está entre os titulares." end
+	end
+	local candidate=M.copy(config)
+	candidate.positions[slotId].playerId=playerId
+	valid,err=M.validate(candidate,roster)
+	if not valid then return false,err end
+	config.positions=candidate.positions
+	return true
+end
 function M.applyPreset(config,id)
 	for _,p in ipairs(C.presets) do
 		if p.id==id then

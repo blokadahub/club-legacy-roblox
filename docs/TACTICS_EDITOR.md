@@ -102,6 +102,8 @@ Não há Studio/Player disponível nesta execução. Portanto a implementação 
 
 ## Próxima etapa, ainda não iniciada
 
+Nota da branch da etapa 2: a continuação foi autorizada em 16/11/2026 e está documentada em [MATCH_LOBBY.md](MATCH_LOBBY.md). O texto abaixo registra o limite histórico da entrega #21. O editor permanece intacto; `TacticsModel.replacePlayer(config, slotId, playerId, roster)` acrescenta uma substituição validada e atômica, preservando função/comportamento do slot. A nova preparação consome o mesmo estado ativo, sem uma segunda formação confirmada.
+
 A etapa 2 poderá ler uma cópia de `state.tacticalPlan.active`, usar `playerId`/`slotId` para formação e reservas e reutilizar `AvatarAppearance.request` para o R15 da conta. O futuro motor deverá revalidar o contrato e possuir autoridade apropriada no servidor; a configuração atual é local ao cliente. Lobby pré-partida, novos avatares de apresentação, motor 2D, adversários IA, transferências, ligas e vitória cinematográfica não foram implementados nesta etapa. Avançar exige autorização.
 
 APIs consultadas: [GuiObject](https://create.roblox.com/docs/reference/engine/classes/GuiObject), [ScrollingFrame](https://create.roblox.com/docs/reference/engine/classes/ScrollingFrame), [PlayerGui](https://create.roblox.com/docs/reference/engine/classes/PlayerGui) e [ScreenOrientation](https://create.roblox.com/docs/reference/engine/enums/ScreenOrientation).

@@ -136,6 +136,15 @@ function methods:FindFirstChild(name, recursive)
 	for _, child in ipairs(if recursive then self:GetDescendants() else self._children) do if child.Name == name then return child end end
 	return nil
 end
+function methods:FindFirstChildOfClass(className)
+	for _,child in ipairs(self:GetChildren()) do if child:IsA(className) then return child end end
+	return nil
+end
+function methods:IsDescendantOf(ancestor)
+	local parent=self.Parent
+	while parent do if parent==ancestor then return true end;parent=parent.Parent end
+	return false
+end
 function methods:WaitForChild(name) return assert(self:FindFirstChild(name), "Missing stub child: " .. name) end
 function methods:SetAttribute(key, value) self._attributes[key] = value end
 function methods:GetAttribute(key) return self._attributes[key] end
@@ -156,6 +165,7 @@ function methods:Clone()
 	return result
 end
 local services = {ReplicatedStorage = Instance.new("ReplicatedStorage"), UserInputService = {InputBegan = signal()}, TweenService = {}}
+services.GuiService={}
 services.Players = {LocalPlayer = Instance.new("Player")}
 services.Players.LocalPlayer.Name = "RealUserTest"
 function services.TweenService:Create(object, info, goals)
@@ -186,7 +196,7 @@ local function deepClone(value)
 end
 local baseState = {homeClub = 1, awayClub = 2, homeKit = 1, awayKit = 2, selectedPlayer = 8, formation = 1, screen = "HomeInterior", settings = {quality = "Alta", reducedMotion = false}}
 local routeSet = {}
-local routes = {"HomeInterior", "Overview", "Squad", "Tactics", "Assignments", "Calendar", "Transfers", "Finance", "Development", "Competitions", "Customization", "Settings", "Clubs", "Kits"}
+local routes = {"HomeInterior", "MatchLobby", "Overview", "Squad", "Tactics", "Assignments", "Calendar", "Transfers", "Finance", "Development", "Competitions", "Customization", "Settings", "Clubs", "Kits"}
 for _, id in ipairs(routes) do routeSet[id] = true end
 local assertions, mounts, callbacks = 0, 0, 0
 local function check(value, message) assert(value, message); assertions += 1 end
