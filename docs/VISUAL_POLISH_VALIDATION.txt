@@ -1,0 +1,72 @@
+CL-27 — REVISÃO COMPLETA DA ETAPA 02.5
+Data: 17/11/2026
+Branch: feat/cl27-mega-visual-polish
+Base do PR: feat/cl27-mega-match-lobby (ffb05ec5be931a79885afcd2142bbf30fd46e4fa)
+Ponto de partida preservado: PR #23 / a76a30b099443d8538e7beec243642780997dc59
+Referências: TXT integral e imagens 01/02/03 anexados pelo proprietário.
+
+FERRAMENTAS
+Luau 0.745 oficial e Rojo 7.7.1, downloads com SHA256 conferido contra o workflow.
+Luau ZIP: 186e5ddaa2b048ebc7390c11ed1b00c04e7d3beaffed429250329e3575d2ece2
+Rojo ZIP: 00feb4fa0829a1dd72b49df2639da519a352bfe13cadcd83969e2ba2bb5693c4
+
+COMANDOS EXECUTADOS LOCALMENTE
+python3 tools/validate.py --compiler /tmp/cl27-tools/luau/luau-compile
+python3 tools/run-data.py --runtime /tmp/cl27-tools/luau/luau
+python3 tools/run-runtime-smoke.py --runtime /tmp/cl27-tools/luau/luau
+python3 tools/run-app-states.py --runtime /tmp/cl27-tools/luau/luau
+python3 tools/run-app-states.py --runtime /tmp/cl27-tools/luau/luau --intro
+python3 tools/run-app-states.py --runtime /tmp/cl27-tools/luau/luau --penalty
+/tmp/cl27-tools/rojo/rojo build default.project.json --output /tmp/cl27-visual-review.rbxlx
+python3 tools/validate.py --place /tmp/cl27-visual-review.rbxlx
+git diff --check
+
+RESULTADOS
+Compilação: 63 fontes; 16 rotas; require/mapeamento verificados.
+Dados: 653 verificações, 8 clubes, 22 atletas.
+Smoke: 620 montagens / 488 callbacks / 209 asserções.
+Táticas: 110142 asserções.
+Lobby regras/UI: 1489 asserções.
+Refinamento/contraste: 91 asserções; inclui alto contraste e ações sem candidato.
+App existente: 6076 asserções.
+Lobby no App: 363 asserções.
+Editor no App (nova suíte): 12620 asserções.
+Introdução: 2034 asserções.
+Arena: 365840 asserções.
+Lobby cena/avatar: 172 asserções.
+Rojo/XML: build concluído; 63 fontes idênticas e serviços verificados.
+SHA256 do RBXLX local: 81dfe708f6e1a4e22849c0dc24669324fc943af31eb16f5541f8a3e27e0afe4c
+Whitespace: git diff --check sem erros.
+
+NOVA COBERTURA
+1600x900; 1920x1080; 2560x1080; 1024x768; 854x393; 720x360; 640x360; 568x320.
+Cada resolução com insets (esquerda,topo,direita,base):
+(0,0,0,0), (20,24,12,8), (44,24,44,20), mais margem de 12 do App.
+Todas as cinco formações e ambas as fases, onze cartões inteiros dentro do campo.
+Alvos de toque calculados, um controle completo visível, todos os onze atletas acessíveis.
+Fichas bloqueiam o fundo; restauração de foco; limites 10/90 e medidor ligado ao dado.
+Análise inclui cada texto retornado pelo modelo, sem probabilidades inventadas.
+Redimensionamento durante bloqueio; feedback finito/interrompido; descarte sem reconstrução.
+Quatro emissores / dois em baixa; zero sombras baixa/média, uma alta.
+69 descritores de arquitetura; painéis e portal dentro da parede, pés no topo do inlay.
+
+ERROS ENCONTRADOS E RESOLVIDOS
+O teste novo de 568x320 com insets encontrou área menor que um controle inteiro.
+Correção: identificação da tática incorporada à predefinição no compacto, liberando altura.
+Revisão geométrica: painel final atravessava fundo; pés estavam 0,015 stud acima do inlay.
+Correção: painel final encurtado e centralizado; posição do pé coincide com topo real.
+Uma chamada auxiliar inexistente (near) foi removida da nova suíte; comparação numérica explícita.
+Logs de falha de cena/áudio/aparência nos testes são injeções previstas, cobertas por asserções de recuperação.
+
+LIMITES DA EVIDÊNCIA
+Runtime Luau real com APIs Roblox substituídas e relógio virtual. Não certifica permissões,
+Gotham real, renderização, carregamento da conta do proprietário, toque/gamepad físicos,
+áudio real, GPU/FPS ou desempenho Android. Nenhuma captura Roblox foi produzida.
+Projeção de fixture R15: x 0,791587–0,962365; y 0,269415–0,857025. Não é captura do avatar da conta.
+Código e testes passaram; critérios visuais e desempenho permanecem pendentes.
+A implementação foi validada por código e testes automatizados, mas a aprovação visual no Roblox permanece pendente.
+Roteiro de inspeção, auditoria das telas e manifesto: docs/VISUAL_POLISH.md.
+
+ENTREGA
+Novo PR em rascunho; CI e artefato GitHub registrados na descrição do PR após conclusão.
+Não houve merge, execução de publish, alteração de credenciais ou implementação da Etapa 03.

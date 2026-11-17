@@ -191,6 +191,7 @@ if args.penalty:
     spec += "\n" + (root / "tools/match-lobby-scene.spec.luau").read_text()
 elif not args.intro:
     spec += "\n" + (root / "tools/match-lobby-app.spec.luau").read_text()
+    spec += "\n" + (root / "tools/tactics-app.spec.luau").read_text()
 with tempfile.TemporaryDirectory(prefix="cl27-app-") as folder:
     generated = Path(folder) / "app-check.luau"
     generated.write_text(prelude + setup + "\n".join(parts) + spec)

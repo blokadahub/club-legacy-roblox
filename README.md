@@ -33,6 +33,10 @@ Na Central, abra **Táticas**. Selecione uma predefinição, alterne a formaçã
 
 O canvas continua 1600×900. Controles e campo são roláveis; em telas compactas, o campo é ampliado proporcionalmente para leitura e toque, e pode ser arrastado em ambos os eixos. A navegação por controle revela o item focado. [Contrato, arquivos, testes e validação Roblox pendente](docs/TACTICS_EDITOR.md).
 
+## Refinamento visual — etapa 02.5
+
+O editor e o lobby compartilham cartões grafite, seleção clara e foco persistente. O banco mostra a condição física dos atletas; abas transparentes e campo trapezoidal preservam a leitura do corredor. O cenário recebeu seis juntas de piso, mantendo o orçamento de geometria e luzes. [Alterações, limites e roteiro de aceite](docs/VISUAL_POLISH_025.md). A aparência final ainda depende de execução real no Roblox.
+
 ## Abrir e executar
 
 **Etapa 02 — Central → Pré-partida:** confira os onze titulares da tática salva e os cinco reservas inscritos. Selecione um titular para consultar função/instrução e escolher um reserva compatível. Selecione um reserva para mudar sua inscrição ou propor sua entrada no time. **Confirmar escalação** grava os 16 na memória da sessão; **Cancelar alterações** restaura a lista. Navegar descarta propostas pendentes. Táticas e Elenco usam os mesmos titulares confirmados; o elenco global de 22 atletas é preservado.

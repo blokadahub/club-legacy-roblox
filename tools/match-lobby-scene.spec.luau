@@ -87,6 +87,43 @@ end
 check(minX>.77 and maxX<.98 and minY>.20 and maxY<.87,"Full avatar outside right presentation region")
 print("Match lobby numeric avatar bounds",minX,maxX,minY,maxY)
 check(#Layout.build()<70 and #lobby.lights==4,"Excessive geometry or lights")
+local joints=0
+for _,descriptor in ipairs(Layout.build()) do
+	if descriptor.name:match("^JuntaPiso_") then
+		joints+=1
+		local part=lobby.model:FindFirstChild(descriptor.name)
+		check(part and not part.CastShadow,"Floor seam casts an unnecessary dynamic shadow")
+		check(near(part.Position.Y-part.Size.Y/2,0),"Floor seam floats or is coplanar with the floor")
+		check(part.Position.Z+part.Size.Z/2< -2.2,"Floor seam intersects the presentation inlay")
+		check(part.Position.Z-part.Size.Z/2> -59.8 and part.Size.X<29.6,"Floor seam crosses corridor perimeter")
+	end
+end
+check(joints==6,"Missing floor depth cues")
+local inlay=lobby.model:FindFirstChild("AreaDoTecnico")
+check(near(bottom,inlay.Position.Y+inlay.Size.Y/2),"Feet do not touch the real presentation surface")
+local portals,panels=0,0
+for _,descriptor in ipairs(Layout.build()) do
+	if descriptor.name:match("^Painel_") then
+		panels+=1
+		check(descriptor.material=="Metal","Wall cladding ignores authored material")
+		check(descriptor.position[3]-descriptor.size[3]/2> -59.8,"Wall panel crosses back wall")
+	elseif descriptor.name:match("^MarcoFundo_") or descriptor.name=="PortaFundo" then
+		portals+=1
+		check(descriptor.position[3]-descriptor.size[3]/2> -59.8,"Portal intersects back wall")
+	end
+end
+check(panels==16 and portals==4 and #Layout.build()==69,"Unreviewed architecture budget")
+for _,quality in ipairs({"Baixa","Média","Alta"}) do
+	lobby:ApplySettings({quality=quality,reducedMotion=false})
+	local enabled,shadows=0,0
+	for _,light in ipairs(lobby.lights) do
+		if light.Enabled then enabled+=1 end
+		if light.Shadows then shadows+=1 end
+	end
+	check(enabled==(if quality=="Baixa" then 2 else 4),"Wrong light budget for "..quality)
+	check(shadows==(if quality=="Alta" then 1 else 0),"Wrong shadow budget for "..quality)
+end
+
 local oldStep=lobby.avatar.step
 services.RunService.PreSimulation:Fire(.1)
 check(lobby.avatar.joints.Waist.Transform~=nil,"Subtle idle absent")

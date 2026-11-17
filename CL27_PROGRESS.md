@@ -1,5 +1,24 @@
 # CL 27 — progresso verificável
 
+## Revisão completa da Etapa 02.5 — 17/11/2026
+
+- TXT integral e três imagens relidos; diagnóstico de dez critérios registrado antes de editar. Branch correta `feat/cl27-mega-visual-polish`, baseada no trabalho preservado de #23 e com destino #22.
+- Editor com formação inteira, fichas compactas de atletas/análise, identificação dos atletas, controles editoriais, medidores reais, foco e transições finitas via Scope.
+- Lobby com marca original do clube, cabeçalhos compactos, ficha e ações indisponíveis corretas; corredor com 69 descritores/quatro emissores, material metálico e avatar alinhado ao piso.
+- Auditoria das doze telas; correções pontuais em nove páginas de gestão, preservando sistemas/cenas já aprovados.
+- Luau/Rojo e todas as suítes executados localmente; nova cobertura de oito resoluções × três insets. [Auditoria e antes/depois](docs/VISUAL_POLISH.md), [resultados](docs/VISUAL_POLISH_VALIDATION.txt).
+- A implementação foi validada por código e testes automatizados, mas a aprovação visual no Roblox permanece pendente. Sem merge/publicação/Etapa 03.
+
+## Mega atualização — refinamento 02.5, retomada de 16/11/2026
+
+- Continuação do PR #23 / `feat/cl27-visual-polish-025`, a partir de `cc0c223`; PRs #21/#22 preservados.
+- Corrigido gradiente escuro no cartão selecionado, persistência do contorno e coexistência do foco mouse/gamepad. Mesmo acabamento e alto contraste no editor e lobby.
+- Abas transparentes, reservas com condição física do elenco, destaque exclusivo entre reserva/titular e base discreta de leitura para as ações. Campo preserva a silhueta trapezoidal e deixa o túnel visível.
+- Corredor recebe seis juntas sem sombra e escurecimento progressivo dos painéis; 65 descritores, quatro emissores, um R15. O limite existente de menos de 70 peças não foi relaxado.
+- Adicionadas verificações de contraste declarado/foco e posicionamento das barras/juntas. A execução do novo commit depende do CI; resultado real será registrado na descrição do PR.
+- Executor local indisponível. As imagens recebidas foram revistas, mas não houve releitura do TXT, execução/captura Roblox, teste físico Android/gamepad ou medição de FPS.
+- Sem mudanças de contratos táticos, persistência, câmera, aparência, áudio ou workflows; sem merge, publicação ou etapa 3. [Auditoria, arquivos e roteiro](docs/VISUAL_POLISH_025.md).
+
 ## Mega atualização — lobby pré-partida (16/11/2026, Fortaleza)
 
 - Continuação autorizada da etapa 1, base `6b353c2`, PR #21 aberto/em rascunho. Branch separada `feat/cl27-mega-match-lobby`; nenhuma modificação na branch anterior ou na main.

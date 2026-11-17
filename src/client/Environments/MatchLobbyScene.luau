@@ -15,7 +15,7 @@ function S.new(parent,club,settings)
 			p.Size=Vector3.new(table.unpack(data.size));p.CFrame=CFrame.new(table.unpack(data.position))
 			p.Color=Color3.fromRGB(table.unpack(data.color));p.Material=Enum.Material[data.material]
 			p.Anchored=true;p.CanCollide=false;p.CanTouch=false;p.CanQuery=false
-			p.CastShadow=true;p.Reflectance=0;p.Parent=self.model
+			p.CastShadow=data.castShadow~=false;p.Reflectance=0;p.Parent=self.model
 		end
 		local function light(name,position,color,brightness,range)
 			local host=Instance.new("Part");host.Name=name;host.Size=Vector3.new(.1,.1,.1)

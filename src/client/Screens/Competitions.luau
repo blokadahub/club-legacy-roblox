@@ -18,7 +18,7 @@ return function(root, ctx)
 	UI.header(root, "Competições", "TEMPORADA 2026 / 27", M.tabs({competition, "Copa Legado"}, state.competitionTab, function(i) state.competitionTab = i; ctx.rerender() end))
 	local selectedClub = M.club(Data, state.competitionClub)
 	M.title(root, state.competitionTab == 1 and "CLASSIFICAÇÃO GERAL" or "FASE ELIMINATÓRIA", state.competitionTab == 1 and competition or "Copa Legado", 65, 145, 1035)
-	UI.text(root, state.competitionTab == 1 and "Rodada 12 de 14  /  Circuito internacional de clubes convidados" or "Quartas de final  /  Confrontos de ida e volta", 67, 246, 1040, 28, 17, M.c.muted)
+	UI.text(root, state.competitionTab == 1 and "Tabela demonstrativa  /  Rodada 12 de 14" or "Quartas de final  /  Confrontos de ida e volta", 67, 246, 1040, 28, 17, M.c.muted)
 	if state.competitionTab == 1 then
 		local cols = {{"CLUBE", 115, 438}, {"J", 590, 62}, {"V", 677, 62}, {"E", 764, 62}, {"D", 851, 62}, {"SG", 938, 65}, {"PTS", 1025, 70}}
 		for _, col in ipairs(cols) do UI.text(root, col[1], col[2], 309, col[3], 25, 12, M.c.muted, Enum.Font.GothamBold) end
@@ -51,7 +51,7 @@ return function(root, ctx)
 		end
 		UI.text(root, "Chaveamento demonstrativo  /  Resultados ainda não definidos", 65, 813, 1040, 25, 13, M.c.muted)
 	end
-	UI.panel(root, 1175, 147, 360, 658, M.c.panel, 0.18)
+	M.panel(root, 1175, 147, 360, 658, M.c.panel, 0.18)
 	UI.text(root, "EM DESTAQUE", 1205, 187, 300, 25, 13, M.c.accent, Enum.Font.GothamBold)
 	UI.badge(root, selectedClub, 1240, 257, 220)
 	M.wrap(root, selectedClub.name, 1205, 512, 300, 79, 31, M.c.white, Enum.Font.GothamBold)

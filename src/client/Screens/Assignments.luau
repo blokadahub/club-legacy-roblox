@@ -1,10 +1,7 @@
 local UI = require(script.Parent.Parent.UI)
+local M = require(script.Parent.ManagementUI)
 local Data = require(game:GetService("ReplicatedStorage").CL27.Data)
 
-local WHITE = Color3.fromRGB(241, 248, 248)
-local MUTED = Color3.fromRGB(149, 176, 187)
-local ACCENT = Color3.fromRGB(67, 241, 202)
-local PANEL = Color3.fromRGB(17, 34, 51)
 local ROLES = {
 	{ key = "captain", title = "Capitão", symbol = "C", attribute = "passing", default = 1, description = "A referência de liderança do elenco." },
 	{ key = "penalties", title = "Pênaltis", symbol = "11", attribute = "shooting", default = 11, description = "Precisão e serenidade na marca da cal." },
@@ -15,6 +12,7 @@ local ROLES = {
 }
 
 return function(root, ctx)
+	local WHITE,MUTED,ACCENT,PANEL,GOLD=M.c.white,M.c.muted,M.c.accent,M.c.panel,M.c.gold
 	local state, scope = ctx.state, ctx.scope
 	state.assignments = state.assignments or {}
 	state.assignmentRole = math.clamp(state.assignmentRole or 1, 1, #ROLES)
@@ -32,7 +30,7 @@ return function(root, ctx)
 	})
 	UI.text(root, "CADA DETALHE DEFINE UM LEGADO.", 74, 139, 1000, 35, 27, WHITE, Enum.Font.GothamBold)
 	UI.text(root, "Escolha uma responsabilidade e indique o atleta.", 74, 182, 1000, 25, 15, MUTED)
-	local rolePanel = UI.panel(root, 74, 241, 464, 572, PANEL, 0.12)
+	local rolePanel = M.panel(root, 74, 241, 464, 572, PANEL, 0.12)
 	UI.text(rolePanel, "RESPONSABILIDADES", 23, 19, 410, 25, 12, MUTED, Enum.Font.GothamBold)
 	for index, item in ipairs(ROLES) do
 		local player = Data.players[state.assignments[item.key]]
@@ -45,7 +43,7 @@ return function(root, ctx)
 		UI.text(button, item.title, 67, 9, 345, 25, 16, WHITE, Enum.Font.GothamBold)
 		UI.text(button, player.name, 67, 38, 345, 21, 12, MUTED)
 	end
-	local hero = UI.panel(root, 560, 241, 380, 572, PANEL, 0.45)
+	local hero = M.panel(root, 560, 241, 380, 572, PANEL, 0.45)
 	UI.text(hero, "RESPONSÁVEL ATUAL", 25, 19, 333, 25, 12, ACCENT, Enum.Font.GothamBold)
 	UI.portrait(hero, assigned, club, 32, 65, 317, 290, scope)
 	UI.text(hero, tostring(assigned.overall), 275, 76, 86, 59, 43, WHITE, Enum.Font.GothamBold)
@@ -55,7 +53,7 @@ return function(root, ctx)
 	UI.text(hero, role.title, 25, 483, 332, 26, 17, ACCENT, Enum.Font.GothamBold)
 	local description = UI.text(hero, role.description, 25, 521, 332, 36, 12, MUTED)
 	description.TextWrapped = true
-	local list = UI.panel(root, 963, 241, 573, 572, PANEL, 0.1)
+	local list = M.panel(root, 963, 241, 573, 572, PANEL, 0.1)
 	UI.text(list, "SELECIONAR RESPONSÁVEL", 23, 19, 405, 25, 12, MUTED, Enum.Font.GothamBold)
 	UI.text(list, if role.attribute == "passing" then "PASSE" else "FINALIZ.", 458, 20, 92, 24, 11, MUTED, Enum.Font.GothamBold)
 	local scroll = UI.new("ScrollingFrame", {

@@ -52,7 +52,7 @@ return function(root, ctx)
 	end
 	UI.button(root, "Abrir apresentação de uniformes  →", 65, 771, 735, 52, function() ctx.go("Kits") end, ctx.scope, {primary = true})
 	UI.line(root, 845, 149, 845, 810, M.c.line, 1)
-	UI.panel(root, 888, 149, 646, 674, M.c.panel, 0.35)
+	M.panel(root, 888, 149, 646, 674, M.c.panel, 0.35)
 	UI.gradient(UI.frame(root, 888, 149, 646, 674, Color3.new(1, 1, 1), 0.83), {M.c.ink, accent}, 35)
 	UI.text(root, "APRESENTAÇÃO DO CLUBE", 922, 183, 570, 26, 13, accent, Enum.Font.GothamBold)
 	local viewport = UI.new("ViewportFrame", {

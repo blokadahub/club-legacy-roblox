@@ -1,17 +1,23 @@
 -- Utilitários editoriais das telas de gestão; todas as medidas usam o canvas 1600×900.
 local UI = require(script.Parent.Parent.UI)
+local Theme = require(game:GetService("ReplicatedStorage").CL27.Theme)
+local C = Theme.sports
 local M = {}
 M.c = setmetatable({
-	white = Color3.fromRGB(241, 248, 250),
-	blue = Color3.fromRGB(72, 137, 238),
-	ink = Color3.fromRGB(10, 27, 42),
-	line = Color3.fromRGB(54, 80, 94), gold = Color3.fromRGB(229, 205, 139),
+	white = C.white, blue = Color3.fromRGB(151, 174, 192),
+	ink = C.ink, line = C.border, gold = C.warning,
 }, {__index = function(_, key)
-	if key == "accent" then return UI.accent or Color3.fromRGB(70, 239, 201) end
-	if key == "muted" then return UI.highContrast and Color3.fromRGB(211, 225, 231) or Color3.fromRGB(151, 176, 187) end
-	if key == "panel" then return UI.highContrast and Color3.fromRGB(5, 15, 23) or Color3.fromRGB(20, 40, 56) end
+	if key == "accent" then return UI.accent or C.green end
+	if key == "muted" then return UI.highContrast and C.white or C.muted end
+	if key == "panel" then return UI.highContrast and C.ink or C.panel end
 	return nil
 end})
+function M.panel(parent,x,y,width,height,color,transparency)
+	local panel=UI.frame(parent,x,y,width,height,color or M.c.panel,transparency or .12)
+	panel.Name="SuperficieEditorial"
+	UI.line(panel,0,0,width,0,M.c.line,1).BackgroundTransparency=.35
+	return panel
+end
 function M.wrap(parent, text, x, y, width, height, size, color, font)
 	local label = UI.text(parent, text, x, y, width, height, size, color, font)
 	label.TextWrapped = true

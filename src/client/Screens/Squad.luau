@@ -1,15 +1,11 @@
 local UI = require(script.Parent.Parent.UI)
+local M = require(script.Parent.ManagementUI)
 local Data = require(game:GetService("ReplicatedStorage").CL27.Data)
 local Pitch = require(script.Parent.Pitch)
 local TacticsLayout = require(script.Parent.TacticsLayout)
 local TacticsModel = require(game:GetService("ReplicatedStorage").CL27.TacticsModel)
 local TacticsCatalog = require(game:GetService("ReplicatedStorage").CL27.TacticsCatalog)
 
-local WHITE = Color3.fromRGB(241, 248, 248)
-local MUTED = Color3.fromRGB(149, 176, 187)
-local ACCENT = Color3.fromRGB(67, 241, 202)
-local PANEL = Color3.fromRGB(17, 34, 51)
-local GOLD = Color3.fromRGB(221, 202, 133)
 local ATTRIBUTES = {
 	{ "pace", "Ritmo" }, { "shooting", "Finalização" }, { "passing", "Passe" },
 	{ "dribbling", "Condução" }, { "defending", "Defesa" }, { "physical", "Físico" },
@@ -22,6 +18,7 @@ local function statusText(value, fallback)
 end
 
 return function(root, ctx)
+	local WHITE,MUTED,ACCENT,PANEL,GOLD=M.c.white,M.c.muted,M.c.accent,M.c.panel,M.c.gold
 	local state, scope = ctx.state, ctx.scope
 	state.selectedPlayer = math.clamp(state.selectedPlayer or 1, 1, #Data.players)
 	state.formation = math.clamp(state.formation or 1, 1, #Data.formations)
@@ -83,7 +80,7 @@ return function(root, ctx)
 		UI.text(body, p.position .. "  /  " .. tostring(p.number), 167, 26, 265, 25, 14, MUTED)
 		UI.text(body, string.upper(p.shortName or p.name), 167, 57, 320, 39, 27, WHITE, Enum.Font.GothamBold)
 		UI.text(body, "Potencial " .. tostring(p.potential), 168, 107, 250, 24, 14, MUTED)
-		local overall = UI.frame(body, 486, 34, 74, 74, Color3.fromRGB(29, 64, 74), 0.4)
+		local overall = UI.frame(body, 486, 34, 74, 74, M.c.line, 0.4)
 		overall.Rotation = 45
 		UI.stroke(overall, ACCENT, 0.7, 1)
 		local number = UI.text(body, tostring(p.overall), 478, 46, 90, 54, 42, WHITE, Enum.Font.GothamBold)
@@ -171,7 +168,7 @@ return function(root, ctx)
 		end
 		card(root, index, fieldX + px - 50.5, fieldY + py - fieldCardHeight / 2, false)
 	end
-	local bench = UI.panel(root, 72, 563, 825, 251, PANEL, 0.13)
+	local bench = M.panel(root, 72, 563, 825, 251, PANEL, 0.13)
 	bench.Name = "BancoDeReservas"
 	UI.text(bench, "RESERVAS", 22, 14, 240, 25, 15, WHITE, Enum.Font.GothamBold)
 	UI.text(bench, tostring(#Data.players - 11) .. " ATLETAS DISPONÍVEIS", 535, 16, 267, 23, 11, MUTED)

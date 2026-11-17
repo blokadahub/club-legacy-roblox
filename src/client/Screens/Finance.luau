@@ -46,7 +46,7 @@ return function(root, ctx)
 	UI.frame(root, 232, 805, 7, 7, M.c.blue)
 	UI.text(root, "Despesas", 252, 797, 130, 25, 13, M.c.muted)
 	UI.text(root, "Segundo semestre  /  Dezembro projetado", 442, 797, 570, 25, 13, M.c.muted)
-	UI.panel(root, 1080, 145, 455, 670, M.c.panel, 0.18)
+	M.panel(root, 1080, 145, 455, 670, M.c.panel, 0.18)
 	UI.section(root, "ORIGEM DAS RECEITAS", 1110, 183, 390)
 	for i, item in ipairs(categories) do
 		local y = 243 + (i - 1) * 84
