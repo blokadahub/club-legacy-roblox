@@ -239,12 +239,9 @@ function App.start(options)
 		-- e sem o véu de UI de outras rotas.
 		if wanted=="Arena" and state.screen~="Settings" and state.screen~="Tactics" then
 			local backdrop=UI.frame(page,0,0,1600,900,Color3.new(1,1,1),if state.screen=="Clubs" then .72 else .15)
-			UI.gradient(backdrop,{Theme.blue,Color3.fromRGB(6,62,65),Theme.background},26)
-			for i=1,3 do
-				local shape=UI.frame(backdrop,720+i*190,220+i*180,1550,185,Color3.fromRGB(12,136,120),.93)
-				shape.Rotation=-29
-			end
-			UI.line(backdrop,760,890,1560,135,UI.accent,1).BackgroundTransparency=.9
+			backdrop.Name="FundoGestao"
+			UI.gradient(backdrop,{Theme.sports.ink,Theme.sports.panel,Theme.sports.ink},26)
+			UI.line(backdrop,1000,146,1000,804,Theme.sports.border,1).BackgroundTransparency=.85
 		end
 		local ctx={state=state,scope=pageScope,go=go,rerender=rerender,notify=notify,scene=scene,playerGui=playerGui,openCentral=toggleTray}
 		-- A HOME é desenhada no ScreenGui independente CL27_HomeHUD, não aqui.

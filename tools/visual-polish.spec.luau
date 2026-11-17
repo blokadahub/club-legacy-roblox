@@ -78,5 +78,35 @@ assertReadable(unselected)
 local name=node(root,"CondicaoReserva")
 check(luminance(name.TextColor3)>.8,"High contrast setting ignored by tactical controls")
 dispose(root,ctx);UI.highContrast=previous
-print(string.format("PASS Visual polish: %d assertions; authored contrast, persistent selection, mixed-input focus, bench data. No Roblox render.",assertions-before))
+UI.highContrast=true
+root,ctx=mounted("Tactics")
+assertReadable(node(root,"Posicao_gk"));assertReadable(node(root,"Posicao_lb"))
+dispose(root,ctx);UI.highContrast=previous
+local editorial=require(moduleNodes["src/client/Screens/ManagementUI.luau"])
+for _,highContrast in ipairs({false,true}) do
+	UI.highContrast=highContrast
+	for _,ink in ipairs({editorial.c.white,editorial.c.muted,editorial.c.accent}) do
+		check(contrast(ink,editorial.c.panel)>=4.5,"Editorial text lost contrast")
+	end
+end
+UI.highContrast=previous
+-- A real sixteen-player eligibility fixture must not offer a no-op action.
+root,ctx=mounted("MatchLobby")
+local available={}
+for _,entry in pairs(ctx.state.tacticalPlan.active.positions) do available[entry.playerId]=true end
+for i=1,5 do available[node(root,"Reserva_"..i):GetAttribute("PlayerId")]=true end
+local state=ctx.state;dispose(root,ctx)
+local oldAvailability={}
+for i,player in ipairs(Data.players) do oldAvailability[i]={value=player.available};if not available[player.id] then player.available=false end end
+root,ctx=mounted("MatchLobby",state)
+press(root,"Reserva_1")
+check(not node(root,"EscolherCandidato").Active and not node(root,"ProporAlteracao").Active,"No-candidate action remains active")
+check(not node(root,"ProporAlteracao").Selectable,"Gamepad can enter disabled proposal")
+check(node(root,"FecharFicha").NextSelectionLeft==node(root,"ModoSubstituicao"),"No-candidate focus enters disabled proposal")
+local saved=T.copy(ctx.state.tacticalPlan.active)
+press(root,"ProporAlteracao")
+check(T.equal(saved,ctx.state.tacticalPlan.active) and node(root,"FichaPrePartida").Visible,"Disabled proposal altered state")
+dispose(root,ctx)
+for i,player in ipairs(Data.players) do player.available=oldAvailability[i].value end
+print(string.format("PASS Visual polish: %d assertions; authored contrast, persistent selection, mixed-input focus, bench data, unavailable actions. No Roblox render.",assertions-before))
 end

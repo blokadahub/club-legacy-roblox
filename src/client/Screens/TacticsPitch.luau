@@ -5,9 +5,10 @@ local Layout=require(script.Parent.TacticsLayout)
 local Controls=require(script.Parent.TacticsControls)
 local Catalog=require(game:GetService("ReplicatedStorage").CL27.TacticsCatalog)
 local Model=require(game:GetService("ReplicatedStorage").CL27.TacticsModel)
+local Data=require(game:GetService("ReplicatedStorage").CL27.Data)
 local C=Controls.colors
 local View={}
-function View.create(parent,scope,onSelect)
+function View.create(parent,scope,onSelect,club)
 	local host=UI.frame(parent,0,0,Layout.width,510,C.ink,1)
 	host.Name="PreviaTatica"
 	Pitch.draw(host,12,28,Layout.width-24,Layout.height-70,{
@@ -20,13 +21,26 @@ function View.create(parent,scope,onSelect)
 		card.button.Size=UDim2.fromOffset(Layout.cardWidth,Layout.cardHeight)
 		card.shade=UI.gradient(card.button,{Color3.fromRGB(37,47,44),Color3.fromRGB(14,20,20)},90)
 		card.shade.Name="CardShading"
-		card.label=Controls.text(card.button,"",8,3,126,21,18,C.green,true)
-		card.role=Controls.text(card.button,"",6,24,130,42,18,C.white,true)
-		card.behavior=Controls.text(card.button,"",6,68,130,21,17,C.muted)
-		for _,label in ipairs({card.label,card.role,card.behavior}) do label.TextXAlignment=Enum.TextXAlignment.Center end
+		card.mark=UI.frame(card.button,3,11,2,70,club and club.secondary or C.green,.2)
+		card.mark.Name="MarcaClube"
+		card.label=Controls.text(card.button,"",8,2,126,17,15,C.green,true)
+		card.name=Controls.text(card.button,"",8,19,126,21,17,C.white,true);card.name.Name="NomeAtleta"
+		card.role=Controls.text(card.button,"",8,40,126,31,15,C.white)
+		card.behavior=Controls.text(card.button,"",8,72,126,18,14,C.muted)
+		for _,label in ipairs({card.label,card.name,card.role,card.behavior}) do label.TextXAlignment=Enum.TextXAlignment.Center end
 		cards[i]=card
 	end
 	local view={host=host,cards=cards}
+	function view:compact(enabled,physicalScale)
+		for _,card in ipairs(cards) do
+			card.button.Selectable=not enabled;card.button.Active=not enabled
+			card.name.Visible=not enabled;card.role.Visible=not enabled;card.behavior.Visible=not enabled
+			card.label.Text=if enabled then Layout.compactLabels[card.slotId] else card.fullLabel
+			card.label.Position=UDim2.fromOffset(8,if enabled then 0 else 2)
+			card.label.Size=UDim2.fromOffset(126,if enabled then 92 else 17)
+			card.label.TextSize=if enabled then math.max(18,12/physicalScale) else 15
+		end
+	end
 	function view:update(config,phase,selected,animate)
 		local formation=Catalog.formations[config.formationId]
 		local anchors=Model.resolve(config,phase)
@@ -38,7 +52,9 @@ function View.create(parent,scope,onSelect)
 			card.button.Name="Posicao_"..s.id
 			card.button:SetAttribute("SlotId",s.id)
 			card.button:SetAttribute("PlayerId",entry.playerId)
-			card.label.Text=s.label
+			local player=Model.player(Data.players,entry.playerId)
+			card.fullLabel=s.label.."  ·  "..tostring(player.number)
+			card.label.Text=card.fullLabel;card.name.Text=player.shortName
 			card.role.Text=Catalog.roles[entry.roleId].label
 			card.behavior.Text=Catalog.behaviors[entry.behaviorId].label
 			local focused=s.id==selected
@@ -46,6 +62,7 @@ function View.create(parent,scope,onSelect)
 			card.shade.Enabled=not focused
 			card.label.TextColor3=if focused then Color3.fromRGB(39,102,62) else C.green
 			card.role.TextColor3=if focused then C.ink else C.white
+			card.name.TextColor3=if focused then C.ink else C.white
 			card.behavior.TextColor3=if focused then C.panel elseif UI.highContrast then C.white else C.muted
 			Controls.select(card.button,focused)
 			local p=positions[s.id]

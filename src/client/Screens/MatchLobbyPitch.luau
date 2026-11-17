@@ -7,9 +7,7 @@ local Pitch=require(script.Parent.Pitch)
 local Catalog=require(game:GetService("ReplicatedStorage").CL27.TacticsCatalog)
 local Model=require(game:GetService("ReplicatedStorage").CL27.TacticsModel)
 local V={}
-local compactLabels={gk="G",lcb="ZE",rcb="ZD",cb="Z",lb="LE",rb="LD",dm="V",ldm="VE",rdm="VD",
-	lcm="ME",rcm="MD",lw="PE",rw="PD",lm="ME",rm="MD",lam="ME",ram="MD",am="M",st="AT",lst="AE",rst="AD"}
-function V.create(parent,scope,roster,onSelect)
+function V.create(parent,scope,roster,onSelect,club)
 	local C=Controls.colors
 	local host=UI.frame(parent,0,0,Layout.width,Layout.height,C.ink,1)
 	-- The silhouette belongs to the projected pitch; no opaque rectangular slab
@@ -33,6 +31,7 @@ function V.create(parent,scope,roster,onSelect)
 			ColorSequenceKeypoint.new(0,Color3.fromRGB(37,47,44)),
 			ColorSequenceKeypoint.new(1,Color3.fromRGB(14,20,20))})},card.button)
 		card.accent=UI.frame(card.button,6,6,3,Layout.cardHeight-12,C.green,.15);card.accent.Visible=false
+		card.mark=UI.frame(card.button,3,11,2,70,club and club.secondary or C.green,.2);card.mark.Name="MarcaClube"
 		UI.new("UICorner",{CornerRadius=UDim.new(1,0)},card.accent)
 		card.name=Controls.text(card.button,"",15,4,Layout.cardWidth-22,23,18,C.white,true)
 		card.role=Controls.text(card.button,"",15,28,Layout.cardWidth-22,39,17,C.muted)
@@ -48,7 +47,7 @@ function V.create(parent,scope,roster,onSelect)
 			card.position.Size=UDim2.fromOffset(Layout.cardWidth-22,enabled and Layout.cardHeight or 21)
 			card.accent.Visible=not enabled and card.button:GetAttribute("TacticalSelected")==true
 			card.position.TextSize=if enabled then math.max(18,12/physicalScale) else 18
-			card.position.Text=if enabled then compactLabels[card.slotId] else card.fullPosition
+			card.position.Text=if enabled then Layout.compactLabels[card.slotId] else card.fullPosition
 		end
 	end
 	function view:update(config,selected)

@@ -1,5 +1,14 @@
 # CL 27 — progresso verificável
 
+## Revisão completa da Etapa 02.5 — 17/11/2026
+
+- TXT integral e três imagens relidos; diagnóstico de dez critérios registrado antes de editar. Branch correta `feat/cl27-mega-visual-polish`, baseada no trabalho preservado de #23 e com destino #22.
+- Editor com formação inteira, fichas compactas de atletas/análise, identificação dos atletas, controles editoriais, medidores reais, foco e transições finitas via Scope.
+- Lobby com marca original do clube, cabeçalhos compactos, ficha e ações indisponíveis corretas; corredor com 69 descritores/quatro emissores, material metálico e avatar alinhado ao piso.
+- Auditoria das doze telas; correções pontuais em nove páginas de gestão, preservando sistemas/cenas já aprovados.
+- Luau/Rojo e todas as suítes executados localmente; nova cobertura de oito resoluções × três insets. [Auditoria e antes/depois](docs/VISUAL_POLISH.md), [resultados](docs/VISUAL_POLISH_VALIDATION.txt).
+- A implementação foi validada por código e testes automatizados, mas a aprovação visual no Roblox permanece pendente. Sem merge/publicação/Etapa 03.
+
 ## Mega atualização — refinamento 02.5, retomada de 16/11/2026
 
 - Continuação do PR #23 / `feat/cl27-visual-polish-025`, a partir de `cc0c223`; PRs #21/#22 preservados.

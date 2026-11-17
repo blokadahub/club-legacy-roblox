@@ -99,6 +99,30 @@ for _,descriptor in ipairs(Layout.build()) do
 	end
 end
 check(joints==6,"Missing floor depth cues")
+local inlay=lobby.model:FindFirstChild("AreaDoTecnico")
+check(near(bottom,inlay.Position.Y+inlay.Size.Y/2),"Feet do not touch the real presentation surface")
+local portals,panels=0,0
+for _,descriptor in ipairs(Layout.build()) do
+	if descriptor.name:match("^Painel_") then
+		panels+=1
+		check(descriptor.material=="Metal","Wall cladding ignores authored material")
+		check(descriptor.position[3]-descriptor.size[3]/2> -59.8,"Wall panel crosses back wall")
+	elseif descriptor.name:match("^MarcoFundo_") or descriptor.name=="PortaFundo" then
+		portals+=1
+		check(descriptor.position[3]-descriptor.size[3]/2> -59.8,"Portal intersects back wall")
+	end
+end
+check(panels==16 and portals==4 and #Layout.build()==69,"Unreviewed architecture budget")
+for _,quality in ipairs({"Baixa","Média","Alta"}) do
+	lobby:ApplySettings({quality=quality,reducedMotion=false})
+	local enabled,shadows=0,0
+	for _,light in ipairs(lobby.lights) do
+		if light.Enabled then enabled+=1 end
+		if light.Shadows then shadows+=1 end
+	end
+	check(enabled==(if quality=="Baixa" then 2 else 4),"Wrong light budget for "..quality)
+	check(shadows==(if quality=="Alta" then 1 else 0),"Wrong shadow budget for "..quality)
+end
 
 local oldStep=lobby.avatar.step
 services.RunService.PreSimulation:Fire(.1)

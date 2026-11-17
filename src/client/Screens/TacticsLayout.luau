@@ -1,6 +1,8 @@
 --!nonstrict
 -- Display-only collision constraints; never writes back to tactical anchors.
 local L={width=920,height=510,cardWidth=142,cardHeight=92,gap=10}
+L.compactLabels={gk="G",lcb="ZE",rcb="ZD",cb="Z",lb="LE",rb="LD",dm="V",ldm="VE",rdm="VD",
+	lcm="ME",rcm="MD",lw="PE",rw="PD",lm="ME",rm="MD",lam="ME",ram="MD",am="M",st="AT",lst="AE",rst="AD"}
 function L.arrange(formation,anchors,project)
 	local rows={}
 	for _,s in ipairs(formation.slots) do

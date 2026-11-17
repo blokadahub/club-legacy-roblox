@@ -95,7 +95,7 @@ return function(root,ctx)
 		Controls.reveal(bench,card.button,nil,scope)
 	end
 	local pitchScroll=scroll(root,"CampoPrePartida");pitchScroll.ScrollingDirection=Enum.ScrollingDirection.XY
-	local pitch=PitchView.create(pitchScroll,scope,Data.players,function(id) if not mode then selected=id;openDetail("starter") end end)
+	local pitch=PitchView.create(pitchScroll,scope,Data.players,function(id) if not mode then selected=id;openDetail("starter") end end,club)
 	local pitchScale=UI.new("UIScale",{Scale=1},pitch.host)
 	-- Small displays keep all eleven positions visible. The whole board is one
 	-- generous touch target; the sheet exposes names/roles and a starter selector.
@@ -147,8 +147,9 @@ return function(root,ctx)
 	for _,b in ipairs({confirm,cancel,central,home}) do table.insert(mainButtons,b) end
 	local future=text(root,"SIMULAÇÃO DE PARTIDAS\nEm desenvolvimento",1244,811,300,66,19,C.muted)
 	-- Contextual sheet leaves the real avatar visible; no new scene or portraits.
-	local overlay=UI.frame(root,38,202,1182,590,C.ink,.02)
-	overlay.Name="FichaPrePartida";overlay.Visible=false;overlay.Active=true
+	local overlay=UI.new("CanvasGroup",{Name="FichaPrePartida",Position=UDim2.fromOffset(38,202),
+		Size=UDim2.fromOffset(1182,590),BackgroundColor3=C.ink,BackgroundTransparency=.02,
+		BorderSizePixel=0,GroupTransparency=0,Visible=false,Active=true,ZIndex=20},root)
 	UI.stroke(overlay,C.border,.15,1)
 	local sheetRule=UI.frame(overlay,24,0,1134,2,C.green,.3);sheetRule.Name="ReguaFicha"
 	local body=scroll(overlay,"DetalhesRolaveis")
@@ -197,13 +198,13 @@ return function(root,ctx)
 	openDetail=function(nextMode)
 		if nextMode=="starter" then selectedBench=nil end
 		if not mode then focusBefore=GuiService.SelectedObject end
-		mode=nextMode;overlay.Visible=true;body.CanvasPosition=Vector2.new()
+		mode=nextMode;Controls.present(overlay,scope,true);body.CanvasPosition=Vector2.new()
 		makeChoices()
 		for _,b in ipairs(mainButtons) do b.Selectable=false;b.Active=false end
 		refresh();GuiService.SelectedObject=if #choices>0 then candidate else dismiss
 	end
 	closeDetail=function()
-		mode=nil;overlay.Visible=false
+		mode=nil;Controls.present(overlay,scope,false)
 		for _,b in ipairs(mainButtons) do b.Selectable=true;b.Active=true end
 		if focusBefore and focusBefore.Parent then GuiService.SelectedObject=focusBefore end
 		refresh()
@@ -241,9 +242,15 @@ return function(root,ctx)
 		if mode then
 			local help=mode=="help"
 			candidate.Visible=not help;proposal.Visible=not help
+			candidate.Active=not help and #choices>0;candidate.Selectable=candidate.Active
+			proposal.Active=candidate.Active;proposal.Selectable=candidate.Active
+			proposal.BackgroundColor3=if proposal.Active then C.green else C.panel
+			proposal.TextColor3=if proposal.Active then C.ink else C.muted
 			operation.Visible=not help
 			candidate.NextSelectionDown=if operation.Visible then operation else proposal
 			proposal.NextSelectionUp=if operation.Visible then operation else candidate
+			operation.NextSelectionDown=if proposal.Active then proposal else dismiss
+			dismiss.NextSelectionLeft=if proposal.Active then proposal elseif not help then operation else dismiss
 			if help then
 				title.Text="PREPARE SUA EQUIPE"
 				details.Text="1. Selecione um titular para consultar sua função e propor uma troca compatível.\n2. Selecione um reserva para mudar sua inscrição ou colocá-lo no time.\n3. Confirme a escalação para salvar os 16 atletas nesta sessão.\n\nTáticas e Elenco compartilham a mesma equipe confirmada. Sair descarta alterações pendentes. Seu avatar representa o técnico; os atletas são fictícios. A simulação de partidas está em desenvolvimento."
@@ -278,9 +285,12 @@ return function(root,ctx)
 		end
 		nav.CanvasSize=UDim2.fromOffset(#tabButtons*(tabW+8),0)
 		local headingY=math.max(214,140+h)
+		benchTitle.Text=if compact then "RESERVAS" else "BANCO DE RESERVAS"
 		benchTitle.Position=UDim2.fromOffset(54,headingY);benchTitle.TextSize=font;benchTitle.Size=UDim2.fromOffset(242,compact and 88 or 56)
 		badge.Position=UDim2.fromOffset(336,headingY)
+		clubName.Text=if compact then club.shortName.."  /  "..Catalog.formations[session.tactic.formationId].label else club.name
 		clubName.Position=UDim2.fromOffset(412,headingY);clubName.TextSize=math.max(30,font)
+		clubName.Size=UDim2.fromOffset(775,math.max(42,font*1.3));formation.Visible=not compact
 		formation.Position=UDim2.fromOffset(413,headingY+46);formation.TextSize=font;formation.Size=UDim2.fromOffset(750,math.max(30,font*1.3))
 		local actionY=880-h
 		for i,b in ipairs({confirm,cancel,central,home}) do
@@ -315,7 +325,8 @@ return function(root,ctx)
 		for _,card in ipairs(pitch.cards) do card.button.Selectable=not compact and not mode;card.button.Active=not compact and not mode end
 		avatarTitle.TextSize=font;identity.TextSize=math.max(25,font);username.TextSize=font
 		identity.Size=UDim2.fromOffset(300,math.max(70,font*2.5));username.Position=UDim2.fromOffset(1244,118);username.Visible=not compact
-		avatarTitle.Position=UDim2.fromOffset(1244,compact and 152 or 161);avatarTitle.Size=UDim2.fromOffset(300,compact and 92 or 50)
+		avatarTitle.Text=if compact then "SEU TÉCNICO" else "SEU AVATAR • TÉCNICO"
+		avatarTitle.Position=UDim2.fromOffset(1244,161);avatarTitle.Size=UDim2.fromOffset(300,math.max(50,font*1.3))
 		avatarMessage.TextSize=font;avatarMessage.Position=UDim2.fromOffset(1244,773);avatarMessage.Size=UDim2.fromOffset(300,compact and 106 or 68)
 		if retry.Visible then avatarMessage.Position=UDim2.fromOffset(1244,380);avatarMessage.Size=UDim2.fromOffset(300,240) end
 		retry.Position=UDim2.fromOffset(1244,635);retry.Size=UDim2.fromOffset(300,h);retry.TextSize=font

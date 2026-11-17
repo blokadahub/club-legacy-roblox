@@ -21,7 +21,7 @@ return function(root, ctx)
 	local club = M.club(Data, state.homeClub)
 	UI.header(root, "Desenvolvimento", "CENTRO DE PERFORMANCE")
 	UI.text(root, "Talento encontra direção.", 65, 141, 1100, 60, 42, M.c.white, Enum.Font.GothamBold)
-	UI.text(root, "Planos individuais  /  Comissão técnica CL 27", 67, 210, 1000, 30, 17, M.c.muted)
+	UI.text(root, "Planos da sessão  /  Evolução demonstrativa", 67, 210, 1000, 30, 17, M.c.muted)
 	UI.section(root, "SELECIONAR ATLETA", 65, 282, 360)
 	local scroll = UI.new("ScrollingFrame", {
 		Name = "AtletasEmDesenvolvimento", Position = UDim2.fromOffset(65, 329), Size = UDim2.fromOffset(365, 459),
